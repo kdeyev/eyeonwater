@@ -9,5 +9,5 @@ DATA_SMART_METER = "smart_meter_data"
 
 DOMAIN = "eyeonwater"
 
-METER_NUMBER = "meter_number"
 WATER_METER = "Water Meter"
+WATER_LEAK_SENSOR = "Water Leak Sensor"

@@ -13,8 +13,9 @@ async def main():
         
     meters = await account.fetch_meters(client=client)
     for meter in meters:
-        value = await meter.read_meter(client=client)
-        print(f"meter {meter.meter_id} shows {value}")
+        await meter.read_meter(client=client)
+        print(f"meter {meter.meter_id} shows {meter.reading}")
+        print(f"meter leaks: {meter.has_leak}")
 
     await websession.close()
        

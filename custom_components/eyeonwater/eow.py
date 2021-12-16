@@ -1,47 +1,41 @@
 from __future__ import annotations
 
 import datetime
+import json
 import logging
+from typing import Any, Dict
 import urllib.parse
-import re
 from aiohttp import ClientSession
 from tenacity import retry, retry_if_exception_type
 import datetime
 
+from voluptuous.validators import Boolean
+
+__author__ = "Konstantin Deev"
+__email__ = "kn.deev@gmail.com"
+__version__ = "0.0.1"
+
+
 BASE_HOSTNAME = "eyeonwater.com"
 BASE_URL = "https://" + BASE_HOSTNAME + "/"
-# BASE_ENDPOINT = BASE_URL + "api"
 AUTH_ENDPOINT = "account/signin"
 DASHBOARD_ENDPOINT = "/dashboard/"
-# LATEST_OD_READ_ENDPOINT = "/usage/latestodrread"
-# METER_ENDPOINT = "/meter"
-# OD_READ_ENDPOINT = "/ondemandread"
-
 
 MEASUREMENT_GALLONS = "GAL"
 MEASUREMENT_KILOGALLONS = "KGAL"
 
-USER_AGENT_TEMPLATE = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/85.0.{BUILD}.{REV} Safari/537.36"
-)
-CLIENT_HEADERS = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-}
+METER_ID_FIELD = "meter_id"
+METER_READ_FIELD = "meter_read"
+NEW_LATEST_READ_FIELD = "new_latest_read"
+READ_UNITS_FIELD = "read_units"
+READ_AMOUNT_FIELD = "read_amount"
+HAS_LEAK_FIELD = "has_leak"
 
-API_ERROR_KEY = "errormessage"
-TOKEN_EXPIRED_KEY = "message"
-TOKEN_EXPIRED_VALUE = "Invalid Token"
+TOKEN_EXPIRATION = datetime.timedelta(minutes=15)
 
-API_ERROR_RESPONSES = {
-    "ERR-USR-USERNOTFOUND": "user not found",
-    "ERR-USR-INVALIDPASSWORDERROR": "password is not correct",
-}
+_LOGGER = logging.getLogger(__name__)
 
-OD_READ_RETRY_TIME = 15
-TOKEN_EXPRIATION = datetime.timedelta(minutes=15)
+
 
 class EyeOnWaterException(Exception):
     """Base exception for more specific exceptions to inherit from."""
@@ -75,26 +69,21 @@ class EyeOnWaterAPIError(EyeOnWaterException):
     ...
 
 
-__author__ = "Konstantin Deev"
-__email__ = "kn.deev@gmail.com"
-__version__ = "0.0.1"
-
-_LOGGER = logging.getLogger(__name__)
-
+def extract_json(line, prefix):
+    line = line[line.find(prefix) + len(prefix):]
+    line = line[:line.find(";")]
+    return json.loads(line)
 
 class Meter:
-    regex =  r"^(.*){\"new_latest_read\": {\"read_time\": \"(.*)\", \"read_units\": \"(.*)\", \"read_amount\": \"(\d+\.\d+)\", \"read_date\": \"(.*)\"}(.*)$"
-    pattern = re.compile(regex)
+    meter_prefix = "var new_barInfo = "
+    info_prefix = "AQ.Views.MeterPicker.meters = "
 
-
-    def __init__(self, meter_id: str, address: str):
+    def __init__(self, meter_id: str, meter_info: Dict[str, Any]):
         self.meter_id = meter_id
-        # self.esiid = esiid
-        self.address = address
+        self.meter_info = meter_info
         self.reading_data = None
-
         
-    async def read_meter(self, client: Client) -> float:
+    async def read_meter(self, client: Client) -> Dict[str, Any]:
         """Triggers an on-demand meter read and returns it when complete."""
         _LOGGER.debug("Requesting meter reading")
 
@@ -106,42 +95,55 @@ class Meter:
             path=path
         )
 
-        return self.parse_reading_data(data)
+        return self._parse_reading_data(data)
 
-    def parse_reading_data(self, data):
+    def _parse_reading_data(self, data) -> Dict[str, Any]:
         lines = data.split("\n")
+
+        meter_index = None
         for line in lines:
-            match = re.match(Meter.pattern, line)
-            if match:
-                gr = match.groups()
-                meter_value = float(gr[3])
-                measurement_unit = gr[2]
-                if measurement_unit.upper() == MEASUREMENT_KILOGALLONS:
-                    meter_value = meter_value * 1000
-                elif measurement_unit.upper() == MEASUREMENT_GALLONS:
-                    pass
-                else:
-                    raise EyeOnWaterAPIError(f"Unsupported measurement unit: {measurement_unit}")
-                
-                self.reading_data  = meter_value
-                return self.reading_data
-            
-        self.reading_data = None
-        raise EyeOnWaterAPIError("Cannot parse the server response")
+            if Meter.info_prefix in line:
+                meter_infos = extract_json(line, Meter.info_prefix)
+                meter_index = next(i for i, v in enumerate(meter_infos) if v[METER_ID_FIELD] == self.meter_id)
+                self.meter_info = meter_infos[meter_index]
+
+        if meter_index is None:
+            raise EyeOnWaterAPIError("Cannot find meter info")
+
+        for line in lines:
+            if Meter.meter_prefix in line:
+                meters_read = extract_json(line, Meter.meter_prefix)
+                self.reading_data = meters_read[METER_READ_FIELD][meter_index][NEW_LATEST_READ_FIELD]
+             
+        return self.reading_data
+
+    @property
+    def attributes(self):
+        return self.meter_info
+
+    @property
+    def has_leak(self) -> bool:
+        if HAS_LEAK_FIELD not in self.meter_info:
+            raise EyeOnWaterAPIError(f"Cannot find {HAS_LEAK_FIELD} field")
+        return self.meter_info[HAS_LEAK_FIELD] == "true"
 
     @property
     def reading(self):
-        """Returns the latest meter reading in kWh."""
-        return self.reading_data
+        """Returns the latest meter reading in gal."""
+        if READ_UNITS_FIELD not in self.reading_data:
+            raise EyeOnWaterAPIError("Cannot find read units in reading data")
+        read_unit = self.reading_data[READ_UNITS_FIELD]
+        amount = float(self.reading_data[READ_AMOUNT_FIELD])
+        if read_unit.upper() == MEASUREMENT_KILOGALLONS:
+            amount = amount * 1000
+        elif read_unit.upper() == MEASUREMENT_GALLONS:
+            pass
+        else:
+            raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
+        return amount
 
 
 class Account:
-    regex =  r"^(.*){\"display_address\": \"(.*)\", \"account_id\": \"(.*)\", \"meter_uuid\": \"(.*)\", \"meter_id\": \"(.*)\", \"city\": \"(.*)\", \"location_name\": \"(.*)\", \"has_leak\": (.*), \"state\": \"(.*)\", \"serial_number\": \"(.*)\", \"utility_uuid\": \"(.*)\", \"page\": (.*), \"zip_code\": \"(.*)\"}(.*)$"
-    # regex =  r"^(.*)\"meter_id\": \"(.*)\", (.*)$"
-    pattern = re.compile(regex)
-
-    # AQ.Views.MeterPicker.meters = [{"display_address": "4510 HUNTWOOD HILLS LN", "account_id": "60634-6340122703", "meter_uuid": "5214483767293934848", "meter_id": "200010108", "city": "KATY", "location_name": "4510 HUNTWOOD HILLS LN", "has_leak": false, "state": "TX", "serial_number": "200010108", "utility_uuid": "5214483767290840517", "page": 1, "zip_code": "77450"}];
-
     def __init__(self, username: str, password: str):
         self.username = username
         self.password = password
@@ -154,22 +156,16 @@ class Account:
         meters = []
         lines = data.split("\n")
         for line in lines:
-            match = re.match(Account.pattern, line)
-            if match:
-                gr = match.groups()
-
-                meter_id = gr[4]
-                address = gr[1]
+            if Meter.info_prefix in line:
+                meter_infos = extract_json(line, Meter.info_prefix)
+                for meter_info in meter_infos:
+                    if METER_ID_FIELD not in meter_info:
+                        raise EyeOnWaterAPIError(f"Cannot find {METER_ID_FIELD} field")
                 
-                meter = Meter(meter_id, address)
-                meters.append(meter)
-
-        # for meter_data in json_response["data"]:
-        #     address = meter_data["address"]
-        #     meter = meter_data["meterNumber"]
-        #     esiid = meter_data["esiid"]
-        #     meter = Meter(meter, esiid, address)
-        #     meters.append(meter)
+                    meter_id = meter_info[METER_ID_FIELD]
+                    
+                    meter = Meter(meter_id, meter_info)
+                    meters.append(meter)
 
         return meters  
 
@@ -186,7 +182,7 @@ class Client:
         self.user_agent = None
 
     def _update_token_expiration(self):
-        self.token_expiration = datetime.datetime.now() + TOKEN_EXPRIATION
+        self.token_expiration = datetime.datetime.now() + TOKEN_EXPIRATION
 
     @retry(retry=retry_if_exception_type(EyeOnWaterAuthExpired))
     async def request(
@@ -250,4 +246,3 @@ class Client:
             return True
 
         return False
-

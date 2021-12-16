@@ -1,7 +1,6 @@
 """The Eye On Water integration."""
 import asyncio
 import logging
-import ssl
 
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
@@ -26,7 +25,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
-_LOGGER.setLevel(logging.DEBUG)
+# _LOGGER.setLevel(logging.DEBUG)
 
 PLATFORMS = [Platform.SENSOR]
 

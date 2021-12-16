@@ -55,10 +55,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await smart_meter_texas_data.read_meters()
         return smart_meter_texas_data
 
-    # Use a DataUpdateCoordinator to manage the updates. This is due to the
-    # Eye On Water API which takes around 30 seconds to read a meter.
-    # This avoids Home Assistant from complaining about the component taking
-    # too long to update.
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,

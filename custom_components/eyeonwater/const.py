@@ -10,5 +10,4 @@ DATA_SMART_METER = "smart_meter_data"
 DOMAIN = "eyeonwater"
 
 METER_NUMBER = "meter_number"
-LAST_UPDATE = "last_updated"
 WATER_METER = "Water Meter"

@@ -15,7 +15,6 @@ from .const import (
     DATA_SMART_METER,
     DOMAIN,
     WATER_METER,
-    ESIID,
     METER_NUMBER,
 )
 

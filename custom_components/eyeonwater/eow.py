@@ -17,6 +17,10 @@ DASHBOARD_ENDPOINT = "/dashboard/"
 # METER_ENDPOINT = "/meter"
 # OD_READ_ENDPOINT = "/ondemandread"
 
+
+MEASUREMENT_GALLONS = "GAL"
+MEASUREMENT_KILOGALLONS = "KGAL"
+
 USER_AGENT_TEMPLATE = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -110,11 +114,26 @@ class Meter:
             match = re.match(Meter.pattern, line)
             if match:
                 gr = match.groups()
-                self.reading_data = float(gr[3])
+                meter_value = float(gr[3])
+                measurement_unit = gr[2]
+                if measurement_unit.upper() == MEASUREMENT_KILOGALLONS:
+                    meter_value = meter_value * 1000
+                elif measurement_unit.upper() == MEASUREMENT_GALLONS:
+                    pass
+                else:
+                    raise EyeOnWaterAPIError(f"Unsupported measurement unit: {measurement_unit}")
+                
+                self.reading_data  = meter_value
                 return self.reading_data
             
         self.reading_data = None
         raise EyeOnWaterAPIError("Cannot parse the server response")
+
+    @property
+    def reading(self):
+        """Returns the latest meter reading in kWh."""
+        return self.reading_data
+
 
 class Account:
     regex =  r"^(.*){\"display_address\": \"(.*)\", \"account_id\": \"(.*)\", \"meter_uuid\": \"(.*)\", \"meter_id\": \"(.*)\", \"city\": \"(.*)\", \"location_name\": \"(.*)\", \"has_leak\": (.*), \"state\": \"(.*)\", \"serial_number\": \"(.*)\", \"utility_uuid\": \"(.*)\", \"page\": (.*), \"zip_code\": \"(.*)\"}(.*)$"

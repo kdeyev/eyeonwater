@@ -1,0 +1,10 @@
+{
+  "domain": "eyeonwater",
+  "name": "EyeOnWater",
+  "config_flow": true,
+  "documentation": "https://github.com/kdeyev/eyeonwater",
+  "requirements": [],
+  "codeowners": [],
+  "iot_class": "cloud_polling",
+  "version": "0.0.1"
+}

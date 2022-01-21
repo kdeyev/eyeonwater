@@ -38,21 +38,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     account = Account(username, password)
 
-    smart_meter_texas_data = EyeOnWaterData(hass, entry, account)
+    eye_on_water_data = EyeOnWaterData(hass, entry, account)
     try:
-        await smart_meter_texas_data.client.authenticate()
+        await eye_on_water_data.client.authenticate()
     except EyeOnWaterAuthError:
         _LOGGER.error("Username or password was not accepted")
         return False
     except asyncio.TimeoutError as error:
         raise ConfigEntryNotReady from error
 
-    await smart_meter_texas_data.setup()
+    await eye_on_water_data.setup()
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
-        await smart_meter_texas_data.read_meters()
-        return smart_meter_texas_data
+        await eye_on_water_data.read_meters()
+        return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -68,7 +68,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         DATA_COORDINATOR: coordinator,
-        DATA_SMART_METER: smart_meter_texas_data,
+        DATA_SMART_METER: eye_on_water_data,
     }
 
     asyncio.create_task(coordinator.async_refresh())

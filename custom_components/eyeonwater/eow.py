@@ -183,7 +183,7 @@ class Client:
     def __init__(
         self, websession: ClientSession, account: "Account",
     ):
-        self.base_url = "https://" + account.base_hostname + "/"
+        self.base_url = "https://" + account.eow_hostname + "/"
         self.websession = websession
         self.account = account
         self.cookies = None

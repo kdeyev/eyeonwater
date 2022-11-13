@@ -23,6 +23,7 @@ DASHBOARD_ENDPOINT = "/dashboard/"
 
 MEASUREMENT_GALLONS = "GAL"
 MEASUREMENT_KILOGALLONS = "KGAL"
+MEASUREMENT_CUBICMETERS = "CM"
 
 METER_ID_FIELD = "meter_id"
 METER_READ_FIELD = "meter_read"
@@ -78,9 +79,11 @@ class Meter:
     meter_prefix = "var new_barInfo = "
     info_prefix = "AQ.Views.MeterPicker.meters = "
 
-    def __init__(self, meter_id: str, meter_info: Dict[str, Any]):
+    def __init__(self, meter_id: str, meter_info: Dict[str, Any], metric_measurement_system: bool):
         self.meter_id = meter_id
         self.meter_info = meter_info
+        self.metric_measurement_system = metric_measurement_system
+        self.native_unit_of_measurement = "m\u00b3" if self.metric_measurement_system else "gal"
         self.reading_data = None
         
     async def read_meter(self, client: Client) -> Dict[str, Any]:
@@ -134,19 +137,27 @@ class Meter:
             raise EyeOnWaterAPIError("Cannot find read units in reading data")
         read_unit = self.reading_data[READ_UNITS_FIELD]
         amount = float(self.reading_data[READ_AMOUNT_FIELD])
-        if read_unit.upper() == MEASUREMENT_KILOGALLONS:
-            amount = amount * 1000
-        elif read_unit.upper() == MEASUREMENT_GALLONS:
-            pass
+        if self.metric_measurement_system:    
+            if read_unit.upper() == MEASUREMENT_CUBICMETERS:
+                pass
+            else:
+                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         else:
-            raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
+            if read_unit.upper() == MEASUREMENT_KILOGALLONS:
+                amount = amount * 1000
+            elif read_unit.upper() == MEASUREMENT_GALLONS:
+                pass
+            else:
+                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         return amount
 
 
 class Account:
-    def __init__(self, username: str, password: str):
+    def __init__(self, eow_hostname: str, username: str, password: str, metric_measurement_system: bool):
+        self.eow_hostname = eow_hostname
         self.username = username
         self.password = password
+        self.metric_measurement_system = metric_measurement_system
 
     async def fetch_meters(self, client: "Client"):
         """Returns a list of the meters associated with the account"""
@@ -164,7 +175,7 @@ class Account:
                 
                     meter_id = meter_info[METER_ID_FIELD]
                     
-                    meter = Meter(meter_id, meter_info)
+                    meter = Meter(meter_id=meter_id, meter_info=meter_info, metric_measurement_system=metric_measurement_system)
                     meters.append(meter)
 
         return meters  

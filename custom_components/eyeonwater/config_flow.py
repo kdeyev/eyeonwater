@@ -1,6 +1,7 @@
 """Config flow for Eye On Water integration."""
 import asyncio
 import logging
+from typing import Any, Dict
 
 from aiohttp import ClientError
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
@@ -19,13 +20,7 @@ DATA_SCHEMA = vol.Schema(
     {vol.Required(CONF_DOMAIN, default="com"): str, vol.Required(CONF_USERNAME): str, vol.Required(CONF_PASSWORD): str}
 )
 
-
-async def validate_input(hass: core.HomeAssistant, data):
-    """Validate the user input allows us to connect.
-
-    Data has the keys from DATA_SCHEMA with values provided by the user.
-    """
-    client_session = aiohttp_client.async_get_clientsession(hass)
+def create_account_from_config(data: Dict[str, Any]) -> Account:
     domain = data[CONF_DOMAIN]
     if domain == "com":
         eow_hostname = "eyeonwater.com"
@@ -34,9 +29,18 @@ async def validate_input(hass: core.HomeAssistant, data):
         eow_hostname = "eyeonwater.ca"
         metric_measurement_system = True
     else:
-        raise WrongDomain(f"Unsupported domain {domain}. On;y 'com' and 'ca' are supported")
+        raise WrongDomain(f"Unsupported domain {domain}. Only 'com' and 'ca' are supported")
 
     account = Account(eow_hostname=eow_hostname, username=data[CONF_USERNAME], password=data[CONF_PASSWORD], metric_measurement_system=metric_measurement_system)
+    return account
+
+async def validate_input(hass: core.HomeAssistant, data):
+    """Validate the user input allows us to connect.
+
+    Data has the keys from DATA_SCHEMA with values provided by the user.
+    """
+    client_session = aiohttp_client.async_get_clientsession(hass)
+    account = create_account_from_config(data=data)
     client = Client(client_session, account)
 
     try:

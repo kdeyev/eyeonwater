@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
+from .config_flow import create_account_from_config
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
@@ -32,12 +33,7 @@ PLATFORMS = [Platform.SENSOR]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Eye On Water from a config entry."""
-
-    username = entry.data[CONF_USERNAME]
-    password = entry.data[CONF_PASSWORD]
-
-    account = Account(username, password)
-
+    account = create_account_from_config(data=entry.data)
     eye_on_water_data = EyeOnWaterData(hass, entry, account)
     try:
         await eye_on_water_data.client.authenticate()

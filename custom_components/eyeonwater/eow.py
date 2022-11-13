@@ -175,7 +175,7 @@ class Account:
                 
                     meter_id = meter_info[METER_ID_FIELD]
                     
-                    meter = Meter(meter_id=meter_id, meter_info=meter_info, metric_measurement_system=metric_measurement_system)
+                    meter = Meter(meter_id=meter_id, meter_info=meter_info, metric_measurement_system=self.metric_measurement_system)
                     meters.append(meter)
 
         return meters  

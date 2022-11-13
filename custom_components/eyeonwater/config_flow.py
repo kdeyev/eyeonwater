@@ -8,7 +8,7 @@ from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, CONF_DOMAIN
 from homeassistant.helpers import aiohttp_client
 
 from .const import DOMAIN
@@ -16,7 +16,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 DATA_SCHEMA = vol.Schema(
-    {vol.Required(CONF_USERNAME): str, vol.Required(CONF_PASSWORD): str}
+    {vol.Required(CONF_DOMAIN, default="com"): str, vol.Required(CONF_USERNAME): str, vol.Required(CONF_PASSWORD): str}
 )
 
 
@@ -26,7 +26,17 @@ async def validate_input(hass: core.HomeAssistant, data):
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
     client_session = aiohttp_client.async_get_clientsession(hass)
-    account = Account(data["username"], data["password"])
+    domain = data[CONF_DOMAIN]
+    if domain == "com":
+        eow_hostname = "eyeonwater.com"
+        metric_measurement_system = False
+    elif domain == "ca":
+        eow_hostname = "eyeonwater.ca"
+        metric_measurement_system = True
+    else:
+        raise WrongDomain(f"Unsupported domain {domain}. On;y 'com' and 'ca' are supported")
+
+    account = Account(eow_hostname=eow_hostname, username=data[CONF_USERNAME], password=data[CONF_PASSWORD], metric_measurement_system=metric_measurement_system)
     client = Client(client_session, account)
 
     try:
@@ -70,6 +80,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
+
+class WrongDomain(exceptions.HomeAssistantError):
+    """Error to indicate wrong EOW domain."""
 
 
 class CannotConnect(exceptions.HomeAssistantError):

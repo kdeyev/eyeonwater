@@ -2,7 +2,6 @@
 from .eow import Meter
 
 from homeassistant.components.sensor import STATE_CLASS_TOTAL_INCREASING, SensorEntity
-from homeassistant.const import DEVICE_CLASS_ENERGY
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
@@ -21,6 +20,7 @@ from .const import (
     DOMAIN,
     WATER_LEAK_SENSOR,
     WATER_METER,
+    DEVICE_CLASS_WATER
 )
 
 
@@ -40,9 +40,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     """Representation of an Eye On Water sensor."""
 
-    _attr_device_class = DEVICE_CLASS_ENERGY
+    _attr_device_class = DEVICE_CLASS_WATER
     _attr_state_class = STATE_CLASS_TOTAL_INCREASING
-    _attr_native_unit_of_measurement = "gal"
 
     def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator) -> None:
         """Initialize the sensor."""
@@ -50,6 +49,7 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         self.meter = meter
         self._state = None
         self._available = False
+        self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
 
     @property
     def name(self):
@@ -105,8 +105,6 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
     """Representation of an Eye On Water leak sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
-    # _attr_state_class = STATE_CLASS_TOTAL_INCREASING
-    # _attr_native_unit_of_measurement = "gal"
 
     def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator) -> None:
         """Initialize the sensor."""

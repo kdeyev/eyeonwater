@@ -16,8 +16,6 @@ __email__ = "kn.deev@gmail.com"
 __version__ = "0.0.1"
 
 
-BASE_HOSTNAME = "eyeonwater.com"
-BASE_URL = "https://" + BASE_HOSTNAME + "/"
 AUTH_ENDPOINT = "account/signin"
 DASHBOARD_ENDPOINT = "/dashboard/"
 
@@ -173,7 +171,8 @@ class Account:
                     if METER_ID_FIELD not in meter_info:
                         raise EyeOnWaterAPIError(f"Cannot find {METER_ID_FIELD} field")
                 
-                    meter_id = meter_info[METER_ID_FIELD]                    
+                    meter_id = meter_info[METER_ID_FIELD]
+                    
                     meter = Meter(meter_id=meter_id, meter_info=meter_info, metric_measurement_system=self.metric_measurement_system)
                     meters.append(meter)
 
@@ -184,6 +183,7 @@ class Client:
     def __init__(
         self, websession: ClientSession, account: "Account",
     ):
+        self.base_url = "https://" + account.base_hostname + "/"
         self.websession = websession
         self.account = account
         self.cookies = None
@@ -205,7 +205,7 @@ class Client:
         await self.authenticate()
         resp = await self.websession.request(
             method,
-            f"{BASE_URL}{path}",
+            f"{self.base_url}{path}",
             cookies=self.cookies,
             **kwargs,
             # ssl=self.ssl_context,
@@ -228,7 +228,7 @@ class Client:
 
             resp = await self.websession.request(
                 "POST",
-                f"{BASE_URL}{AUTH_ENDPOINT}",
+                f"{self.base_url}{AUTH_ENDPOINT}",
                 data={
                     "username": self.account.username,
                     "password": self.account.password,

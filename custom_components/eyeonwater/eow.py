@@ -21,6 +21,7 @@ DASHBOARD_ENDPOINT = "/dashboard/"
 
 MEASUREMENT_GALLONS = "GAL"
 MEASUREMENT_100_GALLONS = "100 GAL"
+MEASUREMENT_CCF = "CCF"
 MEASUREMENT_KILOGALLONS = "KGAL"
 MEASUREMENT_CUBICMETERS = "CM"
 
@@ -148,6 +149,8 @@ class Meter:
                 amount = amount * 100
             elif read_unit.upper() == MEASUREMENT_GALLONS:
                 pass
+            elif read_unit.upper() == MEASUREMENT_CCF:
+                amount = amount * 748.052
             else:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         return amount

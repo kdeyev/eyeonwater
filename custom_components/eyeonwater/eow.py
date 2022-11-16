@@ -145,7 +145,7 @@ class Meter:
             if read_unit.upper() == MEASUREMENT_KILOGALLONS:
                 amount = amount * 1000
             if read_unit.upper() == MEASUREMENT_100_GALLONS:
-                amount = amount * 100
+                amount = amount
             elif read_unit.upper() == MEASUREMENT_GALLONS:
                 pass
             else:

@@ -21,7 +21,11 @@ DATA_SCHEMA = vol.Schema(
 )
 
 def create_account_from_config(data: Dict[str, Any]) -> Account:
-    domain = data[CONF_DOMAIN]
+    try:
+        domain = data[CONF_DOMAIN]
+    except KeyError:
+        domain = "com"
+
     if domain == "com":
         eow_hostname = "eyeonwater.com"
         metric_measurement_system = False

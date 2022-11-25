@@ -87,7 +87,8 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
 
     async def async_added_to_hass(self):
         """Subscribe to updates."""
-        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self._state_update))
 
         # If the background update finished before
         # we added the entity, there is no need to restore
@@ -98,7 +99,6 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         if last_state := await self.async_get_last_state():
             self._state = last_state.state
             self._available = True
-
 
 
 class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
@@ -154,7 +154,8 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
 
     async def async_added_to_hass(self):
         """Subscribe to updates."""
-        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self._state_update))
 
         # If the background update finished before
         # we added the entity, there is no need to restore

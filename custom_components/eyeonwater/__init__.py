@@ -6,7 +6,7 @@ from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 from .config_flow import create_account_from_config
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import aiohttp_client

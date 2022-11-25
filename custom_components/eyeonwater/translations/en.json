@@ -1,0 +1,24 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "description": "Eye On Water configuration.",
+                "title": "EyeOnWater Integration",
+                "data": {
+                    "eow_hostname": "Eye On Water hostname",
+                    "measurement_system": "Measurement system",
+                    "password": "Password",
+                    "username": "Username"
+                }
+            }
+        }
+    }
+}

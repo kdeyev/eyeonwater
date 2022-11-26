@@ -59,7 +59,7 @@ def create_account_from_config(data: Dict[str, Any]) -> Account:
     # Measurement system
     try:
         measurement_system = data[CONF_MEASUREMENT_SYSTEM]
-        metric_measurement_system == measurement_system == CONF_MEASUREMENT_SYSTEM_METRIC
+        metric_measurement_system = measurement_system == CONF_MEASUREMENT_SYSTEM_METRIC
     except KeyError:
         pass
 

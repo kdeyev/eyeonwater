@@ -21,6 +21,7 @@ DASHBOARD_ENDPOINT = "/dashboard/"
 
 MEASUREMENT_GALLONS = "GAL"
 MEASUREMENT_100_GALLONS = "100 GAL"
+MEASUREMENT_10_GALLONS = "10 GAL"
 MEASUREMENT_CF = "CF"
 MEASUREMENT_CCF = "CCF"
 MEASUREMENT_KILOGALLONS = "KGAL"
@@ -148,6 +149,8 @@ class Meter:
                 amount = amount * 1000
             elif read_unit.upper() == MEASUREMENT_100_GALLONS:
                 amount = amount * 100
+            elif read_unit.upper() == MEASUREMENT_10_GALLONS:
+                amount = amount * 10
             elif read_unit.upper() == MEASUREMENT_GALLONS:
                 pass
             elif read_unit.upper() == MEASUREMENT_CCF:

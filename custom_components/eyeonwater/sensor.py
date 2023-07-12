@@ -54,12 +54,12 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     @property
     def name(self):
         """Device Name."""
-        return f"{WATER_METER} {self.meter.meter_id}"
+        return f"{WATER_METER} {self.meter.meter_uuid}"
 
     @property
     def unique_id(self):
         """Device Uniqueid."""
-        return f"{self.meter.meter_id}"
+        return f"{self.meter.meter_uuid}"
 
     @property
     def available(self):
@@ -116,12 +116,12 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
     @property
     def name(self):
         """Device Name."""
-        return f"{WATER_LEAK_SENSOR} {self.meter.meter_id}"
+        return f"{WATER_LEAK_SENSOR} {self.meter.meter_uuid}"
 
     @property
     def unique_id(self):
         """Device Uniqueid."""
-        return f"leak_{self.meter.meter_id}"
+        return f"leak_{self.meter.meter_uuid}"
 
     @property
     def available(self):

@@ -13,7 +13,7 @@ from voluptuous.validators import Boolean
 
 __author__ = "Konstantin Deev"
 __email__ = "kn.deev@gmail.com"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 AUTH_ENDPOINT = "account/signin"
@@ -96,7 +96,7 @@ class Meter:
         data = json.loads(data)
         meters = data["elastic_results"]["hits"]["hits"]
         if len(meters) > 1:
-            raise Exception()
+            raise Exception("More than one meter reading found")
 
         self.meter_info = meters[0]["_source"]
         self.reading_data = self.meter_info["register_0"]

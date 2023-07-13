@@ -15,7 +15,7 @@ async def main():
     print(f"{len(meters)} meters found")
     for meter in meters:
         await meter.read_meter(client=client)
-        print(f"meter {meter.meter_id} shows {meter.reading}")
+        print(f"meter {meter.meter_uuid} shows {meter.reading}")
         print(f"meter leaks: {meter.has_leak}")
 
     await websession.close()

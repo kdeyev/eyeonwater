@@ -13,11 +13,12 @@ from voluptuous.validators import Boolean
 
 __author__ = "Konstantin Deev"
 __email__ = "kn.deev@gmail.com"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 AUTH_ENDPOINT = "account/signin"
 DASHBOARD_ENDPOINT = "/dashboard/"
+SEARCH_ENDPOINT = "/api/2/residential/new_search"
 
 MEASUREMENT_GALLONS = "GAL"
 MEASUREMENT_100_GALLONS = "100 GAL"
@@ -27,12 +28,10 @@ MEASUREMENT_CCF = "CCF"
 MEASUREMENT_KILOGALLONS = "KGAL"
 MEASUREMENT_CUBICMETERS = "CM"
 
-METER_ID_FIELD = "meter_id"
-METER_READ_FIELD = "meter_read"
-NEW_LATEST_READ_FIELD = "new_latest_read"
-READ_UNITS_FIELD = "read_units"
-READ_AMOUNT_FIELD = "read_amount"
-HAS_LEAK_FIELD = "has_leak"
+METER_UUID_FIELD = "meter_uuid"
+READ_UNITS_FIELD = "units"
+READ_AMOUNT_FIELD = "full_read"
+HAS_LEAK_FIELD = "Leak"
 
 TOKEN_EXPIRATION = datetime.timedelta(minutes=15)
 
@@ -81,8 +80,8 @@ class Meter:
     meter_prefix = "var new_barInfo = "
     info_prefix = "AQ.Views.MeterPicker.meters = "
 
-    def __init__(self, meter_id: str, meter_info: Dict[str, Any], metric_measurement_system: bool):
-        self.meter_id = meter_id
+    def __init__(self, meter_uuid: str, meter_info: Dict[str, Any], metric_measurement_system: bool):
+        self.meter_uuid = meter_uuid
         self.meter_info = meter_info
         self.metric_measurement_system = metric_measurement_system
         self.native_unit_of_measurement = "m\u00b3" if self.metric_measurement_system else "gal"
@@ -92,35 +91,15 @@ class Meter:
         """Triggers an on-demand meter read and returns it when complete."""
         _LOGGER.debug("Requesting meter reading")
 
-        path = DASHBOARD_ENDPOINT + urllib.parse.quote(client.account.username)
+        query = {"query":{"terms":{"meter.meter_uuid":[self.meter_uuid]}}}
+        data = await client.request(path=SEARCH_ENDPOINT, method="post", json=query)
+        data = json.loads(data)
+        meters = data["elastic_results"]["hits"]["hits"]
+        if len(meters) > 1:
+            raise Exception("More than one meter reading found")
 
-        # Trigger an on-demand meter read.
-        data = await client.request(
-            method="get",
-            path=path
-        )
-
-        return self._parse_reading_data(data)
-
-    def _parse_reading_data(self, data) -> Dict[str, Any]:
-        lines = data.split("\n")
-
-        meter_index = None
-        for line in lines:
-            if Meter.info_prefix in line:
-                meter_infos = extract_json(line, Meter.info_prefix)
-                meter_index = next(i for i, v in enumerate(meter_infos) if v[METER_ID_FIELD] == self.meter_id)
-                self.meter_info = meter_infos[meter_index]
-
-        if meter_index is None:
-            raise EyeOnWaterAPIError("Cannot find meter info")
-
-        for line in lines:
-            if Meter.meter_prefix in line:
-                meters_read = extract_json(line, Meter.meter_prefix)
-                self.reading_data = meters_read[METER_READ_FIELD][meter_index][NEW_LATEST_READ_FIELD]
-             
-        return self.reading_data
+        self.meter_info = meters[0]["_source"]
+        self.reading_data = self.meter_info["register_0"]
 
     @property
     def attributes(self):
@@ -128,17 +107,19 @@ class Meter:
 
     @property
     def has_leak(self) -> bool:
-        if HAS_LEAK_FIELD not in self.meter_info:
+        flags = self.reading_data["flags"]
+        if HAS_LEAK_FIELD not in flags:
             raise EyeOnWaterAPIError(f"Cannot find {HAS_LEAK_FIELD} field")
-        return self.meter_info[HAS_LEAK_FIELD] == "true"
+        return flags[HAS_LEAK_FIELD]
 
     @property
     def reading(self):
         """Returns the latest meter reading in gal."""
-        if READ_UNITS_FIELD not in self.reading_data:
+        reading = self.reading_data["latest_read"]
+        if READ_UNITS_FIELD not in reading:
             raise EyeOnWaterAPIError("Cannot find read units in reading data")
-        read_unit = self.reading_data[READ_UNITS_FIELD]
-        amount = float(self.reading_data[READ_AMOUNT_FIELD])
+        read_unit = reading[READ_UNITS_FIELD]
+        amount = float(reading[READ_AMOUNT_FIELD])
         if self.metric_measurement_system:    
             if read_unit.upper() == MEASUREMENT_CUBICMETERS:
                 pass
@@ -180,12 +161,12 @@ class Account:
             if Meter.info_prefix in line:
                 meter_infos = extract_json(line, Meter.info_prefix)
                 for meter_info in meter_infos:
-                    if METER_ID_FIELD not in meter_info:
-                        raise EyeOnWaterAPIError(f"Cannot find {METER_ID_FIELD} field")
+                    if METER_UUID_FIELD not in meter_info:
+                        raise EyeOnWaterAPIError(f"Cannot find {METER_UUID_FIELD} field")
                 
-                    meter_id = meter_info[METER_ID_FIELD]
+                    meter_uuid = meter_info[METER_UUID_FIELD]
                     
-                    meter = Meter(meter_id=meter_id, meter_info=meter_info, metric_measurement_system=self.metric_measurement_system)
+                    meter = Meter(meter_uuid=meter_uuid, meter_info=meter_info, metric_measurement_system=self.metric_measurement_system)
                     meters.append(meter)
 
         return meters  

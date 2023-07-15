@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import datetime
+from dateutil import parser
 import json
 import logging
 from typing import Any, Dict
 import urllib.parse
 from aiohttp import ClientSession
 from tenacity import retry, retry_if_exception_type
-import datetime
 
 from voluptuous.validators import Boolean
 
@@ -19,6 +19,7 @@ __version__ = "0.0.2"
 AUTH_ENDPOINT = "account/signin"
 DASHBOARD_ENDPOINT = "/dashboard/"
 SEARCH_ENDPOINT = "/api/2/residential/new_search"
+CONSUMPTION_ENDPOINT = "/api/2/residential/consumption?eow=True"
 
 MEASUREMENT_GALLONS = "GAL"
 MEASUREMENT_100_GALLONS = "100 GAL"
@@ -142,6 +143,46 @@ class Meter:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         return amount
 
+    async def get_consumption(self, date, client: Client):
+
+        query = {
+            "params":{
+                "source":"barnacle",
+                "aggregate":"hr",
+                "units":"GAL",
+                "combine":"true",
+                "perspective":"billing",
+                "display_minutes":True,
+                "display_hours":True,
+                "display_days":True,
+                "date": date,
+                # "perma_link":"https://eyeonwater.com/dashboard/kn.deev%40gmail.com?i=link:hourly,120367282,1686726000",
+                # "compare":False,
+                # "wave_chart":False,
+                # "title":"Wednesday, June 14, 2023",
+                "furthest_zoom":"hr",
+                "display_weeks":True
+            },
+            "query":{
+                "query":{
+                    "terms":{
+                        "meter.meter_uuid":[
+                            self.meter_uuid
+                        ]
+                    }
+                }
+            }
+            }
+        data = await client.request(path=CONSUMPTION_ENDPOINT, method="post", json=query)
+        data = json.loads(data)
+        key = f"{self.meter_uuid},0"
+        if key not in data["timeseries"]:
+            raise Exception("Response is empty")
+        
+        data = data["timeseries"][key]["series"]
+        data = [{"start": parser.parse(d["date"]), "sum": d["bill_read"]} for d in data]
+        
+        return data
 
 class Account:
     def __init__(self, eow_hostname: str, username: str, password: str, metric_measurement_system: bool):

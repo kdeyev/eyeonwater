@@ -1,6 +1,6 @@
-from http import cookies
 import aiohttp
 import asyncio
+import datetime
 
 from eow import Account, Client, Meter
 
@@ -14,9 +14,14 @@ async def main():
     meters = await account.fetch_meters(client=client)
     print(f"{len(meters)} meters found")
     for meter in meters:
-        await meter.read_meter(client=client)
-        print(f"meter {meter.meter_uuid} shows {meter.reading}")
-        print(f"meter leaks: {meter.has_leak}")
+        now = datetime.datetime.now()
+        yesterday = now - datetime.timedelta(days=1)
+
+        data = await meter.get_consumption(date=yesterday.strftime('%m/%d/%Y'), client=client)
+        print(data)
+
+        # print(f"meter {meter.meter_uuid} shows {meter.reading}")
+        # print(f"meter leaks: {meter.has_leak}")
 
     await websession.close()
        

@@ -1,5 +1,6 @@
 """The Eye On Water integration."""
 import asyncio
+import datetime
 import logging
 
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
@@ -16,12 +17,21 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
+from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.statistics import (
+    async_add_external_statistics,
+    get_last_statistics,
+    statistics_during_period,
+)
+
 from .const import (
     DATA_COORDINATOR,
     DATA_SMART_METER,
     DEBOUNCE_COOLDOWN,
     DOMAIN,
     SCAN_INTERVAL,
+    WATER_METER
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,6 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
         await eye_on_water_data.read_meters()
+        await eye_on_water_data.update_statistics()
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(
@@ -84,6 +95,7 @@ class EyeOnWaterData:
         account: Account,
     ) -> None:
         """Initialize the data coordintator."""
+        self.hass = hass
         self._entry = entry
         self.account = account
         websession = aiohttp_client.async_get_clientsession(hass)
@@ -103,7 +115,37 @@ class EyeOnWaterData:
             except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
                 raise UpdateFailed(error) from error
         return self.meters
+    
+    async def update_statistics(self):
+        for meter in self.meters:
+            
+            statistic_id = meter.unique_id
+            name = f"{WATER_METER} {meter.meter_uuid}"
 
+            last_stats = await get_instance(self.hass).async_add_executor_job(
+                get_last_statistics, self.hass, 1, statistic_id, True, set()
+            )
+
+            now = datetime.datetime.now()
+
+            # if not last_stats:
+            #     # First time we insert 5 years of data (if available)
+            #     hourly_data = await home.get_historic_data(
+            #         5 * 365 * 24, production=is_production
+                        
+            yesterday = now - datetime.timedelta(days=1)
+
+            statistics = await meter.get_consumption(date=yesterday.strftime('%m/%d/%Y'), client=self.client)
+
+            metadata = StatisticMetaData(
+                has_mean=False,
+                has_sum=True,
+                name=self.name,
+                source=DOMAIN,
+                statistic_id=statistic_id,
+                unit_of_measurement="GAL",
+            )
+            async_add_external_statistics(self.hass, metadata, statistics)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""

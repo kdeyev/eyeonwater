@@ -1,6 +1,5 @@
 """Support for Eye On Water sensors."""
 from .eow import Meter
-import datetime
 
 from homeassistant.components.sensor import STATE_CLASS_TOTAL_INCREASING, SensorEntity
 from homeassistant.core import callback

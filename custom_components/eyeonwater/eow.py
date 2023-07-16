@@ -26,7 +26,7 @@ MEASUREMENT_10_GALLONS = "10 GAL"
 MEASUREMENT_CF = ["CF", "CUBIC_FEET"]
 MEASUREMENT_CCF = "CCF"
 MEASUREMENT_KILOGALLONS = "KGAL"
-MEASUREMENT_CUBICMETERS = "CM"
+MEASUREMENT_CUBICMETERS = ["CM", "CUBIC_METER"]
 
 METER_UUID_FIELD = "meter_uuid"
 READ_UNITS_FIELD = "units"
@@ -119,24 +119,25 @@ class Meter:
         if READ_UNITS_FIELD not in reading:
             raise EyeOnWaterAPIError("Cannot find read units in reading data")
         read_unit = reading[READ_UNITS_FIELD]
+        read_unit_upper = read_unit.upper()
         amount = float(reading[READ_AMOUNT_FIELD])
         if self.metric_measurement_system:    
-            if read_unit.upper() == MEASUREMENT_CUBICMETERS:
+            if read_unit_upper in MEASUREMENT_CUBICMETERS:
                 pass
             else:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         else:
-            if read_unit.upper() == MEASUREMENT_KILOGALLONS:
+            if read_unit_upper == MEASUREMENT_KILOGALLONS:
                 amount = amount * 1000
-            elif read_unit.upper() == MEASUREMENT_100_GALLONS:
+            elif read_unit_upper == MEASUREMENT_100_GALLONS:
                 amount = amount * 100
-            elif read_unit.upper() == MEASUREMENT_10_GALLONS:
+            elif read_unit_upper == MEASUREMENT_10_GALLONS:
                 amount = amount * 10
-            elif read_unit.upper() == MEASUREMENT_GALLONS:
+            elif read_unit_upper == MEASUREMENT_GALLONS:
                 pass
-            elif read_unit.upper() == MEASUREMENT_CCF:
+            elif read_unit_upper == MEASUREMENT_CCF:
                 amount = amount * 748.052
-            elif read_unit.upper() in MEASUREMENT_CF:
+            elif read_unit_upper in MEASUREMENT_CF:
                 amount = amount * 7.48052
             else:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")

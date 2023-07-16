@@ -119,7 +119,7 @@ class EyeOnWaterData:
     async def update_statistics(self):
         for meter in self.meters:
             
-            statistic_id = meter.unique_id
+            statistic_id = meter.meter_uuid
             name = f"{WATER_METER} {meter.meter_uuid}"
 
             last_stats = await get_instance(self.hass).async_add_executor_job(

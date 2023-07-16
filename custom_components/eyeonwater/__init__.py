@@ -140,7 +140,7 @@ class EyeOnWaterData:
             metadata = StatisticMetaData(
                 has_mean=False,
                 has_sum=True,
-                name=self.name,
+                name=name,
                 source=DOMAIN,
                 statistic_id=statistic_id,
                 unit_of_measurement="GAL",

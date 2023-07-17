@@ -20,8 +20,9 @@ async def main():
         data = await meter.get_consumption(date=yesterday.strftime('%m/%d/%Y'), client=client)
         print(data)
 
-        # print(f"meter {meter.meter_uuid} shows {meter.reading}")
-        # print(f"meter leaks: {meter.has_leak}")
+        await meter.read_meter(client=client)
+        print(f"meter {meter.meter_uuid} shows {meter.reading}")
+        print(f"meter leaks: {meter.has_leak}")
 
     await websession.close()
        

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 from dateutil import parser
+import pytz
 import json
 import logging
 from typing import Any, Dict
@@ -148,7 +149,7 @@ class Meter:
         query = {
             "params":{
                 "source":"barnacle",
-                "aggregate":"hr",
+                "aggregate":"hourly",
                 "units":"GAL",
                 "combine":"true",
                 "perspective":"billing",
@@ -175,14 +176,26 @@ class Meter:
             }
         data = await client.request(path=CONSUMPTION_ENDPOINT, method="post", json=query)
         data = json.loads(data)
+
         key = f"{self.meter_uuid},0"
         if key not in data["timeseries"]:
             raise Exception("Response is empty")
-        
+
+        timezone = data["hit"]["meter.timezone"][0]
+        timezone = pytz.timezone(timezone)
+        # tzinfos = {data["timezone"] : timezone }
+
         data = data["timeseries"][key]["series"]
-        data = [{"start": parser.parse(d["date"]), "sum": d["bill_read"]} for d in data]
+        statistics = [{"start": timezone.localize(parser.parse(d["date"])), "sum": d["bill_read"]} for d in data]
         
-        return data
+        for statistic in statistics:
+            start = statistic["start"]
+            if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:
+                raise Exception("Naive timestamp")
+            if start.minute != 0 or start.second != 0 or start.microsecond != 0:
+                raise Exception("Invalid timestamp")
+
+        return statistics
 
 class Account:
     def __init__(self, eow_hostname: str, username: str, password: str, metric_measurement_system: bool):

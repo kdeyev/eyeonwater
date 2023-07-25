@@ -34,7 +34,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
     """Representation of an Eye On Water leak sensor."""
-
+    _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
 
     def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator) -> None:
@@ -43,16 +43,7 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
         self.meter = meter
         self._state = None
         self._available = False
-
-    @property
-    def name(self):
-        """Device Name."""
-        return f"{WATER_LEAK_SENSOR} {self.meter.meter_uuid}"
-
-    @property
-    def unique_id(self):
-        """Device Uniqueid."""
-        return f"leak_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"leak_{self.meter.meter_uuid}"
 
     @property
     def available(self):

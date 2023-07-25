@@ -60,12 +60,6 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
         """Return the status of the sensor."""
         return self._state == True
 
-    @property
-    def extra_state_attributes(self):
-        """Return the device specific state attributes."""
-        attributes = self.meter.attributes
-        return attributes
-
     @callback
     def _state_update(self):
         """Call when the coordinator has an update."""

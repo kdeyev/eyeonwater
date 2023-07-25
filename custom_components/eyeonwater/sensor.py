@@ -32,7 +32,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     """Representation of an Eye On Water sensor."""
-
+    _attr_has_entity_name = True
     _attr_device_class = DEVICE_CLASS_WATER
     _attr_state_class = STATE_CLASS_TOTAL_INCREASING
 
@@ -42,17 +42,8 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         self.meter = meter
         self._state = None
         self._available = False
+        self._attr_unique_id = meter.meter_uuid
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
-
-    @property
-    def name(self):
-        """Device Name."""
-        return f"{WATER_METER} {self.meter.meter_uuid}"
-
-    @property
-    def unique_id(self):
-        """Device Uniqueid."""
-        return f"{self.meter.meter_uuid}"
 
     @property
     def available(self):

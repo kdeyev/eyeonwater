@@ -58,7 +58,7 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
     @property
     def is_on(self):
         """Return the status of the sensor."""
-        return self._state
+        return self._state == True
 
     @property
     def extra_state_attributes(self):

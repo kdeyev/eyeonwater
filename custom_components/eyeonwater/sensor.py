@@ -3,6 +3,7 @@ from .eow import Meter
 
 from homeassistant.components.sensor import STATE_CLASS_TOTAL_INCREASING, SensorEntity
 from homeassistant.core import callback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -44,6 +45,10 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         self._available = False
         self._attr_unique_id = meter.meter_uuid
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, meter.meter_uuid)},
+            name=meter.meter_info["meter_id"],
+        )
 
     @property
     def available(self):

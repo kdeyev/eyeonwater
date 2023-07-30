@@ -63,7 +63,8 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         """Return the device specific state attributes."""
-        attributes = self.meter.attributes
+        attributes = self.meter.attributes["register_0"]
+        #it would be better to show only the attributes related to the meter that correlates to the entity, we can iterate this if more than one meter
         return attributes
 
     @callback

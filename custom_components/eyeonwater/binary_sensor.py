@@ -48,7 +48,7 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
         self._attr_unique_id = f"leak_{self.meter.meter_uuid}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, meter.meter_uuid)},
-            name=meter.meter_info["meter_id"],
+            name=f"Water Meter {meter.meter_info['meter_id']}",
         )
 
     @property

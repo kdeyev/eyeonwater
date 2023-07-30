@@ -47,7 +47,7 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, meter.meter_uuid)},
-            name=meter.meter_info["meter_id"],
+            name=f"Water Meter {meter.meter_info['meter_id']}",
         )
 
     @property

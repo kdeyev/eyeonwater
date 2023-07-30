@@ -2,6 +2,7 @@
 from .eow import Meter
 
 from homeassistant.core import callback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -35,6 +36,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
     """Representation of an Eye On Water leak sensor."""
     _attr_has_entity_name = True
+    _attr_name = "Leak Sensor"
     _attr_device_class = BinarySensorDeviceClass.MOISTURE
 
     def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator) -> None:
@@ -44,6 +46,10 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
         self._state = None
         self._available = False
         self._attr_unique_id = f"leak_{self.meter.meter_uuid}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, meter.meter_uuid)},
+            name=meter.meter_info["meter_id"],
+        )
 
     @property
     def available(self):

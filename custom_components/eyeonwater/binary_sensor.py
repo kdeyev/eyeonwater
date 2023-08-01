@@ -18,7 +18,6 @@ from .const import (
     DATA_COORDINATOR,
     DATA_SMART_METER,
     DOMAIN,
-    WATER_LEAK_SENSOR,
 )
 
 FLAG_SENSORS = [
@@ -59,11 +58,11 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
+        self.entity_description = description
         self.meter = meter
         self._state = None
         self._flag = description.key
         self._available = False
-        self.entity_description = description
         self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
         self._attr_name = description.name
         self._attr_device_info = DeviceInfo(

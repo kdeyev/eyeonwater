@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
+    BinarySensorEntityDescription,
 )
 
 from .const import (
@@ -19,7 +20,14 @@ from .const import (
     DOMAIN,
     WATER_LEAK_SENSOR,
 )
-FLAG_LEAK = "Leak"
+
+FLAG_SENSORS = [
+    BinarySensorEntityDescription(
+        key="Leak",
+        name="Leak Sensor",
+        device_class=BinarySensorDeviceClass.MOISTURE,
+    ),
+]
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -28,25 +36,26 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
 
     sensors = []
-    for meter in meters:
-        sensors.append(EyeOnWaterLeakSensor(meter, coordinator, FLAG_LEAK))
+    for meter in meters:  
+        sensors.append(
+            EyeOnWaterBinarySensor(meter, coordinator, description)
+            for description in FLAG_SENSORS
+        )
 
     async_add_entities(sensors, False)
 
 
-class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
-    """Representation of an Eye On Water leak sensor."""
-    _attr_has_entity_name = True
-    _attr_device_class = BinarySensorDeviceClass.MOISTURE
+class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
+    """Representation of an EyeOnWater binary flag sensor."""
 
-    def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator, flag: str) -> None:
+    def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator, description: BinarySensorEntityDescription) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
         self._state = None
-        self._flag = flag
+        self._flag = description.key
         self._available = False
-        self._attr_unique_id = f"{flag}_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"{decription.key}_{self.meter.meter_uuid}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, meter.meter_uuid)},
             name=f"Water Meter {meter.meter_info['meter_id']}",

@@ -27,6 +27,11 @@ FLAG_SENSORS = [
         name="Leak Sensor",
         device_class=BinarySensorDeviceClass.MOISTURE,
     ),
+    BinarySensorEntityDescription(
+        key="EmptyPipe",
+        name="Empty Pipe",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+    ),
 ]
 
 
@@ -36,11 +41,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
 
     sensors = []
-    for meter in meters:  
-        sensors.append(
-            EyeOnWaterBinarySensor(meter, coordinator, description)
-            for description in FLAG_SENSORS
-        )
+    for meter in meters:
+        for description in FLAG_SENSORS:
+            sensors.append(EyeOnWaterBinarySensor(meter, coordinator, description))
 
     async_add_entities(sensors, False)
 
@@ -48,28 +51,25 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
     """Representation of an EyeOnWater binary flag sensor."""
 
-    def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator, description: BinarySensorEntityDescription) -> None:
+    def __init__(
+        self,
+        meter: Meter,
+        coordinator: DataUpdateCoordinator,
+        description: BinarySensorEntityDescription
+    ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
         self._state = None
         self._flag = description.key
         self._available = False
-        self._attr_unique_id = f"{decription.key}_{self.meter.meter_uuid}"
+        self.entity_description = description
+        self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
+        self._attr_name = description.name
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, meter.meter_uuid)},
             name=f"Water Meter {meter.meter_info['meter_id']}",
         )
-
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self._available
-
-    @property
-    def native_value(self):
-        """Get the latest reading."""
-        return self._state
 
     @property
     def is_on(self):
@@ -81,7 +81,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
-            self._state = self.meter.get_flags(self._flag)
+            self._state = self.meter.get_flags(self.entity_description.key)
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):

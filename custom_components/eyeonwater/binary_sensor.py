@@ -31,6 +31,33 @@ FLAG_SENSORS = [
         name="Empty Pipe",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
+        BinarySensorEntityDescription(
+        key="Tamper",
+        name="Tamper",
+        device_class=BinarySensorDeviceClass.TAMPER,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    BinarySensorEntityDescription(
+        key="CoverRemoved",
+        name="Cover Removed",
+        device_class=BinarySensorDeviceClass.TAMPER,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    BinarySensorEntityDescription(
+        key="ReverseFlow",
+        name="Reverse Waterflow",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+    ),
+    BinarySensorEntityDescription(
+        key="LowBattery",
+        name="Low Battery",
+        device_class=BinarySensorDeviceClass.BATTERY,
+    ),
+    BinarySensorEntityDescription(
+        key="BatteryCharging",
+        name="Battery Charging",
+        device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
+    ),
 ]
 
 

@@ -19,6 +19,7 @@ from .const import (
     DOMAIN,
     WATER_LEAK_SENSOR,
 )
+FLAG_LEAK = "Leak"
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -28,7 +29,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     sensors = []
     for meter in meters:
-        sensors.append(EyeOnWaterLeakSensor(meter, coordinator))
+        sensors.append(EyeOnWaterLeakSensor(meter, coordinator, FLAG_LEAK))
 
     async_add_entities(sensors, False)
 
@@ -39,13 +40,14 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
     _attr_name = "Leak Sensor"
     _attr_device_class = BinarySensorDeviceClass.MOISTURE
 
-    def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator) -> None:
+    def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator, flag: str) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
         self._state = None
+        self._flag = flag
         self._available = False
-        self._attr_unique_id = f"leak_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"{flag}_{self.meter.meter_uuid}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, meter.meter_uuid)},
             name=f"Water Meter {meter.meter_info['meter_id']}",
@@ -71,7 +73,7 @@ class EyeOnWaterLeakSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity)
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
-            self._state = self.meter.has_leak
+            self._state = self.meter.get_flags(self._flag)
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):

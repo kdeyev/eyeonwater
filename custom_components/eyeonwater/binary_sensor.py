@@ -35,13 +35,13 @@ FLAG_SENSORS = [
         key="Tamper",
         name="Tamper",
         device_class=BinarySensorDeviceClass.TAMPER,
-        entity_category=EntityCategory.DIAGNOSTIC,
+        #entity_category=EntityCategory.DIAGNOSTIC,
     ),
     BinarySensorEntityDescription(
         key="CoverRemoved",
         name="Cover Removed",
         device_class=BinarySensorDeviceClass.TAMPER,
-        entity_category=EntityCategory.DIAGNOSTIC,
+        #entity_category=EntityCategory.DIAGNOSTIC,
     ),
     BinarySensorEntityDescription(
         key="ReverseFlow",

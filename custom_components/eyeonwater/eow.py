@@ -7,14 +7,8 @@ from typing import Any, Dict
 import urllib.parse
 from aiohttp import ClientSession
 from tenacity import retry, retry_if_exception_type
-import datetime
 
 from voluptuous.validators import Boolean
-
-__author__ = "Konstantin Deev"
-__email__ = "kn.deev@gmail.com"
-__version__ = "0.0.2"
-
 
 AUTH_ENDPOINT = "account/signin"
 DASHBOARD_ENDPOINT = "/dashboard/"
@@ -31,7 +25,6 @@ MEASUREMENT_CUBICMETERS = ["CM", "CUBIC_METER"]
 METER_UUID_FIELD = "meter_uuid"
 READ_UNITS_FIELD = "units"
 READ_AMOUNT_FIELD = "full_read"
-HAS_LEAK_FIELD = "Leak"
 
 TOKEN_EXPIRATION = datetime.timedelta(minutes=15)
 
@@ -105,12 +98,11 @@ class Meter:
     def attributes(self):
         return self.meter_info
 
-    @property
-    def has_leak(self) -> bool:
+    def get_flags(self, flag) -> bool:
         flags = self.reading_data["flags"]
-        if HAS_LEAK_FIELD not in flags:
-            raise EyeOnWaterAPIError(f"Cannot find {HAS_LEAK_FIELD} field")
-        return flags[HAS_LEAK_FIELD]
+        if flag not in flags:
+            raise EyeOnWaterAPIError(f"Cannot find {flag} field")
+        return flags[flag]
 
     @property
     def reading(self):

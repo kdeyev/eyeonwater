@@ -87,18 +87,14 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         super().__init__(coordinator)
         self.entity_description = description
         self.meter = meter
-        self._state = None
+        self._state = False
         self._available = False
         self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
+        self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, meter.meter_uuid)},
             name=f"Water Meter {meter.meter_info['meter_id']}",
         )
-
-    @property
-    def is_on(self):
-        """Return the status of the sensor."""
-        return self._state == True
 
     @callback
     def _state_update(self):

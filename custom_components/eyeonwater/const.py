@@ -8,5 +8,3 @@ DATA_COORDINATOR = "coordinator"
 DATA_SMART_METER = "smart_meter_data"
 
 DOMAIN = "eyeonwater"
-
-DEVICE_CLASS_WATER = "water"

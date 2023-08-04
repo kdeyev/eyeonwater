@@ -50,6 +50,7 @@ DATA_SCHEMA = vol.Schema(
 
 
 def create_account_from_config(data: dict[str, Any]) -> Account:
+    """Create account login from config."""
     # Backward compatibility code
     try:
         domain = data[CONF_DOMAIN]

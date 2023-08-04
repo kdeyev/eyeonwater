@@ -1,9 +1,10 @@
+"""EyeOnWater API integration."""
 from __future__ import annotations
 
 import datetime
 import json
 import logging
-from typing import Any, Dict
+from typing import Any
 import urllib.parse
 
 from aiohttp import ClientSession
@@ -33,53 +34,49 @@ _LOGGER = logging.getLogger(__name__)
 class EyeOnWaterException(Exception):
     """Base exception for more specific exceptions to inherit from."""
 
-    ...
-
 
 class EyeOnWaterAuthError(EyeOnWaterException):
     """Exception for authentication failures.
+
     Either wrong username or wrong password.
     """
-
-    ...
 
 
 class EyeOnWaterRateLimitError(EyeOnWaterException):
     """Exception for reaching the ratelimit.
+
     Either too many login attempts or too many requests.
     """
-
-    ...
 
 
 class EyeOnWaterAuthExpired(EyeOnWaterException):
     """Exception for when a token is no longer valid."""
 
-    ...
-
 
 class EyeOnWaterAPIError(EyeOnWaterException):
     """General exception for unknown API responses."""
 
-    ...
-
 
 def extract_json(line, prefix):
+    """Extract JSON responce."""
     line = line[line.find(prefix) + len(prefix) :]
     line = line[: line.find(";")]
     return json.loads(line)
 
 
 class Meter:
+    """Class represents meter object."""
+
     meter_prefix = "var new_barInfo = "
     info_prefix = "AQ.Views.MeterPicker.meters = "
 
     def __init__(
         self,
         meter_uuid: str,
-        meter_info: Dict[str, Any],
+        meter_info: dict[str, Any],
         metric_measurement_system: bool,
-    ):
+    ) -> None:
+        """Initialize the meter."""
         self.meter_uuid = meter_uuid
         self.meter_info = meter_info
         self.metric_measurement_system = metric_measurement_system
@@ -88,7 +85,7 @@ class Meter:
         )
         self.reading_data = None
 
-    async def read_meter(self, client: Client) -> Dict[str, Any]:
+    async def read_meter(self, client: Client) -> dict[str, Any]:
         """Triggers an on-demand meter read and returns it when complete."""
         _LOGGER.debug("Requesting meter reading")
 
@@ -104,9 +101,11 @@ class Meter:
 
     @property
     def attributes(self):
+        """Define attributes."""
         return self.meter_info
 
     def get_flags(self, flag) -> bool:
+        """Define flags."""
         flags = self.reading_data["flags"]
         if flag not in flags:
             raise EyeOnWaterAPIError(f"Cannot find {flag} field")
@@ -145,13 +144,16 @@ class Meter:
 
 
 class Account:
+    """Class represents account object."""
+
     def __init__(
         self,
         eow_hostname: str,
         username: str,
         password: str,
         metric_measurement_system: bool,
-    ):
+    ) -> None:
+        """Initialize the account."""
         self.eow_hostname = eow_hostname
         self.username = username
         self.password = password
@@ -186,11 +188,14 @@ class Account:
 
 
 class Client:
+    """Class represents client object."""
+
     def __init__(
         self,
         websession: ClientSession,
         account: Account,
-    ):
+    ) -> None:
+        """Initialize the client."""
         self.base_url = "https://" + account.eow_hostname + "/"
         self.websession = websession
         self.account = account
@@ -231,6 +236,7 @@ class Client:
         return data
 
     async def authenticate(self):
+        """Authenticate the client."""
         if not self.token_valid:
             _LOGGER.debug("Requesting login token")
 
@@ -258,6 +264,7 @@ class Client:
 
     @property
     def token_valid(self):
+        """Validate the token."""
         if self.authenticated or (datetime.datetime.now() < self.token_expiration):
             return True
 

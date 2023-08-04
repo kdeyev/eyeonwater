@@ -58,7 +58,7 @@ class EyeOnWaterAPIError(EyeOnWaterException):
 
 
 def extract_json(line, prefix):
-    """Extract JSON responce."""
+    """Extract JSON response."""
     line = line[line.find(prefix) + len(prefix) :]
     line = line[: line.find(";")]
     return json.loads(line)

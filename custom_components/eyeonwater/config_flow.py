@@ -1,11 +1,10 @@
-"""Config flow for Eye On Water integration."""
+"""Config flow for EyeOnWater integration."""
 import asyncio
+import contextlib
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from aiohttp import ClientError
-from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
-
 import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
@@ -14,6 +13,7 @@ from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.selector import selector
 
 from .const import DOMAIN
+from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 CONF_MEASUREMENT_SYSTEM = "measurement_system"
 CONF_MEASUREMENT_SYSTEM_METRIC = "metric"
@@ -30,8 +30,19 @@ _LOGGER = logging.getLogger(__name__)
 
 DATA_SCHEMA = vol.Schema(
     {
-        CONF_EOW_HOSTNAME: selector({"select": {"options": [CONF_EOW_HOSTNAME_COM, CONF_EOW_HOSTNAME_CA]}}),
-        CONF_MEASUREMENT_SYSTEM: selector({"select": {"options": [CONF_MEASUREMENT_SYSTEM_METRIC, CONF_MEASUREMENT_SYSTEM_IMPERIAL]}}),
+        CONF_EOW_HOSTNAME: selector(
+            {"select": {"options": [CONF_EOW_HOSTNAME_COM, CONF_EOW_HOSTNAME_CA]}}
+        ),
+        CONF_MEASUREMENT_SYSTEM: selector(
+            {
+                "select": {
+                    "options": [
+                        CONF_MEASUREMENT_SYSTEM_METRIC,
+                        CONF_MEASUREMENT_SYSTEM_IMPERIAL,
+                    ]
+                }
+            }
+        ),
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
     }
@@ -39,7 +50,6 @@ DATA_SCHEMA = vol.Schema(
 
 
 def create_account_from_config(data: Dict[str, Any]) -> Account:
-
     # Backward compatibility code
     try:
         domain = data[CONF_DOMAIN]
@@ -54,7 +64,8 @@ def create_account_from_config(data: Dict[str, Any]) -> Account:
         metric_measurement_system = True
     else:
         raise Exception()(
-            f"Unsupported domain {domain}. Only 'com' and 'ca' are supported")
+            f"Unsupported domain {domain}. Only 'com' and 'ca' are supported"
+        )
 
     # Measurement system
     try:
@@ -64,16 +75,18 @@ def create_account_from_config(data: Dict[str, Any]) -> Account:
         pass
 
     # EOW hostname
-    try:
+    with contextlib.suppress(KeyError):
         eow_hostname = data[CONF_EOW_HOSTNAME]
-    except KeyError:
-        pass
 
     username = data[CONF_USERNAME]
     password = data[CONF_PASSWORD]
 
-    account = Account(eow_hostname=eow_hostname, username=username,
-                      password=password, metric_measurement_system=metric_measurement_system)
+    account = Account(
+        eow_hostname=eow_hostname,
+        username=username,
+        password=password,
+        metric_measurement_system=metric_measurement_system,
+    )
     return account
 
 
@@ -98,7 +111,7 @@ async def validate_input(hass: core.HomeAssistant, data):
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Eye On Water."""
+    """Handle a config flow for EyeOnWater."""
 
     VERSION = 1
 

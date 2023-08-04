@@ -1,9 +1,6 @@
-"""The Eye On Water integration."""
+"""EyeOnWater integration."""
 import asyncio
 import logging
-
-from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
-from .config_flow import create_account_from_config
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -16,6 +13,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
+from .config_flow import create_account_from_config
 from .const import (
     DATA_COORDINATOR,
     DATA_SMART_METER,
@@ -23,10 +21,10 @@ from .const import (
     DOMAIN,
     SCAN_INTERVAL,
 )
+from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
-# _LOGGER.setLevel(logging.DEBUG)
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
@@ -53,7 +51,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        name="Eye On Water",
+        name="EyeOnWater",
         update_method=async_update_data,
         update_interval=SCAN_INTERVAL,
         request_refresh_debouncer=Debouncer(

@@ -9,7 +9,4 @@ DATA_SMART_METER = "smart_meter_data"
 
 DOMAIN = "eyeonwater"
 
-WATER_METER = "Water Meter"
-WATER_LEAK_SENSOR = "Water Leak Sensor"
-
 DEVICE_CLASS_WATER = "water"

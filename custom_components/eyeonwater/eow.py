@@ -93,8 +93,6 @@ class Meter:
         data = await client.request(path=SEARCH_ENDPOINT, method="post", json=query)
         data = json.loads(data)
         meters = data["elastic_results"]["hits"]["hits"]
-        # This looks for more than one meter, but only uses this first one.
-        # Needs fix to iterate
         if len(meters) > 1:
             raise Exception("More than one meter reading found")
 
@@ -108,6 +106,7 @@ class Meter:
 
     def get_flags(self, flag) -> bool:
         """Define flags."""
+        flags = []
         flags = self.reading_data["flags"]
         if flag not in flags:
             raise EyeOnWaterAPIError(f"Cannot find {flag} field")

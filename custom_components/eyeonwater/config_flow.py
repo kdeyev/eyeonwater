@@ -11,7 +11,8 @@ from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_DOMAIN, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.selector import selector
-from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+#from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from .const import DOMAIN
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
@@ -56,7 +57,7 @@ def create_account_from_config(hass: core.HomeAssistant, data: dict[str, Any]) -
         )
 
     # Measurement system
-    metric_measurement_system = False if hass.config.units is US_CUSTOMARY_SYSTEM else True
+    metric_measurement_system = hass.config.units is METRIC_SYSTEM
     
     # EOW hostname
     with contextlib.suppress(KeyError):

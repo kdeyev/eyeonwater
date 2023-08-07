@@ -28,7 +28,9 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
-def create_account_from_config(hass: core.HomeAssistant, data: dict[str, Any]) -> Account:
+def create_account_from_config(
+    hass: core.HomeAssistant, data: dict[str, Any]
+) -> Account:
     """Create account login from config."""
     CountryCode = hass.config.country
     if CountryCode == "US":
@@ -36,7 +38,7 @@ def create_account_from_config(hass: core.HomeAssistant, data: dict[str, Any]) -
     elif CountryCode == "CA":
         eow_hostname = CONF_EOW_HOSTNAME_CA
     else:
-        raise Exception(
+        raise CannotConnect(
             f"Unsupported country ({CountryCode}) setup in HomeAssistant.
         )
 

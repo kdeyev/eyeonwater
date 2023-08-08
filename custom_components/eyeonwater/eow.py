@@ -57,13 +57,6 @@ class EyeOnWaterAPIError(EyeOnWaterException):
     """General exception for unknown API responses."""
 
 
-def extract_json(line, prefix):
-    """Extract JSON response."""
-    line = line[line.find(prefix) + len(prefix) :]
-    line = line[: line.find(";")]
-    return json.loads(line)
-
-
 class Meter:
     """Class represents meter object."""
 
@@ -168,7 +161,7 @@ class Account:
         lines = data.split("\n")
         for line in lines:
             if Meter.info_prefix in line:
-                meter_infos = extract_json(line, Meter.info_prefix)
+                meter_infos = client.extract_json(line, Meter.info_prefix)
                 for meter_info in meter_infos:
                     if METER_UUID_FIELD not in meter_info:
                         raise EyeOnWaterAPIError(
@@ -257,14 +250,18 @@ class Client:
                 raise EyeOnWaterAuthError("Username or password was not accepted")
 
             if resp.status == 403:
-                raise EyeOnWaterRateLimitError(
-                    "Reached ratelimit or brute force protection"
-                )
+                raise EyeOnWaterRateLimitError("Reached ratelimit")
 
             self.cookies = resp.cookies
             self._update_token_expiration()
             self.authenticated = True
             _LOGGER.debug("Successfully retrieved login token")
+
+    def extract_json(self, line, prefix):
+        """Extract JSON response."""
+        line = line[line.find(prefix) + len(prefix) :]
+        line = line[: line.find(";")]
+        return json.loads(line)
 
     @property
     def token_valid(self):

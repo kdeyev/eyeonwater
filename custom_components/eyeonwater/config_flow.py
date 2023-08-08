@@ -39,7 +39,7 @@ def create_account_from_config(
         eow_hostname = CONF_EOW_HOSTNAME_CA
     else:
         raise CannotConnect(
-            f"Unsupported country ({CountryCode}) setup in HomeAssistant.
+            f"Unsupported country ({CountryCode}) setup in HomeAssistant."
         )
 
     metric_measurement_system = hass.config.units is METRIC_SYSTEM

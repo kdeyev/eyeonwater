@@ -19,8 +19,8 @@
             }
         }
     },
-    "entity" {
-        "binary_sensor" {
+    "entity": {
+        "binary_sensor": {
             "leak": {
                 "name": "Leak Sensor"
             },

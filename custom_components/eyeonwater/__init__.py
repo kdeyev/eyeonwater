@@ -61,10 +61,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SMART_METER: eye_on_water_data,
     }
 
-    asyncio.create_task(coordinator.async_refresh())
-
+    watch_task = asyncio.create_task(coordinator.async_refresh())
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
     return True
 
 

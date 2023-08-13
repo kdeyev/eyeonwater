@@ -13,11 +13,28 @@
                 "description": "Eye On Water configuration.",
                 "title": "EyeOnWater Integration",
                 "data": {
-                    "eow_hostname": "Eye On Water hostname",
-                    "measurement_system": "Measurement system",
                     "password": "Password",
                     "username": "Username"
                 }
+            }
+        }
+    },
+    "entity" {
+        "binary_sensor" {
+            "leak": {
+                "name": "Leak Sensor"
+            },
+            "emptypipe": {
+                "name": "Empty Pipe"
+            },
+            "tamper": {
+                "name": "Tamper"
+            },
+            "coverremoved": {
+                "name": "Cover Removed"
+            },
+            "reverseflow": {
+                "name": "Reverse Waterflow"
             }
         }
     }

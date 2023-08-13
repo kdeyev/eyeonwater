@@ -33,12 +33,6 @@
       },
       "reverseflow": {
         "name": "Reverse Waterflow"
-      },
-      "lowbattery": {
-        "name": "Low Battery"
-      },
-      "batterycharging": {
-        "name": "Battery Charging"
       }
     }
   }

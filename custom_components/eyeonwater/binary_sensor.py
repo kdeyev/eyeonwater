@@ -12,11 +12,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import (
-    DATA_COORDINATOR,
-    DATA_SMART_METER,
-    DOMAIN,
-)
+from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
 from .eow import Meter
 
 FLAG_SENSORS = [

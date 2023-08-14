@@ -3,23 +3,13 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import aiohttp_client, debounce
+from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .config_flow import create_account_from_config
-from .const import (
-    DATA_COORDINATOR,
-    DATA_SMART_METER,
-    DEBOUNCE_COOLDOWN,
-    DOMAIN,
-    SCAN_INTERVAL,
-)
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.StreamHandler())
-
 
 
 class EyeOnWaterData:

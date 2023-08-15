@@ -187,6 +187,7 @@ class Meter:
             if start.minute != 0 or start.second != 0 or start.microsecond != 0:
                 raise Exception("Invalid timestamp")
 
+        statistics.sort(key=lambda d: d["start"])
         return statistics
 
 class Account:

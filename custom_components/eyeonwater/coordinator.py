@@ -71,49 +71,36 @@ class EyeOnWaterData:
 
 
     async def update_statistics(self):
-        # Example: https://github.com/janmolemans/huawei_fusionsolar/blob/ea2b58ee8a537b02ab1a367107f77c5960ac9f7a/sensor.py#L101
-        for meter in self.meters:
-            
-            # statistic_id = f"{DOMAIN}:{meter.meter_uuid}"
-            name = f"{WATER_METER} {meter.meter_uuid}"
-            # statistic_id = f"{WATER_METER} {meter.meter_uuid}"
-            # statistic_id = f"{WATER_METER} {meter.meter_uuid}"
-            statistic_id = name = f"sensor.water_meter_{meter.meter_uuid}"
+        base = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        date_list = [base - datetime.timedelta(days=x) for x in range(0,7)]
+        for date in date_list:
+            # Example: https://github.com/janmolemans/huawei_fusionsolar/blob/ea2b58ee8a537b02ab1a367107f77c5960ac9f7a/sensor.py#L101
+            for meter in self.meters:
+                name = f"{WATER_METER} {meter.meter_uuid}"
+                statistic_id = name = f"sensor.water_meter_{meter.meter_uuid}"
 
-            _LOGGER.info(f"adding historical statistics for {statistic_id}")
+                date_str = date.strftime('%m/%d/%Y')
 
-            # last_stats = await get_instance(self.hass).async_add_executor_job(
-            #     get_last_statistics, self.hass, 1, statistic_id, True, set()
-            # )
+                _LOGGER.warning(f"adding historical statistics for {statistic_id} on {date_str}")
 
-            now = datetime.datetime.now()
+                data = await meter.get_consumption(date=date_str, client=self.client)
 
-            # if not last_stats:
-            #     # First time we insert 5 years of data (if available)
-            #     hourly_data = await home.get_historic_data(
-            #         5 * 365 * 24, production=is_production
-                        
-            yesterday = now - datetime.timedelta(days=7)
+                statistics = []
+                for row in data:
+                    _LOGGER.warning(row)
+                    statistics.append(StatisticData(
+                            start=row["start"],
+                            sum=row["sum"],
+                            min=row["sum"], #convert to Watt
+                            max=row["sum"], #convert to Watt
+                        ))
 
-            data = await meter.get_consumption(date=yesterday.strftime('%m/%d/%Y'), client=self.client)
-
-            statistics = []
-            for row in data:
-                statistics.append(StatisticData(
-                        start=row["start"],
-                        sum=row["sum"],
-                        # min=row["sum"], #convert to Watt
-                        # max=row["sum"], #convert to Watt
-                    ))
-
-            metadata = StatisticMetaData(
-                has_mean=False,
-                has_sum=True,
-                name=name,
-                source='recorder',
-                statistic_id=statistic_id,
-                unit_of_measurement="gal",
-            )
-            async_import_statistics(self.hass, metadata, statistics)
-
-
+                metadata = StatisticMetaData(
+                    has_mean=False,
+                    has_sum=True,
+                    name=name,
+                    source='recorder',
+                    statistic_id=statistic_id,
+                    unit_of_measurement="gal",
+                )
+                async_import_statistics(self.hass, metadata, statistics)

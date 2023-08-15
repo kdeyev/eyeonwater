@@ -19,7 +19,7 @@ from homeassistant.components.recorder.models import StatisticData, StatisticMet
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
     get_last_statistics,
-    async_import_statistics
+    async_import_statistics,
 )
 
 from .const import (
@@ -28,9 +28,8 @@ from .const import (
     DEBOUNCE_COOLDOWN,
     DOMAIN,
     SCAN_INTERVAL,
+    WATER_METER_NAME,
 )
-
-WATER_METER = "Water Meter"
 
 from .config_flow import create_account_from_config
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
@@ -69,38 +68,50 @@ class EyeOnWaterData:
                 raise UpdateFailed(error) from error
         return self.meters
 
-
     async def update_statistics(self):
-        base = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        date_list = [base - datetime.timedelta(days=x) for x in range(0,7)]
+        today = datetime.datetime.now().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        # Import data for today and 2 past days.
+        date_list = [today - datetime.timedelta(days=x) for x in range(0, 2)]
         for date in date_list:
-            # Example: https://github.com/janmolemans/huawei_fusionsolar/blob/ea2b58ee8a537b02ab1a367107f77c5960ac9f7a/sensor.py#L101
             for meter in self.meters:
-                name = f"{WATER_METER} {meter.meter_uuid}"
+                name = f"{WATER_METER_NAME} {meter.meter_uuid}"
                 statistic_id = name = f"sensor.water_meter_{meter.meter_uuid}"
 
-                date_str = date.strftime('%m/%d/%Y')
+                date_str = date.strftime("%m/%d/%Y")
 
-                _LOGGER.warning(f"adding historical statistics for {statistic_id} on {date_str}")
+                _LOGGER.info(f"adding historical statistics for {name} on {date_str}")
 
-                data = await meter.get_consumption(date=date_str, client=self.client)
+                try:
+                    data = await meter.get_consumption(
+                        date=date_str, client=self.client
+                    )
 
-                statistics = []
-                for row in data:
-                    _LOGGER.warning(row)
-                    statistics.append(StatisticData(
-                            start=row["start"],
-                            sum=row["sum"],
-                            min=row["sum"],
-                            max=row["sum"],
-                        ))
+                    statistics = []
+                    for row in data:
+                        _LOGGER.debug(row)
+                        statistics.append(
+                            StatisticData(
+                                start=row["start"],
+                                sum=row["sum"],
+                                min=row["sum"],
+                                max=row["sum"],
+                            )
+                        )
 
-                metadata = StatisticMetaData(
-                    has_mean=False,
-                    has_sum=True,
-                    name=name,
-                    source='recorder',
-                    statistic_id=statistic_id,
-                    unit_of_measurement="gal",
-                )
-                async_import_statistics(self.hass, metadata, statistics)
+                    metadata = StatisticMetaData(
+                        has_mean=False,
+                        has_sum=True,
+                        name=name,
+                        source="recorder",
+                        statistic_id=statistic_id,
+                        unit_of_measurement=meter.native_unit_of_measurement,
+                    )
+                    async_import_statistics(self.hass, metadata, statistics)
+                except Exception as error:
+                    _LOGGER.error(
+                        f"Error occured during fetchig historinc data for {name}: {error}"
+                    )
+                    continue

@@ -8,3 +8,4 @@ DATA_COORDINATOR = "coordinator"
 DATA_SMART_METER = "smart_meter_data"
 
 DOMAIN = "eyeonwater"
+WATER_METER_NAME = "Water Meter"

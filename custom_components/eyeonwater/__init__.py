@@ -1,6 +1,5 @@
 """EyeOnWater integration."""
 import asyncio
-import datetime
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -19,7 +18,7 @@ from .const import (
     SCAN_INTERVAL,
 )
 from .coordinator import EyeOnWaterData
-from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
+from .eow import EyeOnWaterAuthError
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())

@@ -6,30 +6,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
-
-# from homeassistant.components.recorder import get_instance
-# from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-# from homeassistant.components.recorder.statistics import (
-#     async_add_external_statistics,
-#     get_last_statistics,
-#     statistics_during_period,
-# )
-# from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.components.recorder.statistics import (
-    async_add_external_statistics,
-    get_last_statistics,
-    async_import_statistics,
-)
+from homeassistant.components.recorder.statistics import async_import_statistics
 
-from .const import (
-    DATA_COORDINATOR,
-    DATA_SMART_METER,
-    DEBOUNCE_COOLDOWN,
-    DOMAIN,
-    SCAN_INTERVAL,
-    WATER_METER_NAME,
-)
+from .const import WATER_METER_NAME
+
 
 from .config_flow import create_account_from_config
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError

@@ -91,8 +91,8 @@ class EyeOnWaterData:
                     statistics.append(StatisticData(
                             start=row["start"],
                             sum=row["sum"],
-                            min=row["sum"], #convert to Watt
-                            max=row["sum"], #convert to Watt
+                            min=row["sum"],
+                            max=row["sum"],
                         ))
 
                 metadata = StatisticMetaData(

@@ -1,3 +1,4 @@
+"""EyeOnWater API integration."""
 from __future__ import annotations
 
 import datetime
@@ -5,17 +6,11 @@ from dateutil import parser
 import pytz
 import json
 import logging
-from typing import Any, Dict
+from typing import Any
 import urllib.parse
+
 from aiohttp import ClientSession
 from tenacity import retry, retry_if_exception_type
-
-from voluptuous.validators import Boolean
-
-__author__ = "Konstantin Deev"
-__email__ = "kn.deev@gmail.com"
-__version__ = "0.0.2"
-
 
 AUTH_ENDPOINT = "account/signin"
 DASHBOARD_ENDPOINT = "/dashboard/"
@@ -28,72 +23,69 @@ MEASUREMENT_10_GALLONS = "10 GAL"
 MEASUREMENT_CF = ["CF", "CUBIC_FEET"]
 MEASUREMENT_CCF = "CCF"
 MEASUREMENT_KILOGALLONS = "KGAL"
-MEASUREMENT_CUBICMETERS = "CM"
+MEASUREMENT_CUBICMETERS = ["CM", "CUBIC_METER"]
 
 METER_UUID_FIELD = "meter_uuid"
 READ_UNITS_FIELD = "units"
 READ_AMOUNT_FIELD = "full_read"
-HAS_LEAK_FIELD = "Leak"
 
 TOKEN_EXPIRATION = datetime.timedelta(minutes=15)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-
 class EyeOnWaterException(Exception):
     """Base exception for more specific exceptions to inherit from."""
-
-    ...
 
 
 class EyeOnWaterAuthError(EyeOnWaterException):
     """Exception for authentication failures.
-    Either wrong username or wrong password."""
 
-    ...
+    Either wrong username or wrong password.
+    """
 
 
 class EyeOnWaterRateLimitError(EyeOnWaterException):
     """Exception for reaching the ratelimit.
-    Either too many login attempts or too many requests."""
 
-    ...
+    Either too many login attempts or too many requests.
+    """
 
 
 class EyeOnWaterAuthExpired(EyeOnWaterException):
     """Exception for when a token is no longer valid."""
 
-    ...
-
 
 class EyeOnWaterAPIError(EyeOnWaterException):
     """General exception for unknown API responses."""
 
-    ...
-
-
-def extract_json(line, prefix):
-    line = line[line.find(prefix) + len(prefix):]
-    line = line[:line.find(";")]
-    return json.loads(line)
 
 class Meter:
+    """Class represents meter object."""
+
     meter_prefix = "var new_barInfo = "
     info_prefix = "AQ.Views.MeterPicker.meters = "
 
-    def __init__(self, meter_uuid: str, meter_info: Dict[str, Any], metric_measurement_system: bool):
+    def __init__(
+        self,
+        meter_uuid: str,
+        meter_info: dict[str, Any],
+        metric_measurement_system: bool,
+    ) -> None:
+        """Initialize the meter."""
         self.meter_uuid = meter_uuid
         self.meter_info = meter_info
         self.metric_measurement_system = metric_measurement_system
-        self.native_unit_of_measurement = "m\u00b3" if self.metric_measurement_system else "gal"
+        self.native_unit_of_measurement = (
+            "m\u00b3" if self.metric_measurement_system else "gal"
+        )
         self.reading_data = None
-        
-    async def read_meter(self, client: Client) -> Dict[str, Any]:
+
+    async def read_meter(self, client: Client) -> dict[str, Any]:
         """Triggers an on-demand meter read and returns it when complete."""
         _LOGGER.debug("Requesting meter reading")
 
-        query = {"query":{"terms":{"meter.meter_uuid":[self.meter_uuid]}}}
+        query = {"query": {"terms": {"meter.meter_uuid": [self.meter_uuid]}}}
         data = await client.request(path=SEARCH_ENDPOINT, method="post", json=query)
         data = json.loads(data)
         meters = data["elastic_results"]["hits"]["hits"]
@@ -105,14 +97,15 @@ class Meter:
 
     @property
     def attributes(self):
+        """Define attributes."""
         return self.meter_info
 
-    @property
-    def has_leak(self) -> bool:
+    def get_flags(self, flag) -> bool:
+        """Define flags."""
         flags = self.reading_data["flags"]
-        if HAS_LEAK_FIELD not in flags:
-            raise EyeOnWaterAPIError(f"Cannot find {HAS_LEAK_FIELD} field")
-        return flags[HAS_LEAK_FIELD]
+        if flag not in flags:
+            raise EyeOnWaterAPIError(f"Cannot find {flag} field")
+        return flags[flag]
 
     @property
     def reading(self):
@@ -121,31 +114,31 @@ class Meter:
         if READ_UNITS_FIELD not in reading:
             raise EyeOnWaterAPIError("Cannot find read units in reading data")
         read_unit = reading[READ_UNITS_FIELD]
+        read_unit_upper = read_unit.upper()
         amount = float(reading[READ_AMOUNT_FIELD])
-        if self.metric_measurement_system:    
-            if read_unit.upper() == MEASUREMENT_CUBICMETERS:
+        if self.metric_measurement_system:
+            if read_unit_upper in MEASUREMENT_CUBICMETERS:
                 pass
             else:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         else:
-            if read_unit.upper() == MEASUREMENT_KILOGALLONS:
+            if read_unit_upper == MEASUREMENT_KILOGALLONS:
                 amount = amount * 1000
-            elif read_unit.upper() == MEASUREMENT_100_GALLONS:
+            elif read_unit_upper == MEASUREMENT_100_GALLONS:
                 amount = amount * 100
-            elif read_unit.upper() == MEASUREMENT_10_GALLONS:
+            elif read_unit_upper == MEASUREMENT_10_GALLONS:
                 amount = amount * 10
-            elif read_unit.upper() == MEASUREMENT_GALLONS:
+            elif read_unit_upper == MEASUREMENT_GALLONS:
                 pass
-            elif read_unit.upper() == MEASUREMENT_CCF:
+            elif read_unit_upper == MEASUREMENT_CCF:
                 amount = amount * 748.052
-            elif read_unit.upper() in MEASUREMENT_CF:
+            elif read_unit_upper in MEASUREMENT_CF:
                 amount = amount * 7.48052
             else:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         return amount
 
     async def get_consumption(self, date, client: Client):
-
         query = {
             "params":{
                 "source":"barnacle",
@@ -157,10 +150,6 @@ class Meter:
                 "display_hours":True,
                 "display_days":True,
                 "date": date,
-                # "perma_link":"https://eyeonwater.com/dashboard/kn.deev%40gmail.com?i=link:hourly,120367282,1686726000",
-                # "compare":False,
-                # "wave_chart":False,
-                # "title":"Wednesday, June 14, 2023",
                 "furthest_zoom":"hr",
                 "display_weeks":True
             },
@@ -173,7 +162,7 @@ class Meter:
                     }
                 }
             }
-            }
+        }
         data = await client.request(path=CONSUMPTION_ENDPOINT, method="post", json=query)
         data = json.loads(data)
 
@@ -187,7 +176,6 @@ class Meter:
 
         data = data["timeseries"][key]["series"]
         statistics = [{"start": timezone.localize(parser.parse(d["date"])), "sum": d["bill_read"]} for d in data]
-        
         for statistic in statistics:
             start = statistic["start"]
             if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:
@@ -198,14 +186,23 @@ class Meter:
         return statistics
 
 class Account:
-    def __init__(self, eow_hostname: str, username: str, password: str, metric_measurement_system: bool):
+    """Class represents account object."""
+
+    def __init__(
+        self,
+        eow_hostname: str,
+        username: str,
+        password: str,
+        metric_measurement_system: bool,
+    ) -> None:
+        """Initialize the account."""
         self.eow_hostname = eow_hostname
         self.username = username
         self.password = password
         self.metric_measurement_system = metric_measurement_system
 
-    async def fetch_meters(self, client: "Client"):
-        """Returns a list of the meters associated with the account"""
+    async def fetch_meters(self, client: Client):
+        """List the meters associated with the account."""
         path = DASHBOARD_ENDPOINT + urllib.parse.quote(self.username)
         data = await client.request(path=path, method="get")
 
@@ -213,23 +210,34 @@ class Account:
         lines = data.split("\n")
         for line in lines:
             if Meter.info_prefix in line:
-                meter_infos = extract_json(line, Meter.info_prefix)
+                meter_infos = client.extract_json(line, Meter.info_prefix)
                 for meter_info in meter_infos:
                     if METER_UUID_FIELD not in meter_info:
-                        raise EyeOnWaterAPIError(f"Cannot find {METER_UUID_FIELD} field")
-                
+                        raise EyeOnWaterAPIError(
+                            f"Cannot find {METER_UUID_FIELD} field"
+                        )
+
                     meter_uuid = meter_info[METER_UUID_FIELD]
-                    
-                    meter = Meter(meter_uuid=meter_uuid, meter_info=meter_info, metric_measurement_system=self.metric_measurement_system)
+
+                    meter = Meter(
+                        meter_uuid=meter_uuid,
+                        meter_info=meter_info,
+                        metric_measurement_system=self.metric_measurement_system,
+                    )
                     meters.append(meter)
 
-        return meters  
+        return meters
 
 
 class Client:
+    """Class represents client object."""
+
     def __init__(
-        self, websession: ClientSession, account: "Account",
-    ):
+        self,
+        websession: ClientSession,
+        account: Account,
+    ) -> None:
+        """Initialize the client."""
         self.base_url = "https://" + account.eow_hostname + "/"
         self.websession = websession
         self.account = account
@@ -248,7 +256,7 @@ class Client:
         method: str,
         **kwargs,
     ):
-        """Helper method to make API calls against the eow API."""
+        """Make API calls against the eow API."""
         await self.authenticate()
         resp = await self.websession.request(
             method,
@@ -270,6 +278,7 @@ class Client:
         return data
 
     async def authenticate(self):
+        """Authenticate the client."""
         if not self.token_valid:
             _LOGGER.debug("Requesting login token")
 
@@ -282,23 +291,30 @@ class Client:
                 },
             )
 
+            if "dashboard" not in str(resp.url):
+                _LOGGER.warning("METER NOT FOUND!")
+                raise EyeOnWaterAuthError("No meter found")
+
             if resp.status == 400:
                 raise EyeOnWaterAuthError("Username or password was not accepted")
 
             if resp.status == 403:
-                raise EyeOnWaterRateLimitError(
-                    "Reached ratelimit or brute force protection"
-                )
+                raise EyeOnWaterRateLimitError("Reached ratelimit")
 
             self.cookies = resp.cookies
             self._update_token_expiration()
             self.authenticated = True
             _LOGGER.debug("Successfully retrieved login token")
 
-
+    def extract_json(self, line, prefix):
+        """Extract JSON response."""
+        line = line[line.find(prefix) + len(prefix) :]
+        line = line[: line.find(";")]
+        return json.loads(line)
 
     @property
     def token_valid(self):
+        """Validate the token."""
         if self.authenticated or (datetime.datetime.now() < self.token_expiration):
             return True
 

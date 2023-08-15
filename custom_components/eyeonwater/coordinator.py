@@ -102,8 +102,8 @@ class EyeOnWaterData:
                 statistics.append(StatisticData(
                         start=row["start"],
                         sum=row["sum"],
-                        min=row["sum"], #convert to Watt
-                        max=row["sum"], #convert to Watt
+                        # min=row["sum"], #convert to Watt
+                        # max=row["sum"], #convert to Watt
                     ))
 
             metadata = StatisticMetaData(
@@ -112,7 +112,7 @@ class EyeOnWaterData:
                 name=name,
                 source='recorder',
                 statistic_id=statistic_id,
-                unit_of_measurement="GAL",
+                unit_of_measurement="gal",
             )
             async_import_statistics(self.hass, metadata, statistics)
 

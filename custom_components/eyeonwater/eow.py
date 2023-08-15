@@ -122,20 +122,24 @@ class Meter:
             else:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         else:
-            if read_unit_upper == MEASUREMENT_KILOGALLONS:
-                amount = amount * 1000
-            elif read_unit_upper == MEASUREMENT_100_GALLONS:
-                amount = amount * 100
-            elif read_unit_upper == MEASUREMENT_10_GALLONS:
-                amount = amount * 10
-            elif read_unit_upper == MEASUREMENT_GALLONS:
-                pass
-            elif read_unit_upper == MEASUREMENT_CCF:
-                amount = amount * 748.052
-            elif read_unit_upper in MEASUREMENT_CF:
-                amount = amount * 7.48052
-            else:
-                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
+            amount = self.convert(read_unit_upper, amount)
+        return amount
+    
+    def convert(self, read_unit_upper, amount):
+        if read_unit_upper == MEASUREMENT_KILOGALLONS:
+            amount = amount * 1000
+        elif read_unit_upper == MEASUREMENT_100_GALLONS:
+            amount = amount * 100
+        elif read_unit_upper == MEASUREMENT_10_GALLONS:
+            amount = amount * 10
+        elif read_unit_upper == MEASUREMENT_GALLONS:
+            pass
+        elif read_unit_upper == MEASUREMENT_CCF:
+            amount = amount * 748.052
+        elif read_unit_upper in MEASUREMENT_CF:
+            amount = amount * 7.48052
+        else:
+            raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit_upper}")
         return amount
 
     async def get_consumption(self, date, client: Client):
@@ -175,7 +179,7 @@ class Meter:
         # tzinfos = {data["timezone"] : timezone }
 
         data = data["timeseries"][key]["series"]
-        statistics = [{"start": timezone.localize(parser.parse(d["date"])), "sum": d["bill_read"]} for d in data]
+        statistics = [{"start": timezone.localize(parser.parse(d["date"])), "sum": self.convert(MEASUREMENT_KILOGALLONS, d["bill_read"])} for d in data]
         for statistic in statistics:
             start = statistic["start"]
             if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:

@@ -17,7 +17,6 @@ from .const import (
     DEBOUNCE_COOLDOWN,
     DOMAIN,
     SCAN_INTERVAL,
-    WATER_METER
 )
 from .coordinator import EyeOnWaterData
 from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError

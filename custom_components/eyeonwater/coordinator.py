@@ -94,6 +94,6 @@ class EyeOnWaterData:
                     async_import_statistics(self.hass, metadata, statistics)
                 except Exception as error:
                     _LOGGER.error(
-                        f"Error occured during fetchig historinc data for {name}: {error}"
+                        f"Error occured during fetchig historical data for {name}: {error}"
                     )
                     continue

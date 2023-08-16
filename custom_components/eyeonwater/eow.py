@@ -124,7 +124,7 @@ class Meter:
             if read_unit_upper in MEASUREMENT_CUBICMETERS:
                 pass
             else:
-                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
+                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit_upper}")
         else:
             if read_unit_upper == MEASUREMENT_KILOGALLONS:
                 amount = amount * 1000

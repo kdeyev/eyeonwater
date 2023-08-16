@@ -42,12 +42,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Fetch actual meter_info for all meters
     await eye_on_water_data.read_meters()
-    
+
     # load old hostorical data
     _LOGGER.info("Start loading historical data")
-    await eye_on_water_data.update_statistics(days_to_load=7)
+    await eye_on_water_data.update_statistics(days_to_load=30)
     _LOGGER.info("Historical data loaded")
-
 
     for meter in eye_on_water_data.meters:
         _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)

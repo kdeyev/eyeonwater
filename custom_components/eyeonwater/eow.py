@@ -74,7 +74,10 @@ class Meter:
     ) -> None:
         """Initialize the meter."""
         self.meter_uuid = meter_uuid
-        self.meter_info = meter_info
+        self.meter_id = meter_info['meter_id']
+
+        self.meter_info = None
+
         self.metric_measurement_system = metric_measurement_system
         self.native_unit_of_measurement = (
             "m\u00b3" if self.metric_measurement_system else "gal"

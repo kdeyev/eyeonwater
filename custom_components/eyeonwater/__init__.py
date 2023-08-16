@@ -40,6 +40,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await eye_on_water_data.setup()
 
+    # Fetch actual meter_info for all meters
+    await eye_on_water_data.read_meters()
+    
+    # load old hostorical data
+    _LOGGER.info("Start loading historical data")
+    await eye_on_water_data.update_statistics(days_to_load=7)
+    _LOGGER.info("Historical data loaded")
+
+
+    for meter in eye_on_water_data.meters:
+        _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)
+
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
         await eye_on_water_data.read_meters()
@@ -64,7 +76,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     watch_task = asyncio.create_task(coordinator.async_refresh())
+
+    _LOGGER.debug("Start setup platforms")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _LOGGER.debug("End setup platforms")
     return True
 
 

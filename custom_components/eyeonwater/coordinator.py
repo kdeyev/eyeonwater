@@ -39,6 +39,7 @@ class EyeOnWaterData:
         """Fetch all of the user's meters."""
         self.meters = await self.account.fetch_meters(self.client)
         _LOGGER.debug("Discovered %s meter(s)", len(self.meters))
+        # await self.read_meters()
 
     async def read_meters(self):
         """Read each meter."""
@@ -49,13 +50,13 @@ class EyeOnWaterData:
                 raise UpdateFailed(error) from error
         return self.meters
 
-    async def update_statistics(self):
+    async def update_statistics(self, days_to_load=2):
         today = datetime.datetime.now().replace(
             hour=0, minute=0, second=0, microsecond=0
         )
 
         # Import data for today and 2 past days.
-        date_list = [today - datetime.timedelta(days=x) for x in range(0, 2)]
+        date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
         for date in date_list:
             for meter in self.meters:
                 name = f"{WATER_METER_NAME} {meter.meter_uuid}"

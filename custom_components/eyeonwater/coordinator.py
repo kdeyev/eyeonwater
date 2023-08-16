@@ -104,6 +104,6 @@ class EyeOnWaterData:
                     name=name,
                     source="recorder",
                     statistic_id=statistic_id,
-                    unit_of_measurement=meter.native_unit_of_measurement,
+                    unit_of_measurement=meter.native_unit_of_measurement.upper(),
                 )
                 async_import_statistics(self.hass, metadata, statistics)

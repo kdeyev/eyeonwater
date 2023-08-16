@@ -45,7 +45,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # load old hostorical data
     _LOGGER.info("Start loading historical data")
-    await eye_on_water_data.update_statistics(days_to_load=30)
+    await eye_on_water_data.import_historical_data(days_to_load=30)
     _LOGGER.info("Historical data loaded")
 
     for meter in eye_on_water_data.meters:
@@ -54,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
         await eye_on_water_data.read_meters()
-        await eye_on_water_data.update_statistics()
+        await eye_on_water_data.import_historical_data()
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(

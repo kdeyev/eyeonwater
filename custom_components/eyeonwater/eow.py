@@ -60,6 +60,10 @@ class EyeOnWaterAPIError(EyeOnWaterException):
     """General exception for unknown API responses."""
 
 
+class EyeOnWaterResponseIsEmpty(EyeOnWaterException):
+    """API answered correct but there is not content to parse."""
+
+
 class Meter:
     """Class represents meter object."""
 
@@ -74,7 +78,7 @@ class Meter:
     ) -> None:
         """Initialize the meter."""
         self.meter_uuid = meter_uuid
-        self.meter_id = meter_info['meter_id']
+        self.meter_id = meter_info["meter_id"]
 
         self.meter_info = None
 
@@ -121,13 +125,15 @@ class Meter:
         amount = float(reading[READ_AMOUNT_FIELD])
         amount = self.convert(read_unit_upper, amount)
         return amount
-    
+
     def convert(self, read_unit_upper, amount):
         if self.metric_measurement_system:
             if read_unit_upper in MEASUREMENT_CUBICMETERS:
                 pass
             else:
-                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit_upper}")
+                raise EyeOnWaterAPIError(
+                    f"Unsupported measurement unit: {read_unit_upper}"
+                )
         else:
             if read_unit_upper == MEASUREMENT_KILOGALLONS:
                 amount = amount * 1000
@@ -142,47 +148,50 @@ class Meter:
             elif read_unit_upper in MEASUREMENT_CF:
                 amount = amount * 7.48052
             else:
-                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit_upper}")
+                raise EyeOnWaterAPIError(
+                    f"Unsupported measurement unit: {read_unit_upper}"
+                )
         return amount
 
-    async def get_consumption(self, date, client: Client):
+    async def get_historical_data(self, date: datetime, units: str, client: Client):
+        """Retrieve the historical hourly water readings for a requested day"""
         query = {
-            "params":{
-                "source":"barnacle",
-                "aggregate":"hourly",
-                "units":"GAL",
-                "combine":"true",
-                "perspective":"billing",
-                "display_minutes":True,
-                "display_hours":True,
-                "display_days":True,
-                "date": date,
-                "furthest_zoom":"hr",
-                "display_weeks":True
+            "params": {
+                "source": "barnacle",
+                "aggregate": "hourly",
+                "units": units,
+                "combine": "true",
+                "perspective": "billing",
+                "display_minutes": True,
+                "display_hours": True,
+                "display_days": True,
+                "date": date.strftime("%m/%d/%Y"),
+                "furthest_zoom": "hr",
+                "display_weeks": True,
             },
-            "query":{
-                "query":{
-                    "terms":{
-                        "meter.meter_uuid":[
-                            self.meter_uuid
-                        ]
-                    }
-                }
-            }
+            "query": {"query": {"terms": {"meter.meter_uuid": [self.meter_uuid]}}},
         }
-        data = await client.request(path=CONSUMPTION_ENDPOINT, method="post", json=query)
+        data = await client.request(
+            path=CONSUMPTION_ENDPOINT, method="post", json=query
+        )
         data = json.loads(data)
 
         key = f"{self.meter_uuid},0"
         if key not in data["timeseries"]:
-            raise Exception("Response is empty")
+            raise EyeOnWaterResponseIsEmpty("Response is empty")
 
         timezone = data["hit"]["meter.timezone"][0]
         timezone = pytz.timezone(timezone)
         # tzinfos = {data["timezone"] : timezone }
 
         data = data["timeseries"][key]["series"]
-        statistics = [{"start": timezone.localize(parser.parse(d["date"])), "sum": self.convert(MEASUREMENT_KILOGALLONS, d["bill_read"])} for d in data]
+        statistics = [
+            {
+                "start": timezone.localize(parser.parse(d["date"])),
+                "sum": self.convert(MEASUREMENT_KILOGALLONS, d["bill_read"]),
+            }
+            for d in data
+        ]
         for statistic in statistics:
             start = statistic["start"]
             if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:
@@ -192,6 +201,7 @@ class Meter:
 
         # statistics.sort(key=lambda d: d["start"])
         return statistics
+
 
 class Account:
     """Class represents account object."""

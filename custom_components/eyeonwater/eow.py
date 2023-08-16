@@ -116,30 +116,30 @@ class Meter:
         read_unit = reading[READ_UNITS_FIELD]
         read_unit_upper = read_unit.upper()
         amount = float(reading[READ_AMOUNT_FIELD])
+        amount = self.convert(read_unit_upper, amount)
+        return amount
+    
+    def convert(self, read_unit_upper, amount):
         if self.metric_measurement_system:
             if read_unit_upper in MEASUREMENT_CUBICMETERS:
                 pass
             else:
                 raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
         else:
-            amount = self.convert(read_unit_upper, amount)
-        return amount
-    
-    def convert(self, read_unit_upper, amount):
-        if read_unit_upper == MEASUREMENT_KILOGALLONS:
-            amount = amount * 1000
-        elif read_unit_upper == MEASUREMENT_100_GALLONS:
-            amount = amount * 100
-        elif read_unit_upper == MEASUREMENT_10_GALLONS:
-            amount = amount * 10
-        elif read_unit_upper == MEASUREMENT_GALLONS:
-            pass
-        elif read_unit_upper == MEASUREMENT_CCF:
-            amount = amount * 748.052
-        elif read_unit_upper in MEASUREMENT_CF:
-            amount = amount * 7.48052
-        else:
-            raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit_upper}")
+            if read_unit_upper == MEASUREMENT_KILOGALLONS:
+                amount = amount * 1000
+            elif read_unit_upper == MEASUREMENT_100_GALLONS:
+                amount = amount * 100
+            elif read_unit_upper == MEASUREMENT_10_GALLONS:
+                amount = amount * 10
+            elif read_unit_upper == MEASUREMENT_GALLONS:
+                pass
+            elif read_unit_upper == MEASUREMENT_CCF:
+                amount = amount * 748.052
+            elif read_unit_upper in MEASUREMENT_CF:
+                amount = amount * 7.48052
+            else:
+                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit_upper}")
         return amount
 
     async def get_consumption(self, date, client: Client):

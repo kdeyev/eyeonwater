@@ -45,7 +45,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # load old hostorical data
     _LOGGER.info("Start loading historical data")
-    await eye_on_water_data.import_historical_data(days_to_load=30)
+    try:
+        await eye_on_water_data.import_historical_data(days_to_load=30)
+    except Exception as e:
+        _LOGGER.info(f"Loading historical data failed: {e}")
     _LOGGER.info("Historical data loaded")
 
     for meter in eye_on_water_data.meters:

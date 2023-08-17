@@ -60,6 +60,10 @@ class EyeOnWaterAPIError(EyeOnWaterException):
     """General exception for unknown API responses."""
 
 
+class EyeOnWaterResponseIsEmpty(EyeOnWaterException):
+    """API answered correct but there is not content to parse."""
+
+
 class Meter:
     """Class represents meter object."""
 
@@ -74,7 +78,10 @@ class Meter:
     ) -> None:
         """Initialize the meter."""
         self.meter_uuid = meter_uuid
-        self.meter_info = meter_info
+        self.meter_id = meter_info["meter_id"]
+
+        self.meter_info = None
+
         self.metric_measurement_system = metric_measurement_system
         self.native_unit_of_measurement = (
             "m\u00b3" if self.metric_measurement_system else "gal"
@@ -116,11 +123,17 @@ class Meter:
         read_unit = reading[READ_UNITS_FIELD]
         read_unit_upper = read_unit.upper()
         amount = float(reading[READ_AMOUNT_FIELD])
+        amount = self.convert(read_unit_upper, amount)
+        return amount
+
+    def convert(self, read_unit_upper, amount):
         if self.metric_measurement_system:
             if read_unit_upper in MEASUREMENT_CUBICMETERS:
                 pass
             else:
-                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
+                raise EyeOnWaterAPIError(
+                    f"Unsupported measurement unit: {read_unit_upper}"
+                )
         else:
             if read_unit_upper == MEASUREMENT_KILOGALLONS:
                 amount = amount * 1000
@@ -135,47 +148,52 @@ class Meter:
             elif read_unit_upper in MEASUREMENT_CF:
                 amount = amount * 7.48052
             else:
-                raise EyeOnWaterAPIError(f"Unsupported measurement unit: {read_unit}")
+                raise EyeOnWaterAPIError(
+                    f"Unsupported measurement unit: {read_unit_upper}"
+                )
         return amount
 
-    async def get_consumption(self, date, client: Client):
+    async def get_historical_data(self, date: datetime, units: str, client: Client):
+        """Retrieve the historical hourly water readings for a requested day"""
         query = {
-            "params":{
-                "source":"barnacle",
-                "aggregate":"hourly",
-                "units":"GAL",
-                "combine":"true",
-                "perspective":"billing",
-                "display_minutes":True,
-                "display_hours":True,
-                "display_days":True,
-                "date": date,
-                "furthest_zoom":"hr",
-                "display_weeks":True
+            "params": {
+                "source": "barnacle",
+                "aggregate": "hourly",
+                "units": units,
+                "combine": "true",
+                "perspective": "billing",
+                "display_minutes": True,
+                "display_hours": True,
+                "display_days": True,
+                "date": date.strftime("%m/%d/%Y"),
+                "furthest_zoom": "hr",
+                "display_weeks": True,
             },
-            "query":{
-                "query":{
-                    "terms":{
-                        "meter.meter_uuid":[
-                            self.meter_uuid
-                        ]
-                    }
-                }
-            }
+            "query": {"query": {"terms": {"meter.meter_uuid": [self.meter_uuid]}}},
         }
-        data = await client.request(path=CONSUMPTION_ENDPOINT, method="post", json=query)
+        data = await client.request(
+            path=CONSUMPTION_ENDPOINT, method="post", json=query
+        )
         data = json.loads(data)
 
         key = f"{self.meter_uuid},0"
         if key not in data["timeseries"]:
-            raise Exception("Response is empty")
+            raise EyeOnWaterResponseIsEmpty("Response is empty")
 
         timezone = data["hit"]["meter.timezone"][0]
         timezone = pytz.timezone(timezone)
         # tzinfos = {data["timezone"] : timezone }
 
         data = data["timeseries"][key]["series"]
-        statistics = [{"start": timezone.localize(parser.parse(d["date"])), "sum": d["bill_read"]} for d in data]
+        statistics = []
+        for d in data:
+            response_unit = d["display_unit"].upper()
+            statistics.append(
+                {
+                    "start": timezone.localize(parser.parse(d["date"])),
+                    "sum": self.convert(response_unit, d["bill_read"]),
+                }
+            )
 
         for statistic in statistics:
             start = statistic["start"]
@@ -184,6 +202,7 @@ class Meter:
             if start.minute != 0 or start.second != 0 or start.microsecond != 0:
                 raise Exception("Invalid timestamp")
 
+        # statistics.sort(key=lambda d: d["start"])
         return statistics
 
 
@@ -267,7 +286,10 @@ class Client:
             **kwargs,
             # ssl=self.ssl_context,
         )
-        if resp.status == 401:
+        if resp.status == 403:
+            _LOGGER.error("Reached ratelimit")
+            raise EyeOnWaterRateLimitError("Reached ratelimit")
+        elif resp.status == 401:
             _LOGGER.debug("Authentication token expired; requesting new token")
             self.authenticated = False
             await self.authenticate()
@@ -277,6 +299,11 @@ class Client:
         self._update_token_expiration()
 
         data = await resp.text()
+
+        if resp.status != 200:
+            _LOGGER.error(f"Request failed: {resp.status} {data}")
+            raise EyeOnWaterException(f"Request failed: {resp.status} {data}")
+    
         return data
 
     async def authenticate(self):

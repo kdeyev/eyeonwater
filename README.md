@@ -34,6 +34,4 @@ You should be able to choose your water meter in the Water Consumption
 
 ![energy-dashboard](https://github.com/kdeyev/eyeonwater/blob/master/img/energy-dashboard.png?raw=true)
 
-Pay attention that EyeOnWater publishes the meter reading once in several hours (even when they accumulate the meter reading once in several minutes). It does not correlate with the HA sensors architecture, which will make your consumption graphs look weird. In the image below, the consumption itself is correct, but the distribution in time is wrong - the graph shows 50 gallons of consumption at 8 AM, but actually, 50 gallons were consumed in the time period 4 AM-8 AM.
-
-![water-consumption-graph](https://github.com/kdeyev/eyeonwater/blob/master/img/water-consumption-graph.png?raw=true)
+Pay attention that EyeOnWater publishes the meter reading once in several hours (even when they accumulate the meter reading once in several minutes). So data may come with a delay of several hours.

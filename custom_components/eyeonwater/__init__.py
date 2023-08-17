@@ -18,7 +18,7 @@ from .const import (
     SCAN_INTERVAL,
 )
 from .coordinator import EyeOnWaterData
-from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
+from .eow import EyeOnWaterAuthError
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
@@ -38,11 +38,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except asyncio.TimeoutError as error:
         raise ConfigEntryNotReady from error
 
-    await eye_on_water_data.setup()
+    try:
+        await eye_on_water_data.setup()
+    except Exception as e:
+        _LOGGER.error(f"Fetching meters failed: {e}")
+        raise e
+    
+    # Fetch actual meter_info for all meters
+    try:
+        await eye_on_water_data.read_meters()
+    except Exception as e:
+        _LOGGER.error(f"Reading meters failed: {e}")
+        raise e
+
+    # load old hostorical data
+    _LOGGER.info("Start loading historical data")
+    try:
+        await eye_on_water_data.import_historical_data(days_to_load=30)
+    except Exception as e:
+        _LOGGER.error(f"Loading historical data failed: {e}")
+    _LOGGER.info("Historical data loaded")
+
+    for meter in eye_on_water_data.meters:
+        _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
         await eye_on_water_data.read_meters()
+        await eye_on_water_data.import_historical_data()
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(
@@ -63,7 +86,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     watch_task = asyncio.create_task(coordinator.async_refresh())
+
+    _LOGGER.debug("Start setup platforms")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _LOGGER.debug("End setup platforms")
     return True
 
 

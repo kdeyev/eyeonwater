@@ -11,7 +11,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
+from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .eow import Meter
 
 
@@ -45,7 +45,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=f"Water Meter {self.meter.meter_info['meter_id']}",
+            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
         )
 
     @property

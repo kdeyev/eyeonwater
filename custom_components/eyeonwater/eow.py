@@ -287,6 +287,7 @@ class Client:
             # ssl=self.ssl_context,
         )
         if resp.status == 403:
+            _LOGGER.error("Reached ratelimit")
             raise EyeOnWaterRateLimitError("Reached ratelimit")
         elif resp.status == 401:
             _LOGGER.debug("Authentication token expired; requesting new token")
@@ -300,6 +301,7 @@ class Client:
         data = await resp.text()
 
         if resp.status != 200:
+            _LOGGER.error(f"Request failed: {resp.status} {data}")
             raise EyeOnWaterException(f"Request failed: {resp.status} {data}")
     
         return data

@@ -65,8 +65,8 @@ class EyeOnWaterData:
             statistics = await self.get_historical_data(meter, days_to_load)
 
             if statistics:
-                name = f"{WATER_METER_NAME} {meter.meter_uuid}"
-                statistic_id = name = f"sensor.water_meter_{meter.meter_uuid}"
+                name = f"{WATER_METER_NAME} {meter.meter_id}"
+                statistic_id = name = f"sensor.water_meter_{meter.meter_id}"
 
                 metadata = StatisticMetaData(
                     has_mean=False,

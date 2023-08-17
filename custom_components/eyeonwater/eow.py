@@ -296,6 +296,10 @@ class Client:
         self._update_token_expiration()
 
         data = await resp.text()
+
+        if resp.status != 200:
+            raise Exception(f"Request failed: {resp.status} {data}")
+    
         return data
 
     async def authenticate(self):

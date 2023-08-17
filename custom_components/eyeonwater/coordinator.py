@@ -47,7 +47,6 @@ class EyeOnWaterData:
         """Fetch all of the user's meters."""
         self.meters = await self.account.fetch_meters(self.client)
         _LOGGER.debug("Discovered %s meter(s)", len(self.meters))
-        # await self.read_meters()
 
     async def read_meters(self):
         """Read each meter."""
@@ -66,7 +65,7 @@ class EyeOnWaterData:
 
             if statistics:
                 name = f"{WATER_METER_NAME} {meter.meter_id}"
-                statistic_id = name = f"sensor.water_meter_{meter.meter_id}"
+                statistic_id = name = f"sensor.water_meter_{meter.meter_id.lower()}"
 
                 metadata = StatisticMetaData(
                     has_mean=False,
@@ -95,14 +94,14 @@ class EyeOnWaterData:
             units = meter.native_unit_of_measurement.upper()
 
         _LOGGER.info(
-            f"adding historical statistics for {meter.meter_uuid} on {date_list} with units {units}"
+            f"adding historical statistics for {meter.meter_id} on {date_list} with units {units}"
         )
 
         statistics = []
 
         for date in date_list:
             _LOGGER.debug(
-                f"requesting historical statistics for {meter.meter_uuid} on {date} with units {units}"
+                f"requesting historical statistics for {meter.meter_id} on {date} with units {units}"
             )
             try:
                 data = await meter.get_historical_data(

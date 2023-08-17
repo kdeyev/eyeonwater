@@ -1,26 +1,22 @@
 """EyeOnWater coordinator."""
-import logging
 import datetime
-from typing import List
+import logging
 
+from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.components.recorder.statistics import async_import_statistics
 
 from .const import WATER_METER_NAME
-
-
-from .config_flow import create_account_from_config
 from .eow import (
     Account,
     Client,
-    Meter,
     EyeOnWaterAPIError,
     EyeOnWaterAuthError,
     EyeOnWaterResponseIsEmpty,
+    Meter,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,7 +55,6 @@ class EyeOnWaterData:
 
     async def import_historical_data(self, days_to_load: int = 2):
         """Import historical data for today and past N days."""
-
         for meter in self.meters:
             statistics = await self.get_historical_data(meter, days_to_load)
 
@@ -78,12 +73,16 @@ class EyeOnWaterData:
                 async_import_statistics(self.hass, metadata, statistics)
 
     async def get_historical_data(
-        self, meter: Meter, days_to_load: int = 2
-    ) -> List[StatisticData]:
+        self,
+        meter: Meter,
+        days_to_load: int = 2,
+    ) -> list[StatisticData]:
         """Retrieve historical data for today and past N days."""
-
         today = datetime.datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
         )
 
         date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
@@ -94,18 +93,20 @@ class EyeOnWaterData:
             units = meter.native_unit_of_measurement.upper()
 
         _LOGGER.info(
-            f"adding historical statistics for {meter.meter_id} on {date_list} with units {units}"
+            f"adding historical statistics for {meter.meter_id} on {date_list} with units {units}",
         )
 
         statistics = []
 
         for date in date_list:
             _LOGGER.debug(
-                f"requesting historical statistics for {meter.meter_id} on {date} with units {units}"
+                f"requesting historical statistics for {meter.meter_id} on {date} with units {units}",
             )
             try:
                 data = await meter.get_historical_data(
-                    date=date, units=units, client=self.client
+                    date=date,
+                    units=units,
+                    client=self.client,
                 )
             except EyeOnWaterResponseIsEmpty:
                 # Suppress this exception. It's valid situation when data was not reported by EOW for the requested day
@@ -120,7 +121,7 @@ class EyeOnWaterData:
                         StatisticData(
                             start=row["start"],
                             sum=row["sum"],
-                        )
+                        ),
                     )
 
         return statistics

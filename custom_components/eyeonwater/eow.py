@@ -286,7 +286,9 @@ class Client:
             **kwargs,
             # ssl=self.ssl_context,
         )
-        if resp.status == 401:
+        if resp.status == 403:
+            raise EyeOnWaterRateLimitError("Reached ratelimit")
+        elif resp.status == 401:
             _LOGGER.debug("Authentication token expired; requesting new token")
             self.authenticated = False
             await self.authenticate()
@@ -298,7 +300,7 @@ class Client:
         data = await resp.text()
 
         if resp.status != 200:
-            raise Exception(f"Request failed: {resp.status} {data}")
+            raise EyeOnWaterException(f"Request failed: {resp.status} {data}")
     
         return data
 

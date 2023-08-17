@@ -8,7 +8,7 @@ Add `https://github.com/kdeyev/eyeonwater` as Repository and select the "Integra
 
 2. Add EyeOnWater integration following [HACS instructions](https://github.com/hacs/integration)
 
-Follow the configuration dialog: 
+Follow the configuration dialog:
 - Choose EyeOnWater hostname (choose eyeonwater.com unless you are in Canada).
 - Choose the measurement system you prefer to use. "Imperial" will create a water sensor counting gallons, "Metric" will create a water sensor counting cubic meters.
 - Use your username and password, which you use to log in on eyeonwater.com

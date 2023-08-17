@@ -90,7 +90,7 @@ class EyeOnWaterData:
         date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
 
         if meter.metric_measurement_system:
-            units = "CUBIC_METER"
+            units = "CM"
         else:
             units = meter.native_unit_of_measurement.upper()
 

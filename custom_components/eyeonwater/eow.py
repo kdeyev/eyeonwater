@@ -185,13 +185,15 @@ class Meter:
         # tzinfos = {data["timezone"] : timezone }
 
         data = data["timeseries"][key]["series"]
-        statistics = [
-            {
-                "start": timezone.localize(parser.parse(d["date"])),
-                "sum": self.convert(MEASUREMENT_KILOGALLONS, d["bill_read"]),
-            }
-            for d in data
-        ]
+        statistics = []
+        for d in data:
+            statistics.append(
+                {
+                    "start": timezone.localize(parser.parse(d["date"])),
+                    "sum": self.convert(d['display_unit'], d["bill_read"]),
+                }
+            )
+
         for statistic in statistics:
             start = statistic["start"]
             if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:

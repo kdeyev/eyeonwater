@@ -187,10 +187,11 @@ class Meter:
         data = data["timeseries"][key]["series"]
         statistics = []
         for d in data:
+            response_unit = d["display_unit"].upper()
             statistics.append(
                 {
                     "start": timezone.localize(parser.parse(d["date"])),
-                    "sum": self.convert(d['display_unit'], d["bill_read"]),
+                    "sum": self.convert(response_unit, d["bill_read"]),
                 }
             )
 

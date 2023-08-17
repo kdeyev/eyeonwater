@@ -89,8 +89,10 @@ class EyeOnWaterData:
 
         date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
 
-        # TODO: it was tested with "GAL" only
-        units = meter.native_unit_of_measurement.upper()
+        if meter.metric_measurement_system:
+            units = "CUBIC_METER"
+        else:
+            units = meter.native_unit_of_measurement.upper()
 
         _LOGGER.info(
             f"adding historical statistics for {meter.meter_uuid} on {date_list} with units {units}"

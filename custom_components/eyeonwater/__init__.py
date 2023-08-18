@@ -40,24 +40,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await eye_on_water_data.setup()
-    except Exception as e:
-        _LOGGER.error(f"Fetching meters failed: {e}")
-        raise e
-    
-    # Fetch actual meter_info for all meters
-    try:
         await eye_on_water_data.read_meters()
     except Exception as e:
         _LOGGER.error(f"Reading meters failed: {e}")
         raise e
 
-    # load old hostorical data
-    _LOGGER.info("Start loading historical data")
     try:
         await eye_on_water_data.import_historical_data(days_to_load=30)
     except Exception as e:
         _LOGGER.error(f"Loading historical data failed: {e}")
-    _LOGGER.info("Historical data loaded")
+
 
     for meter in eye_on_water_data.meters:
         _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)
@@ -86,10 +78,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     watch_task = asyncio.create_task(coordinator.async_refresh())
-
-    _LOGGER.debug("Start setup platforms")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    _LOGGER.debug("End setup platforms")
+
     return True
 
 

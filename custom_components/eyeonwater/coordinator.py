@@ -12,7 +12,6 @@ from homeassistant.components.recorder.statistics import async_import_statistics
 
 from .const import WATER_METER_NAME
 
-
 from .config_flow import create_account_from_config
 from .eow import (
     Account,
@@ -100,9 +99,6 @@ class EyeOnWaterData:
         statistics = []
 
         for date in date_list:
-            _LOGGER.debug(
-                f"requesting historical statistics for {meter.meter_id} on {date} with units {units}"
-            )
             try:
                 data = await meter.get_historical_data(
                     date=date, units=units, client=self.client

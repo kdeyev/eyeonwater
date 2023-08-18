@@ -116,13 +116,12 @@ class EyeOnWaterData:
 
             for row in data:
                 _LOGGER.debug(row)
-                statistics.append(
-                    StatisticData(
-                        start=row["start"],
-                        sum=row["sum"],
-                        min=row["sum"],
-                        max=row["sum"],
+                if row["start"] > 0:
+                    statistics.append(
+                        StatisticData(
+                            start=row["start"],
+                            sum=row["sum"],
+                        )
                     )
-                )
 
         return statistics

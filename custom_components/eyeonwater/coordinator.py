@@ -116,7 +116,7 @@ class EyeOnWaterData:
 
             for row in data:
                 _LOGGER.debug(row)
-                if row["start"] > 0:
+                if row["sum"] > 0:
                     statistics.append(
                         StatisticData(
                             start=row["start"],

@@ -15,8 +15,6 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import async_import_statistics
 
-from .const import WATER_METER_NAME
-
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .eow import Meter
 
@@ -79,7 +77,13 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._available = self.coordinator.last_update_success
         if self._available:
             self._state = self.meter.reading
+
             self._last_historical_data = self.meter.last_historical_data.copy()
+            if self._last_imported_time:
+                self._last_historical_data = list(filter(lambda r: r["start"] > self._last_imported_time, self._last_historical_data))
+            if self._last_historical_data:
+                self._last_imported_time = self._last_historical_data[-1]["start"]
+
             self.import_historical_data()
 
         self.async_write_ha_state()
@@ -100,11 +104,8 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Import historical data for today and past N days."""
 
         if not self._last_historical_data:
-            # Nothing to import
-            return
-
-        if self._last_imported_time and self._last_imported_time == self._last_historical_data[-1]["start"]:
             _LOGGER.info("There is no new historical data")
+            # Nothing to import
             return
 
         statistics = [
@@ -115,10 +116,10 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             for row in self._last_historical_data
         ]
 
-        # Do not import last 3 hours 
-        statistics = statistics[:-3]
-        if not statistics:
-            return
+        # # Do not import last 3 hours 
+        # statistics = statistics[:-3]
+        # if not statistics:
+        #     return
 
         name = f"{WATER_METER_NAME} {self.meter.meter_id}"
         statistic_id = name = f"sensor.water_meter_{self.meter.meter_id}"
@@ -132,5 +133,3 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             unit_of_measurement=self.meter.native_unit_of_measurement,
         )
         async_import_statistics(self.hass, metadata, statistics)
-
-        self._last_imported_time = self._last_historical_data[-1]["start"]

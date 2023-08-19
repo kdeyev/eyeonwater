@@ -337,7 +337,7 @@ class Client:
                 raise EyeOnWaterAuthError(msg)
 
             if resp.status == 400:
-                msg = "Username or password was not accepted"
+                msg = f"Username or password was not accepted by {self.base_url}"
                 raise EyeOnWaterAuthError(msg)
 
             if resp.status == 403:

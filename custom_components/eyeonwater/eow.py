@@ -4,11 +4,11 @@ from __future__ import annotations
 import datetime
 import json
 import logging
-import urllib.parse
 from typing import TYPE_CHECKING, Any
+import urllib.parse
 
-import pytz
 from dateutil import parser
+import pytz
 from tenacity import retry, retry_if_exception_type
 
 if TYPE_CHECKING:

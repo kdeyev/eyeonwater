@@ -10,7 +10,6 @@ from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .const import WATER_METER_NAME
-
 from .eow import (
     Account,
     Client,
@@ -93,9 +92,10 @@ class EyeOnWaterData:
         else:
             units = meter.native_unit_of_measurement.upper()
 
-        _LOGGER.info(
+        message = (
             f"adding historical statistics for {meter.meter_id} on {date_list} with units {units}",
         )
+        _LOGGER.info(message)
 
         statistics = []
 

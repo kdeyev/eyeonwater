@@ -115,6 +115,11 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             for row in self._last_historical_data
         ]
 
+        # Do not import last 3 hours 
+        statistics = statistics[:-3]
+        if not statistics:
+            return
+
         name = f"{WATER_METER_NAME} {self.meter.meter_id}"
         statistic_id = name = f"sensor.water_meter_{self.meter.meter_id}"
 

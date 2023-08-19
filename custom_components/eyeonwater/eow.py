@@ -90,7 +90,7 @@ class Meter:
 
         self.last_historical_data = []
 
-    async def read_meter(self, client: Client) -> dict[str, Any]:
+    async def read_meter(self, client: Client, days_to_load=3) -> dict[str, Any]:
         """Triggers an on-demand meter read and returns it when complete."""
         _LOGGER.debug("Requesting meter reading")
 
@@ -104,12 +104,7 @@ class Meter:
         self.meter_info = meters[0]["_source"]
         self.reading_data = self.meter_info["register_0"]
 
-
-        today = datetime.datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
-        self.last_historical_data = await self.get_historical_data(today, client)
+        self.last_historical_data = await self.get_historical_datas(days_to_load=days_to_load, client=client)
 
 
     @property
@@ -165,6 +160,33 @@ class Meter:
                     f"Unsupported measurement unit: {read_unit_upper}"
                 )
         return amount
+    
+    async def get_historical_datas(self, days_to_load: int, client: Client):
+        """Retrieve historical data for today and past N days."""
+
+        today = datetime.datetime.now().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
+        date_list.reverse()
+
+        _LOGGER.info(
+            f"adding historical statistics for {self.meter_uuid} on {date_list}"
+        )
+
+        statistics = []
+
+        for date in date_list:
+            _LOGGER.debug(
+                f"requesting historical statistics for {self.meter_uuid} on {date}"
+            )
+            try:
+                statistics += await self.get_historical_data(date=date, client=client)
+            except EyeOnWaterResponseIsEmpty:
+                continue
+
+        return statistics
 
     async def get_historical_data(self, date: datetime, client: Client):
         """Retrieve the historical hourly water readings for a requested day"""

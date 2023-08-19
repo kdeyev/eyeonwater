@@ -19,21 +19,14 @@ async def main():
 
     meters = await account.fetch_meters(client=client)
     print(f"{len(meters)} meters found")
-    for meter in meters:
-        today = datetime.datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-        # yesterday = today - datetime.timedelta(days=0)
-
-        data = await meter.get_historical_data(
-            client=client, date=today
-        )
-        for d in data:
-            print(str(d["start"]), d["sum"])
-
+    for meter in meters:     
         await meter.read_meter(client=client)
         print(f"meter {meter.meter_uuid} shows {meter.reading}")
         print(f"meter {meter.meter_uuid} info {meter.meter_info}")
+
+        for d in meter.last_historical_data:
+            print(str(d["start"]), d["sum"])
+
 
     await websession.close()
 

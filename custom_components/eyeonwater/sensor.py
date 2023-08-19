@@ -10,6 +10,10 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.statistics import async_import_statistics
+
+from .const import WATER_METER_NAME
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .eow import Meter
@@ -69,6 +73,8 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._available = self.coordinator.last_update_success
         if self._available:
             self._state = self.meter.reading
+            self.import_historical_data()
+
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):
@@ -81,3 +87,27 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         if last_state := await self.async_get_last_state():
             self._state = last_state.state
             self._available = True
+
+
+    def import_historical_data(self):
+        """Import historical data for today and past N days."""
+        statistics = [
+            StatisticData(
+                start=row["start"],
+                sum=row["sum"],
+            )
+            for row in self.meter.last_historical_data
+        ]
+
+        name = f"{WATER_METER_NAME} {self.meter.meter_id}"
+        statistic_id = name = f"sensor.water_meter_{self.meter.meter_id}"
+
+        metadata = StatisticMetaData(
+            has_mean=False,
+            has_sum=True,
+            name=name,
+            source="recorder",
+            statistic_id=statistic_id,
+            unit_of_measurement=self.meter.native_unit_of_measurement,
+        )
+        async_import_statistics(self.hass, metadata, statistics)

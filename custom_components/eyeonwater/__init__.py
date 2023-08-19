@@ -43,29 +43,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as e:
         _LOGGER.error(f"Fetching meters failed: {e}")
         raise e
-    
+
     # Fetch actual meter_info for all meters
     try:
-        await eye_on_water_data.read_meters()
+        await eye_on_water_data.read_meters(days_to_load=30)
     except Exception as e:
         _LOGGER.error(f"Reading meters failed: {e}")
         raise e
-
-    # load old hostorical data
-    _LOGGER.info("Start loading historical data")
-    try:
-        await eye_on_water_data.import_historical_data(days_to_load=30)
-    except Exception as e:
-        _LOGGER.error(f"Loading historical data failed: {e}")
-    _LOGGER.info("Historical data loaded")
 
     for meter in eye_on_water_data.meters:
         _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
-        await eye_on_water_data.read_meters()
-        await eye_on_water_data.import_historical_data()
+        await eye_on_water_data.read_meters(days_to_load=3)
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(

@@ -47,106 +47,12 @@ class EyeOnWaterData:
         """Fetch all of the user's meters."""
         self.meters = await self.account.fetch_meters(self.client)
         _LOGGER.debug("Discovered %s meter(s)", len(self.meters))
-        # await self.read_meters()
 
-    async def read_meters(self):
+    async def read_meters(self, days_to_load=3):
         """Read each meter."""
         for meter in self.meters:
             try:
-                await meter.read_meter(self.client)
-                # self.import_last_reading_historical_data(meter)
+                await meter.read_meter(client=self.client, days_to_load=days_to_load)
             except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
                 raise UpdateFailed(error) from error
         return self.meters
-    
-    # def import_last_reading_historical_data(self, meter: Meter):
-    #     statistics = []
-    #     for row in meter.last_historical_data:
-    #         _LOGGER.debug(row)
-    #         if row["sum"] > 0:
-    #             statistics.append(
-    #                 StatisticData(
-    #                     start=row["start"],
-    #                     sum=row["sum"],
-    #                 )
-    #             )
-    #     if statistics:
-    #         name = f"{WATER_METER_NAME} {meter.meter_id}"
-    #         statistic_id = name = f"sensor.water_meter_{meter.meter_id}"
-
-    #         metadata = StatisticMetaData(
-    #             has_mean=False,
-    #             has_sum=True,
-    #             name=name,
-    #             source="recorder",
-    #             statistic_id=statistic_id,
-    #             unit_of_measurement=meter.native_unit_of_measurement,
-    #         )
-    #         async_import_statistics(self.hass, metadata, statistics)
-
-    async def import_historical_data(self, days_to_load: int = 2):
-        """Import historical data for today and past N days."""
-
-        for meter in self.meters:
-            statistics = await self.get_historical_data(meter, days_to_load)
-
-            if statistics:
-                name = f"{WATER_METER_NAME} {meter.meter_id}"
-                statistic_id = name = f"sensor.water_meter_{meter.meter_id}"
-
-                metadata = StatisticMetaData(
-                    has_mean=False,
-                    has_sum=True,
-                    name=name,
-                    source="recorder",
-                    statistic_id=statistic_id,
-                    unit_of_measurement=meter.native_unit_of_measurement,
-                )
-                async_import_statistics(self.hass, metadata, statistics)
-
-    async def get_historical_data(
-        self, meter: Meter, days_to_load: int = 2
-    ) -> List[StatisticData]:
-        """Retrieve historical data for today and past N days."""
-
-        today = datetime.datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
-        date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
-        date_list.reverse()
-
-        _LOGGER.info(
-            f"adding historical statistics for {meter.meter_uuid} on {date_list}"
-        )
-
-        statistics = []
-
-        for date in date_list:
-            _LOGGER.debug(
-                f"requesting historical statistics for {meter.meter_uuid} on {date}"
-            )
-            try:
-                data = await meter.get_historical_data(
-                    date=date, client=self.client
-                )
-            except EyeOnWaterResponseIsEmpty:
-                # Suppress this exception. It's valid situation when data was not reported by EOW for the requested day
-                continue
-            except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
-                raise UpdateFailed(error) from error
-
-            for row in data:
-                _LOGGER.debug(row)
-                if row["sum"] > 0:
-                    statistics.append(
-                        StatisticData(
-                            start=row["start"],
-                            sum=row["sum"],
-                        )
-                    )
-
-        # statistics_str = "\n".join([f"{r['start']} - {r['sum']}" for r in statistics])
-        # _LOGGER.warning(f"Historical data: \n {statistics_str}")
-
-        return statistics

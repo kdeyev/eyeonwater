@@ -54,9 +54,35 @@ class EyeOnWaterData:
         for meter in self.meters:
             try:
                 await meter.read_meter(self.client)
+                # self.import_last_reading_historical_data(meter)
             except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
                 raise UpdateFailed(error) from error
         return self.meters
+    
+    # def import_last_reading_historical_data(self, meter: Meter):
+    #     statistics = []
+    #     for row in meter.last_historical_data:
+    #         _LOGGER.debug(row)
+    #         if row["sum"] > 0:
+    #             statistics.append(
+    #                 StatisticData(
+    #                     start=row["start"],
+    #                     sum=row["sum"],
+    #                 )
+    #             )
+    #     if statistics:
+    #         name = f"{WATER_METER_NAME} {meter.meter_id}"
+    #         statistic_id = name = f"sensor.water_meter_{meter.meter_id}"
+
+    #         metadata = StatisticMetaData(
+    #             has_mean=False,
+    #             has_sum=True,
+    #             name=name,
+    #             source="recorder",
+    #             statistic_id=statistic_id,
+    #             unit_of_measurement=meter.native_unit_of_measurement,
+    #         )
+    #         async_import_statistics(self.hass, metadata, statistics)
 
     async def import_historical_data(self, days_to_load: int = 2):
         """Import historical data for today and past N days."""

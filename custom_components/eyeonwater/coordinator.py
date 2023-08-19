@@ -10,6 +10,7 @@ from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .const import WATER_METER_NAME
+
 from .eow import (
     Account,
     Client,

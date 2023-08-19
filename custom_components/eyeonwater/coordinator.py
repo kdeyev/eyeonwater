@@ -124,7 +124,9 @@ class EyeOnWaterData:
                         )
                     )
 
-        statistics_str = "\n".join([f"{r.start} - {r.sum}" for r in statistics])
-        _LOGGER.warning(f"Historical data: \n: {statistics_str}")
+        statistics.sort(key=lambda r: r["start"])
+
+        statistics_str = "\n".join([f"{r['start']} - {r['sum']}" for r in statistics])
+        _LOGGER.warning(f"Historical data: \n {statistics_str}")
 
         return statistics

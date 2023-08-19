@@ -88,6 +88,7 @@ class EyeOnWaterData:
         )
 
         date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
+        date_list.reverse()
 
         _LOGGER.info(
             f"adding historical statistics for {meter.meter_uuid} on {date_list}"
@@ -118,8 +119,6 @@ class EyeOnWaterData:
                             sum=row["sum"],
                         )
                     )
-
-        statistics.sort(key=lambda r: r["start"])
 
         statistics_str = "\n".join([f"{r['start']} - {r['sum']}" for r in statistics])
         _LOGGER.warning(f"Historical data: \n {statistics_str}")

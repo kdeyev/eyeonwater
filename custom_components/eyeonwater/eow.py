@@ -110,7 +110,6 @@ class Meter:
         # )
 
         # self.last_historical_data = await self.get_historical_data(today, client)
-        # self.last_historical_data.sort(key=lambda d: d["start"])
 
 
     @property
@@ -222,7 +221,8 @@ class Meter:
             if start.minute != 0 or start.second != 0 or start.microsecond != 0:
                 raise Exception("Invalid timestamp")
 
-        # statistics.sort(key=lambda d: d["start"])
+        statistics.sort(key=lambda d: d["start"])
+
         return statistics
 
 

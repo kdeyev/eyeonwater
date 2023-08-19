@@ -1,10 +1,11 @@
 {
   "domain": "eyeonwater",
   "name": "EyeOnWater",
-  "config_flow": true,
-  "documentation": "https://github.com/kdeyev/eyeonwater",
-  "requirements": [],
   "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["recorder"],
+  "documentation": "https://github.com/kdeyev/eyeonwater",
   "iot_class": "cloud_polling",
-  "version": "1.0"
+  "requirements": [],
+  "version": "2.0.0"
 }

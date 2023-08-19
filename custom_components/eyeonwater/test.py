@@ -1,8 +1,8 @@
-import aiohttp
 import asyncio
 import datetime
 
-from eow import Account, Client, Meter
+import aiohttp
+from eow import Account, Client
 
 
 async def main():
@@ -21,12 +21,16 @@ async def main():
     print(f"{len(meters)} meters found")
     for meter in meters:
         today = datetime.datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
         )
-        # yesterday = today - datetime.timedelta(days=0)
 
         data = await meter.get_historical_data(
-            client=client, units="GAL", date=today
+            client=client,
+            units="GAL",
+            date=today,
         )
         for d in data:
             print(str(d["start"]), d["sum"])

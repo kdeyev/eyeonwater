@@ -104,7 +104,10 @@ class Meter:
         self.meter_info = meters[0]["_source"]
         self.reading_data = self.meter_info["register_0"]
 
-        self.last_historical_data = await self.get_historical_datas(days_to_load=days_to_load, client=client)
+        try:
+            self.last_historical_data = await self.get_historical_datas(days_to_load=days_to_load, client=client)
+        except EyeOnWaterResponseIsEmpty:
+            self.last_historical_data = []
 
 
     @property
@@ -122,17 +125,17 @@ class Meter:
     @property
     def reading(self):
         """Returns the latest meter reading in gal."""
-        # reading = self.reading_data["latest_read"]
-        # if READ_UNITS_FIELD not in reading:
-        #     raise EyeOnWaterAPIError("Cannot find read units in reading data")
-        # read_unit = reading[READ_UNITS_FIELD]
-        # read_unit_upper = read_unit.upper()
-        # amount = float(reading[READ_AMOUNT_FIELD])
-        # amount = self.convert(read_unit_upper, amount)
-        # return amount
-        if not self.last_historical_data:
+        if self.last_historical_data:
+            return self.last_historical_data[-1]["sum"]
+
+        reading = self.reading_data["latest_read"]
+        if READ_UNITS_FIELD not in reading:
             raise EyeOnWaterAPIError("Cannot find read units in reading data")
-        return self.last_historical_data[-1]["sum"]
+        read_unit = reading[READ_UNITS_FIELD]
+        read_unit_upper = read_unit.upper()
+        amount = float(reading[READ_AMOUNT_FIELD])
+        amount = self.convert(read_unit_upper, amount)
+        return amount
 
     def convert(self, read_unit_upper, amount):
         if self.metric_measurement_system:

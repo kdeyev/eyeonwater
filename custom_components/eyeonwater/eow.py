@@ -325,7 +325,7 @@ class Client:
                 raise EyeOnWaterAuthError("No meter found")
 
             if resp.status == 400:
-                raise EyeOnWaterAuthError("Username or password was not accepted")
+                raise EyeOnWaterAuthError(f"Username or password was not accepted by {self.base_url}")
 
             if resp.status == 403:
                 raise EyeOnWaterRateLimitError("Reached ratelimit")

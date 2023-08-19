@@ -33,14 +33,11 @@ def create_account_from_config(
 ) -> Account:
     """Create account login from config."""
     CountryCode = hass.config.country
-    if CountryCode == "US":
-        eow_hostname = CONF_EOW_HOSTNAME_COM
-    elif CountryCode == "CA":
+    if CountryCode == "CA":
         eow_hostname = CONF_EOW_HOSTNAME_CA
     else:
-        raise CannotConnect(
-            f"Unsupported country ({CountryCode}) setup in HomeAssistant."
-        )
+        # There are some users from Europe that use .com domain
+        eow_hostname = CONF_EOW_HOSTNAME_COM
 
     metric_measurement_system = hass.config.units is METRIC_SYSTEM
     username = data[CONF_USERNAME]

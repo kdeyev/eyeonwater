@@ -26,7 +26,7 @@ async def main():
         # yesterday = today - datetime.timedelta(days=0)
 
         data = await meter.get_historical_data(
-            client=client, units="GAL", date=today
+            client=client, date=today
         )
         for d in data:
             print(str(d["start"]), d["sum"])

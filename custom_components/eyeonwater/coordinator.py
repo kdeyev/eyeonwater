@@ -89,24 +89,19 @@ class EyeOnWaterData:
 
         date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
 
-        if meter.metric_measurement_system:
-            units = "CM"
-        else:
-            units = meter.native_unit_of_measurement.upper()
-
         _LOGGER.info(
-            f"adding historical statistics for {meter.meter_uuid} on {date_list} with units {units}"
+            f"adding historical statistics for {meter.meter_uuid} on {date_list}"
         )
 
         statistics = []
 
         for date in date_list:
             _LOGGER.debug(
-                f"requesting historical statistics for {meter.meter_uuid} on {date} with units {units}"
+                f"requesting historical statistics for {meter.meter_uuid} on {date}"
             )
             try:
                 data = await meter.get_historical_data(
-                    date=date, units=units, client=self.client
+                    date=date, client=self.client
                 )
             except EyeOnWaterResponseIsEmpty:
                 # Suppress this exception. It's valid situation when data was not reported by EOW for the requested day

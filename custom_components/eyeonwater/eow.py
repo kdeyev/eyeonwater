@@ -88,6 +88,8 @@ class Meter:
         )
         self.reading_data = None
 
+        # self.last_historical_data = []
+
     async def read_meter(self, client: Client) -> dict[str, Any]:
         """Triggers an on-demand meter read and returns it when complete."""
         _LOGGER.debug("Requesting meter reading")
@@ -101,6 +103,15 @@ class Meter:
 
         self.meter_info = meters[0]["_source"]
         self.reading_data = self.meter_info["register_0"]
+
+
+        # today = datetime.datetime.now().replace(
+        #     hour=0, minute=0, second=0, microsecond=0
+        # )
+
+        # self.last_historical_data = await self.get_historical_data(today, client)
+        # self.last_historical_data.sort(key=lambda d: d["start"])
+
 
     @property
     def attributes(self):
@@ -125,6 +136,9 @@ class Meter:
         amount = float(reading[READ_AMOUNT_FIELD])
         amount = self.convert(read_unit_upper, amount)
         return amount
+        # if not self.last_historical_data:
+        #     raise EyeOnWaterAPIError("Cannot find read units in reading data")
+        # return self.last_historical_data[-1]["sum"]
 
     def convert(self, read_unit_upper, amount):
         if self.metric_measurement_system:
@@ -153,8 +167,14 @@ class Meter:
                 )
         return amount
 
-    async def get_historical_data(self, date: datetime, units: str, client: Client):
+    async def get_historical_data(self, date: datetime, client: Client):
         """Retrieve the historical hourly water readings for a requested day"""
+
+        if self.metric_measurement_system:
+            units = "CM"
+        else:
+            units = self.native_unit_of_measurement.upper()
+        
         query = {
             "params": {
                 "source": "barnacle",

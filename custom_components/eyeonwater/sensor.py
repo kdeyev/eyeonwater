@@ -60,11 +60,11 @@ class EyeOnWaterSensor(PollUpdateMixin, HistoricalSensor, SensorEntity):
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
         )
 
-        self._attr_has_entity_name = False
-        # self._attr_name = DOMAIN
-
         self._attr_unique_id = meter.meter_uuid
-        self._attr_entity_id = meter.meter_uuid
+        # self._attr_entity_id = self.meter.meter_id
+
+        self._attr_has_entity_name = True
+        self._attr_name = None
 
         self._attr_entity_registry_enabled_default = True
         self._attr_state = None
@@ -72,6 +72,14 @@ class EyeOnWaterSensor(PollUpdateMixin, HistoricalSensor, SensorEntity):
         # Define whatever you are
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
         self._attr_device_class = SensorDeviceClass.WATER
+
+        # We DON'T opt-in for statistics (don't set state_class). Why?
+        #
+        # Those statistics are generated from a real sensor, this sensor, but we don't
+        # want that hass try to do anything with those statistics because we
+        # (HistoricalSensor) handle generation and importing
+        #
+        # self._attr_state_class = SensorStateClass.MEASUREMENT
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -84,8 +92,8 @@ class EyeOnWaterSensor(PollUpdateMixin, HistoricalSensor, SensorEntity):
     async def async_update_historical(self):
         statistics = [
             HistoricalState(
-                dt=row["start"],
-                state=row["sum"],
+                dt=row["dt"],
+                state=row["reading"],
             )
             for row in self.meter.last_historical_data
         ]
@@ -104,7 +112,7 @@ class EyeOnWaterSensor(PollUpdateMixin, HistoricalSensor, SensorEntity):
         #
         meta = super().get_statistic_metadata()
         meta["has_sum"] = True
-        meta["has_mean"] = True
+        meta["has_mean"] = False
 
         return meta
 
@@ -116,8 +124,9 @@ class EyeOnWaterSensor(PollUpdateMixin, HistoricalSensor, SensorEntity):
     ) -> list[StatisticData]:
         statistics = [
             StatisticData(
-                dt=row["start"],
-                state=row["sum"],
+                start=row.dt,
+                state=row.state,
+                sum=row.state,
             )
             for row in hist_states
         ]

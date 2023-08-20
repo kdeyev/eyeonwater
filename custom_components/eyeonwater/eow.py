@@ -131,7 +131,7 @@ class Meter:
     def reading(self):
         """Returns the latest meter reading in gal."""
         if self.last_historical_data:
-            return self.last_historical_data[-1]["sum"]
+            return self.last_historical_data[-1]["reading"]
 
         reading = self.reading_data["latest_read"]
         if READ_UNITS_FIELD not in reading:
@@ -239,21 +239,21 @@ class Meter:
             response_unit = d["display_unit"].upper()
             statistics.append(
                 {
-                    "start": timezone.localize(parser.parse(d["date"])),
-                    "sum": self.convert(response_unit, d["bill_read"]),
+                    "dt": timezone.localize(parser.parse(d["date"])),
+                    "reading": self.convert(response_unit, d["bill_read"]),
                 }
             )
 
         for statistic in statistics:
-            start = statistic["start"]
-            if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:
+            dt = statistic["dt"]
+            if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
                 msg = "Naive timestamp"
                 raise Exception(msg)
-            if start.minute != 0 or start.second != 0 or start.microsecond != 0:
+            if dt.minute != 0 or dt.second != 0 or dt.microsecond != 0:
                 msg = "Invalid timestamp"
                 raise Exception(msg)
 
-        statistics.sort(key=lambda d: d["start"])
+        statistics.sort(key=lambda d: d["dt"])
 
         return statistics
 

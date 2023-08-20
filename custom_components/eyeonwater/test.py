@@ -25,7 +25,7 @@ async def main():
         print(f"meter {meter.meter_uuid} info {meter.meter_info}")
 
         for d in meter.last_historical_data:
-            print(str(d["start"]), d["sum"])
+            print(str(d["dt"]), d["reading"])
 
     await websession.close()
 

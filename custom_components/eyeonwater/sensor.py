@@ -39,12 +39,12 @@ async def get_last_imported_time(hass, meter):
     statistic_id = get_statistics_id(meter)
 
     last_stats = await get_instance(hass).async_add_executor_job(
-        get_last_statistics, hass, 1, statistic_id, True, set(["start", "sum"])
+        get_last_statistics, hass, 1, statistic_id, True, set(["dt", "reading"])
     )
     _LOGGER.warning(f"last_stats {last_stats}")
 
     if last_stats:
-        date = last_stats[statistic_id][0]["start"]
+        date = last_stats[statistic_id][0]["dt"]
         _LOGGER.warning(f"date {date}")
         date = datetime.datetime.fromtimestamp(date)
         _LOGGER.warning(f"date {date}")
@@ -130,7 +130,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
                 )
                 self._last_historical_data = list(
                     filter(
-                        lambda r: r["start"] > self._last_imported_time,
+                        lambda r: r["dt"] > self._last_imported_time,
                         self._last_historical_data,
                     )
                 )
@@ -141,7 +141,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             if self._last_historical_data:
                 self.import_historical_data()
 
-                self._last_imported_time = self._last_historical_data[-1]["start"]
+                self._last_imported_time = self._last_historical_data[-1]["dt"]
 
         self.async_write_ha_state()
 
@@ -170,9 +170,9 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
 
         statistics = [
             StatisticData(
-                start=row["start"],
-                sum=row["sum"],
-                state=row["sum"],
+                start=row["dt"],
+                sum=row["reading"],
+                state=row["reading"],
             )
             for row in self._last_historical_data
         ]

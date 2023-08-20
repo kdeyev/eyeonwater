@@ -1,7 +1,8 @@
 import asyncio
-import datetime
 
 import aiohttp
+
+from .eow import Account, Client
 
 
 async def main():

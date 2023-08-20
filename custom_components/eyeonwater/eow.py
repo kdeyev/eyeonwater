@@ -108,9 +108,22 @@ class Meter:
         self.reading_data = self.meter_info["register_0"]
 
         try:
-            self.last_historical_data = await self.get_historical_datas(
+            historical_data = await self.get_historical_datas(
                 days_to_load=days_to_load, client=client
             )
+            if (
+                historical_data
+                and historical_data[-1]["reading"]
+                > self.last_historical_data[-1]["reading"]
+            ):
+                # Take newer data
+                self.last_historical_data = historical_data
+            elif historical_data[-1]["reading"] == self.last_historical_data[-1][
+                "reading"
+            ] and len(historical_data) > len(self.last_historical_data):
+                # If it the same date - take more data
+                self.last_historical_data = historical_data
+
         except EyeOnWaterResponseIsEmpty:
             self.last_historical_data = []
 
@@ -130,9 +143,6 @@ class Meter:
     @property
     def reading(self):
         """Returns the latest meter reading in gal."""
-        if self.last_historical_data:
-            return self.last_historical_data[-1]["reading"]
-
         reading = self.reading_data["latest_read"]
         if READ_UNITS_FIELD not in reading:
             msg = "Cannot find read units in reading data"

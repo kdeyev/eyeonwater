@@ -31,7 +31,9 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
     _attr_name = None
     _attr_device_class = SensorDeviceClass.WATER
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
+    # We should not specify the state_class for workarounding the #30 issue
+    # _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(self, meter: Meter, coordinator: DataUpdateCoordinator) -> None:
         """Initialize the sensor."""

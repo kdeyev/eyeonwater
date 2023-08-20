@@ -164,6 +164,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             StatisticData(
                 start=row["start"],
                 sum=row["sum"],
+                state=row["sum"],
             )
             for row in self._last_historical_data
         ]

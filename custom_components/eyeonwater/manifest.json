@@ -6,6 +6,8 @@
   "dependencies": ["recorder"],
   "documentation": "https://github.com/kdeyev/eyeonwater",
   "iot_class": "cloud_polling",
-  "requirements": [],
+  "requirements": [
+    "homeassistant-historical-sensor==2.0.0rc1"
+  ],
   "version": "2.0.0"
 }

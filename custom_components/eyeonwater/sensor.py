@@ -2,11 +2,17 @@
 import datetime
 import logging
 
+from homeassistant_historical_sensor import (
+    HistoricalSensor,
+    HistoricalState,
+    PollUpdateMixin,
+)
 import pytz
 
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import (
+    StatisticsRow,
     async_import_statistics,
     get_last_statistics,
 )
@@ -68,7 +74,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(sensors, False)
 
 
-class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
+class EyeOnWaterSensor(PollUpdateMixin, HistoricalSensor, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
     _attr_has_entity_name = True
@@ -82,31 +88,99 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state = None
-        self._available = False
-        self._attr_unique_id = meter.meter_uuid
-        self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
-        )
+        # self._state = None
+        # self._available = False
+        # self._attr_unique_id = meter.meter_uuid
+        # self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        # self._attr_device_info = DeviceInfo(
+        #     identifiers={(DOMAIN, self.meter.meter_uuid)},
+        #     name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+        # )
+
         self._last_historical_data = []
         self._last_imported_time = last_imported_time
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self._available
+        self._attr_has_entity_name = True
+        self._attr_name = DOMAIN
 
-    @property
-    def native_value(self):
-        """Get the latest reading."""
-        return self._state
+        self._attr_unique_id = meter.meter_uuid
+        self._attr_entity_id = meter.meter_uuid
+
+        self._attr_entity_registry_enabled_default = True
+        self._attr_state = None
+
+        # Define whatever you are
+        self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_device_class = SensorDeviceClass.WATER
+
+    # @property
+    # def available(self):
+    #     """Return True if entity is available."""
+    #     return self._available
+
+    # @property
+    # def native_value(self):
+    #     """Get the latest reading."""
+    #     return self._state
 
     @property
     def extra_state_attributes(self):
         """Return the device specific state attributes."""
         return self.meter.attributes["register_0"]
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+
+    async def async_update_historical(self):
+        statistics = [
+            HistoricalState(
+                dt=row["start"],
+                state=row["sum"],
+            )
+            for row in self._last_historical_data
+        ]
+
+        self._attr_historical_states = statistics
+
+    @property
+    def statistic_id(self) -> str:
+        return self.entity_id
+
+    def get_statistic_metadata(self) -> StatisticMetaData:
+        #
+        # Add sum and mean to base statistics metadata
+        # Important: HistoricalSensor.get_statistic_metadata returns an
+        # internal source by default.
+        #
+        meta = super().get_statistic_metadata()
+        meta["has_sum"] = True
+        meta["has_mean"] = True
+
+        return meta
+
+    # @property
+    # def historical_states(self):
+    #     ret = historical_states_from_historical_api_data(
+    #         self.coordinator.data[DATA_ATTR_HISTORICAL_CONSUMPTION]["historical"]
+    #     )
+
+    #     return ret
+
+    async def async_calculate_statistic_data(
+        self,
+        hist_states: list[HistoricalState],
+        *,
+        latest: StatisticsRow | None = None,
+    ) -> list[StatisticData]:
+        statistics = [
+            StatisticData(
+                dt=row["start"],
+                state=row["sum"],
+            )
+            for row in self._last_historical_data
+        ]
+
+        return statistics
 
     @callback
     def _state_update(self):
@@ -137,46 +211,46 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
 
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """Subscribe to updates."""
-        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
+    # async def async_added_to_hass(self):
+    #     """Subscribe to updates."""
+    #     self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
 
-        if self.coordinator.last_update_success:
-            return
+    #     if self.coordinator.last_update_success:
+    #         return
 
-        if last_state := await self.async_get_last_state():
-            self._state = last_state.state
-            self._available = True
+    #     if last_state := await self.async_get_last_state():
+    #         self._state = last_state.state
+    #         self._available = True
 
-    def import_historical_data(self):
-        """Import historical data for today and past N days."""
+    # def import_historical_data(self):
+    #     """Import historical data for today and past N days."""
 
-        if not self._last_historical_data:
-            _LOGGER.warning("There is no new historical data")
-            # Nothing to import
-            return
+    #     if not self._last_historical_data:
+    #         _LOGGER.warning("There is no new historical data")
+    #         # Nothing to import
+    #         return
 
-        _LOGGER.warning(
-            f"{len(self._last_historical_data)} data points will be imported"
-        )
+    #     _LOGGER.warning(
+    #         f"{len(self._last_historical_data)} data points will be imported"
+    #     )
 
-        statistics = [
-            StatisticData(
-                start=row["start"],
-                sum=row["sum"],
-            )
-            for row in self._last_historical_data
-        ]
+    #     statistics = [
+    #         StatisticData(
+    #             start=row["start"],
+    #             sum=row["sum"],
+    #         )
+    #         for row in self._last_historical_data
+    #     ]
 
-        name = f"{WATER_METER_NAME} {self.meter.meter_id}"
-        statistic_id = get_statistics_id(self.meter)
+    #     name = f"{WATER_METER_NAME} {self.meter.meter_id}"
+    #     statistic_id = get_statistics_id(self.meter)
 
-        metadata = StatisticMetaData(
-            has_mean=False,
-            has_sum=True,
-            name=name,
-            source="recorder",
-            statistic_id=statistic_id,
-            unit_of_measurement=self.meter.native_unit_of_measurement,
-        )
-        async_import_statistics(self.hass, metadata, statistics)
+    #     metadata = StatisticMetaData(
+    #         has_mean=False,
+    #         has_sum=True,
+    #         name=name,
+    #         source="recorder",
+    #         statistic_id=statistic_id,
+    #         unit_of_measurement=self.meter.native_unit_of_measurement,
+    #     )
+    #     async_import_statistics(self.hass, metadata, statistics)

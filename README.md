@@ -35,3 +35,25 @@ You should be able to choose your water meter in the Water Consumption
 ![energy-dashboard](https://github.com/kdeyev/eyeonwater/blob/master/img/energy-dashboard.png?raw=true)
 
 Pay attention that EyeOnWater publishes the meter reading once in several hours (even when they accumulate the meter reading once in several minutes). So data may come with a delay of several hours.
+
+
+# Unsupported state class
+
+Please pay attention: If you look at the "Developer Tools -> Statistics", you will see an error message associated with the water sensor:
+```
+The state class '' of this entity is not supported.
+```
+or
+```
+Unsupported state class
+The state class of this entity, is not supported.
+Statistics cannot be generated until this entity has a supported state class.
+
+If this state class was provided by an integration, this is a bug. Please report an issue.
+
+If you have set this state class yourself, please correct it. The different state classes and when to use which can be found in the developer documentation. If the state class has permanently changed, you may want to remove the long term statistics of it from your database.
+
+Do you want to permanently remove the long term statistics of sensor.water_meter_200010108 from your database?
+```
+
+It's a side-effect of the way we prevent the HA from recalculating the sensor statistics. You can find more information [here](https://github.com/kdeyev/eyeonwater/issues/30)

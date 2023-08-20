@@ -111,7 +111,9 @@ class Meter:
             historical_data = await self.get_historical_datas(
                 days_to_load=days_to_load, client=client
             )
-            if (
+            if not self.last_historical_data:
+                self.last_historical_data = historical_data
+            elif (
                 historical_data
                 and historical_data[-1]["reading"]
                 > self.last_historical_data[-1]["reading"]
@@ -193,13 +195,13 @@ class Meter:
         # TODO: identify missing days and request only missing dates.
 
         _LOGGER.info(
-            f"adding historical statistics for {self.meter_uuid} on {date_list}"
+            f"requesting historical statistics for {self.meter_uuid} on {date_list}"
         )
 
         statistics = []
 
         for date in date_list:
-            _LOGGER.debug(
+            _LOGGER.info(
                 f"requesting historical statistics for {self.meter_uuid} on {date}"
             )
             try:

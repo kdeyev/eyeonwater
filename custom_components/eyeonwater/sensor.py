@@ -21,6 +21,7 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+from homeassistant.util import dt as dtutil
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .eow import Meter
@@ -39,16 +40,16 @@ async def get_last_imported_time(hass, meter):
     statistic_id = get_statistics_id(meter)
 
     last_stats = await get_instance(hass).async_add_executor_job(
-        get_last_statistics, hass, 1, statistic_id, True, set(["dt", "reading"])
+        get_last_statistics, hass, 1, statistic_id, True, set(["start", "sum"])
     )
     _LOGGER.debug(f"last_stats", last_stats)
 
     if last_stats:
-        date = last_stats[statistic_id][0]["dt"]
+        date = last_stats[statistic_id][0]["start"]
         _LOGGER.debug("date", date)
         date = datetime.datetime.fromtimestamp(date)
         _LOGGER.debug("date", date)
-        date = pytz.UTC.localize(date)
+        date = dtutil.as_local(date)
         _LOGGER.debug("date", date)
 
         return date
@@ -124,9 +125,9 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             self._state = self.meter.reading
 
             self._last_historical_data = self.meter.last_historical_data.copy()
-            if self._last_imported_time:
+            if self._last_imported_time and self._last_historical_data:
                 _LOGGER.info(
-                    f"_last_imported_time {self._last_imported_time} - self._last_historical_data {self._last_historical_data[-1]['start']}"
+                    f"_last_imported_time {self._last_imported_time} - self._last_historical_data {self._last_historical_data[-1]['dt']}"
                 )
                 self._last_historical_data = list(
                     filter(

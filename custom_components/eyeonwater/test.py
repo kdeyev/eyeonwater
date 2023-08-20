@@ -1,8 +1,7 @@
-import aiohttp
 import asyncio
 import datetime
 
-from eow import Account, Client, Meter
+import aiohttp
 
 
 async def main():
@@ -19,14 +18,13 @@ async def main():
 
     meters = await account.fetch_meters(client=client)
     print(f"{len(meters)} meters found")
-    for meter in meters:     
+    for meter in meters:
         await meter.read_meter(client=client)
         print(f"meter {meter.meter_uuid} shows {meter.reading}")
         print(f"meter {meter.meter_uuid} info {meter.meter_info}")
 
         for d in meter.last_historical_data:
             print(str(d["start"]), d["sum"])
-
 
     await websession.close()
 

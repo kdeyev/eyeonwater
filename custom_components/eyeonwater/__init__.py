@@ -33,7 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await eye_on_water_data.client.authenticate()
     except EyeOnWaterAuthError:
-        _LOGGER.error("Username or password was not accepted")
+        _LOGGER.exception("Username or password was not accepted")
         return False
     except asyncio.TimeoutError as error:
         raise ConfigEntryNotReady from error
@@ -66,7 +66,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_method=async_update_data,
         update_interval=SCAN_INTERVAL,
         request_refresh_debouncer=debounce.Debouncer(
-            hass, _LOGGER, cooldown=DEBOUNCE_COOLDOWN, immediate=True
+            hass,
+            _LOGGER,
+            cooldown=DEBOUNCE_COOLDOWN,
+            immediate=True,
         ),
     )
 

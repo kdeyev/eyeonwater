@@ -2,15 +2,17 @@
 from __future__ import annotations
 
 import datetime
-from dateutil import parser
-import pytz
 import json
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 import urllib.parse
 
-from aiohttp import ClientSession
+from dateutil import parser
+import pytz
 from tenacity import retry, retry_if_exception_type
+
+if TYPE_CHECKING:
+    from aiohttp import ClientSession
 
 AUTH_ENDPOINT = "account/signin"
 DASHBOARD_ENDPOINT = "/dashboard/"
@@ -99,16 +101,18 @@ class Meter:
         data = json.loads(data)
         meters = data["elastic_results"]["hits"]["hits"]
         if len(meters) > 1:
-            raise Exception("More than one meter reading found")
+            msg = "More than one meter reading found"
+            raise Exception(msg)
 
         self.meter_info = meters[0]["_source"]
         self.reading_data = self.meter_info["register_0"]
 
         try:
-            self.last_historical_data = await self.get_historical_datas(days_to_load=days_to_load, client=client)
+            self.last_historical_data = await self.get_historical_datas(
+                days_to_load=days_to_load, client=client
+            )
         except EyeOnWaterResponseIsEmpty:
             self.last_historical_data = []
-
 
     @property
     def attributes(self):
@@ -119,7 +123,8 @@ class Meter:
         """Define flags."""
         flags = self.reading_data["flags"]
         if flag not in flags:
-            raise EyeOnWaterAPIError(f"Cannot find {flag} field")
+            msg = f"Cannot find {flag} field"
+            raise EyeOnWaterAPIError(msg)
         return flags[flag]
 
     @property
@@ -130,7 +135,8 @@ class Meter:
 
         reading = self.reading_data["latest_read"]
         if READ_UNITS_FIELD not in reading:
-            raise EyeOnWaterAPIError("Cannot find read units in reading data")
+            msg = "Cannot find read units in reading data"
+            raise EyeOnWaterAPIError(msg)
         read_unit = reading[READ_UNITS_FIELD]
         read_unit_upper = read_unit.upper()
         amount = float(reading[READ_AMOUNT_FIELD])
@@ -163,7 +169,7 @@ class Meter:
                     f"Unsupported measurement unit: {read_unit_upper}"
                 )
         return amount
-    
+
     async def get_historical_datas(self, days_to_load: int, client: Client):
         """Retrieve historical data for today and past N days."""
 
@@ -198,7 +204,7 @@ class Meter:
             units = "CM"
         else:
             units = self.native_unit_of_measurement.upper()
-        
+
         query = {
             "params": {
                 "source": "barnacle",
@@ -226,7 +232,6 @@ class Meter:
 
         timezone = data["hit"]["meter.timezone"][0]
         timezone = pytz.timezone(timezone)
-        # tzinfos = {data["timezone"] : timezone }
 
         data = data["timeseries"][key]["series"]
         statistics = []
@@ -242,9 +247,11 @@ class Meter:
         for statistic in statistics:
             start = statistic["start"]
             if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:
-                raise Exception("Naive timestamp")
+                msg = "Naive timestamp"
+                raise Exception(msg)
             if start.minute != 0 or start.second != 0 or start.microsecond != 0:
-                raise Exception("Invalid timestamp")
+                msg = "Invalid timestamp"
+                raise Exception(msg)
 
         statistics.sort(key=lambda d: d["start"])
 
@@ -279,8 +286,9 @@ class Account:
                 meter_infos = client.extract_json(line, Meter.info_prefix)
                 for meter_info in meter_infos:
                     if METER_UUID_FIELD not in meter_info:
+                        msg = f"Cannot find {METER_UUID_FIELD} field"
                         raise EyeOnWaterAPIError(
-                            f"Cannot find {METER_UUID_FIELD} field"
+                            msg,
                         )
 
                     meter_uuid = meter_info[METER_UUID_FIELD]
@@ -329,7 +337,6 @@ class Client:
             f"{self.base_url}{path}",
             cookies=self.cookies,
             **kwargs,
-            # ssl=self.ssl_context,
         )
         if resp.status == 403:
             _LOGGER.error("Reached ratelimit")
@@ -348,7 +355,7 @@ class Client:
         if resp.status != 200:
             _LOGGER.error(f"Request failed: {resp.status} {data}")
             raise EyeOnWaterException(f"Request failed: {resp.status} {data}")
-    
+
         return data
 
     async def authenticate(self):
@@ -367,13 +374,16 @@ class Client:
 
             if "dashboard" not in str(resp.url):
                 _LOGGER.warning("METER NOT FOUND!")
-                raise EyeOnWaterAuthError("No meter found")
+                msg = "No meter found"
+                raise EyeOnWaterAuthError(msg)
 
             if resp.status == 400:
-                raise EyeOnWaterAuthError("Username or password was not accepted")
+                msg = f"Username or password was not accepted by {self.base_url}"
+                raise EyeOnWaterAuthError(msg)
 
             if resp.status == 403:
-                raise EyeOnWaterRateLimitError("Reached ratelimit")
+                msg = "Reached ratelimit"
+                raise EyeOnWaterRateLimitError(msg)
 
             self.cookies = resp.cookies
             self._update_token_expiration()

@@ -1,6 +1,5 @@
 """Config flow for EyeOnWater integration."""
 import asyncio
-import contextlib
 import logging
 from typing import Any
 
@@ -24,35 +23,32 @@ DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
-    }
+    },
 )
 
 
 def create_account_from_config(
-    hass: core.HomeAssistant, data: dict[str, Any]
+    hass: core.HomeAssistant,
+    data: dict[str, Any],
 ) -> Account:
     """Create account login from config."""
     CountryCode = hass.config.country
-    if CountryCode == "US":
-        eow_hostname = CONF_EOW_HOSTNAME_COM
-    elif CountryCode == "CA":
+    if CountryCode == "CA":
         eow_hostname = CONF_EOW_HOSTNAME_CA
     else:
-        raise CannotConnect(
-            f"Unsupported country ({CountryCode}) setup in HomeAssistant."
-        )
+        # There are some users from Europe that use .com domain
+        eow_hostname = CONF_EOW_HOSTNAME_COM
 
     metric_measurement_system = hass.config.units is METRIC_SYSTEM
     username = data[CONF_USERNAME]
     password = data[CONF_PASSWORD]
 
-    account = Account(
+    return Account(
         eow_hostname=eow_hostname,
         username=username,
         password=password,
         metric_measurement_system=metric_measurement_system,
     )
-    return account
 
 
 async def validate_input(hass: core.HomeAssistant, data):
@@ -82,7 +78,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
-
         errors = {}
         if user_input is not None:
             try:
@@ -103,7 +98,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="user",
+            data_schema=DATA_SCHEMA,
+            errors=errors,
         )
 
 

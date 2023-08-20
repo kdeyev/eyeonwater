@@ -198,19 +198,10 @@ class Meter:
             response_unit = d["display_unit"].upper()
             statistics.append(
                 {
-                    "start": timezone.localize(parser.parse(d["date"])),
-                    "sum": self.convert(response_unit, d["bill_read"]),
+                    "dt": timezone.localize(parser.parse(d["date"])),
+                    "reading": self.convert(response_unit, d["bill_read"]),
                 },
             )
-
-        for statistic in statistics:
-            start = statistic["start"]
-            if start.tzinfo is None or start.tzinfo.utcoffset(start) is None:
-                msg = "Naive timestamp"
-                raise Exception(msg)
-            if start.minute != 0 or start.second != 0 or start.microsecond != 0:
-                msg = "Invalid timestamp"
-                raise Exception(msg)
 
         return statistics
 

@@ -33,7 +33,7 @@ async def main():
             date=today,
         )
         for d in data:
-            print(str(d["start"]), d["sum"])
+            print(str(d["dt"]), d["reading"])
 
         await meter.read_meter(client=client)
         print(f"meter {meter.meter_uuid} shows {meter.reading}")

@@ -41,15 +41,15 @@ async def get_last_imported_time(hass, meter):
     last_stats = await get_instance(hass).async_add_executor_job(
         get_last_statistics, hass, 1, statistic_id, True, set(["dt", "reading"])
     )
-    _LOGGER.warning(f"last_stats {last_stats}")
+    _LOGGER.debug(f"last_stats", last_stats)
 
     if last_stats:
         date = last_stats[statistic_id][0]["dt"]
-        _LOGGER.warning(f"date {date}")
+        _LOGGER.debug("date", date)
         date = datetime.datetime.fromtimestamp(date)
-        _LOGGER.warning(f"date {date}")
+        _LOGGER.debug("date", date)
         date = pytz.UTC.localize(date)
-        _LOGGER.warning(f"date {date}")
+        _LOGGER.debug("date", date)
 
         return date
     return None
@@ -125,7 +125,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
 
             self._last_historical_data = self.meter.last_historical_data.copy()
             if self._last_imported_time:
-                _LOGGER.warning(
+                _LOGGER.info(
                     f"_last_imported_time {self._last_imported_time} - self._last_historical_data {self._last_historical_data[-1]['start']}"
                 )
                 self._last_historical_data = list(
@@ -134,7 +134,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
                         self._last_historical_data,
                     )
                 )
-                _LOGGER.warning(
+                _LOGGER.info(
                     f"{len(self._last_historical_data)} data points will be imported"
                 )
 
@@ -160,13 +160,11 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Import historical data for today and past N days."""
 
         if not self._last_historical_data:
-            _LOGGER.warning("There is no new historical data")
+            _LOGGER.info("There is no new historical data")
             # Nothing to import
             return
 
-        _LOGGER.warning(
-            f"{len(self._last_historical_data)} data points will be imported"
-        )
+        _LOGGER.info(f"{len(self._last_historical_data)} data points will be imported")
 
         statistics = [
             StatisticData(

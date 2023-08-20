@@ -190,6 +190,8 @@ class Meter:
         date_list = [today - datetime.timedelta(days=x) for x in range(0, days_to_load)]
         date_list.reverse()
 
+        # TODO: identify missing days and request only missing dates.
+
         _LOGGER.info(
             f"adding historical statistics for {self.meter_uuid} on {date_list}"
         )

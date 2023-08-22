@@ -27,17 +27,24 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
+def get_hostname_for_country(hass) -> str:
+    """Return EOW hostname based on HA country."""
+
+    CountryCode = hass.config.country
+    if CountryCode == "CA":
+        return CONF_EOW_HOSTNAME_CA
+    else:
+        # There are some users from Europe that use .com domain
+        return CONF_EOW_HOSTNAME_COM
+
+
 def create_account_from_config(
     hass: core.HomeAssistant,
     data: dict[str, Any],
 ) -> Account:
     """Create account login from config."""
-    CountryCode = hass.config.country
-    if CountryCode == "CA":
-        eow_hostname = CONF_EOW_HOSTNAME_CA
-    else:
-        # There are some users from Europe that use .com domain
-        eow_hostname = CONF_EOW_HOSTNAME_COM
+
+    eow_hostname = get_hostname_for_country(hass)
 
     metric_measurement_system = hass.config.units is METRIC_SYSTEM
     username = data[CONF_USERNAME]

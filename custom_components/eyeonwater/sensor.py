@@ -76,13 +76,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     _attr_name = None
     _attr_device_class = SensorDeviceClass.WATER
 
-    # We DON'T opt-in for statistics (don't set state_class). Why?
-    #
-    # Those statistics are generated from a real sensor, this sensor, but we don't
-    # want that hass try to do anything with those statistics because we
-    # (HistoricalSensor) handle generation and importing
-    #
-
+    # We should not specify the state_class for workarounding the #30 issue
     # _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(

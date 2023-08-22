@@ -38,28 +38,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except asyncio.TimeoutError as error:
         raise ConfigEntryNotReady from error
 
-    # Fetch actual meter_info for all meters
     try:
         await eye_on_water_data.setup()
-        await eye_on_water_data.read_meters()
     except Exception as e:
-        message = f"Reading meters failed: {e}"
-        _LOGGER.exception(message)
-        raise
+        _LOGGER.error(f"Fetching meters failed: {e}")
+        raise e
 
+    # Fetch actual meter_info for all meters
     try:
-        await eye_on_water_data.import_historical_data(days_to_load=30)
+        await eye_on_water_data.read_meters(days_to_load=30)
     except Exception as e:
-        message = f"Loading historical data failed: {e}"
-        _LOGGER.exception(message)
+        _LOGGER.error(f"Reading meters failed: {e}")
+        raise e
 
     for meter in eye_on_water_data.meters:
         _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
-        await eye_on_water_data.read_meters()
-        await eye_on_water_data.import_historical_data()
+        await eye_on_water_data.read_meters(days_to_load=3)
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(
@@ -82,9 +79,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SMART_METER: eye_on_water_data,
     }
 
-    asyncio.create_task(coordinator.async_refresh())
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    watch_task = asyncio.create_task(coordinator.async_refresh())
 
+    _LOGGER.debug("Start setup platforms")
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _LOGGER.debug("End setup platforms")
     return True
 
 

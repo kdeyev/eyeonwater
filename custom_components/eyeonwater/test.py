@@ -1,7 +1,6 @@
 import asyncio
 
 import aiohttp
-
 from pyonwater import Account, Client
 
 

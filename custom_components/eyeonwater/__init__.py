@@ -2,6 +2,8 @@
 import asyncio
 import logging
 
+from pyonwater import EyeOnWaterAuthError
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -18,7 +20,6 @@ from .const import (
     SCAN_INTERVAL,
 )
 from .coordinator import EyeOnWaterData
-from pyonwater import EyeOnWaterAuthError
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())

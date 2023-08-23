@@ -18,7 +18,7 @@ from .const import (
     SCAN_INTERVAL,
 )
 from .coordinator import EyeOnWaterData
-from .eow import EyeOnWaterAuthError
+from pyonwater import EyeOnWaterAuthError
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())

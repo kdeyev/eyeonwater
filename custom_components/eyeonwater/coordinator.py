@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .config_flow import create_account_from_config
 from .const import WATER_METER_NAME
-from .eow import (
+from pyonwater import (
     Account,
     Client,
     EyeOnWaterAPIError,

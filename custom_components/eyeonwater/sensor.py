@@ -24,7 +24,7 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.util import dt as dtutil
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
-from .eow import Meter
+from pyonwater import Meter
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())

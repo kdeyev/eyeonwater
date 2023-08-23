@@ -2,7 +2,7 @@ import asyncio
 
 import aiohttp
 
-from .eow import Account, Client
+from pyonwater import Account, Client
 
 
 async def main():

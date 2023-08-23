@@ -3,6 +3,15 @@ import datetime
 import logging
 from typing import List
 
+from pyonwater import (
+    Account,
+    Client,
+    EyeOnWaterAPIError,
+    EyeOnWaterAuthError,
+    EyeOnWaterResponseIsEmpty,
+    Meter,
+)
+
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.config_entries import ConfigEntry
@@ -12,14 +21,6 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .config_flow import create_account_from_config
 from .const import WATER_METER_NAME
-from .eow import (
-    Account,
-    Client,
-    EyeOnWaterAPIError,
-    EyeOnWaterAuthError,
-    EyeOnWaterResponseIsEmpty,
-    Meter,
-)
 
 _LOGGER = logging.getLogger(__name__)
 

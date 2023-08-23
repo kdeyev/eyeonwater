@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from aiohttp import ClientError
+from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
@@ -12,7 +13,6 @@ from homeassistant.helpers import aiohttp_client
 from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from .const import DOMAIN
-from .eow import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 CONF_EOW_HOSTNAME_COM = "eyeonwater.com"
 CONF_EOW_HOSTNAME_CA = "eyeonwater.ca"

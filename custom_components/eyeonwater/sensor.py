@@ -2,6 +2,7 @@
 import datetime
 import logging
 
+from pyonwater import Meter
 import pytz
 
 from homeassistant.components.recorder import get_instance
@@ -24,7 +25,6 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.util import dt as dtutil
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
-from .eow import Meter
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())

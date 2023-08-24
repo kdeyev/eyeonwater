@@ -18,36 +18,43 @@ from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
 
 FLAG_SENSORS = [
     BinarySensorEntityDescription(
-        key="Leak",
+        name="Leak",
+        key="leak`",
         translation_key="leak",
         device_class=BinarySensorDeviceClass.MOISTURE,
     ),
     BinarySensorEntityDescription(
-        key="EmptyPipe",
+        name="EmptyPipe",
+        key="empty_pipe",
         translation_key="emptypipe",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     BinarySensorEntityDescription(
-        key="Tamper",
+        name="Tamper",
+        key="tamper",
         translation_key="tamper",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
     BinarySensorEntityDescription(
-        key="CoverRemoved",
+        name="CoverRemoved",
+        key="cover_removed",
         translation_key="coverremoved",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
     BinarySensorEntityDescription(
-        key="ReverseFlow",
+        name="ReverseFlow",
+        key="reverse_flow",
         translation_key="reverseflow",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     BinarySensorEntityDescription(
-        key="LowBattery",
+        name="LowBattery",
+        key="low_battery",
         device_class=BinarySensorDeviceClass.BATTERY,
     ),
     BinarySensorEntityDescription(
-        key="BatteryCharging",
+        name="BatteryCharging",
+        key="battery_charging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
     ),
 ]
@@ -83,19 +90,22 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self.meter = meter
         self._state = False
         self._available = False
-        self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"{description.name}_{self.meter.meter_uuid}"
         self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"Water Meter {self.meter.meter_id}",
         )
 
+    def get_flag(self, key: str) -> bool:
+        return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
+
     @callback
     def _state_update(self):
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
-            self._state = self.meter.get_flags(self.entity_description.key)
+            self._state = self.get_flags(self.entity_description.key)
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):

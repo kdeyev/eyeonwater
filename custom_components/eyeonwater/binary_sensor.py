@@ -114,7 +114,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
             name=f"Water Meter {self.meter.meter_id}",
         )
 
-    def get_flag(self, key: str) -> bool:
+    def get_flag(self) -> bool:
         return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
 
     @callback
@@ -122,7 +122,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
-            self._state = self.get_flags(self.entity_description.key)
+            self._state = self.get_flag()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):

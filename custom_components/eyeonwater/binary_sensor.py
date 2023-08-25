@@ -1,6 +1,7 @@
 """Support for EyeOnWater binary sensors."""
-from pyonwater import Meter
 from dataclasses import dataclass
+
+from pyonwater import Meter
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -16,6 +17,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
+
 
 @dataclass
 class Description:
@@ -97,7 +99,11 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self.entity_description = BinarySensorEntityDescription(key=description.key, device_class=description.device_class, translation_key=description.translation_key)
+        self.entity_description = BinarySensorEntityDescription(
+            key=description.key,
+            device_class=description.device_class,
+            translation_key=description.translation_key,
+        )
         self.meter = meter
         self._state = False
         self._available = False

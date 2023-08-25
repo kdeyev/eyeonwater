@@ -1,5 +1,6 @@
 """Support for EyeOnWater binary sensors."""
 from pyonwater import Meter
+from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -16,45 +17,55 @@ from homeassistant.helpers.update_coordinator import (
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
 
+@dataclass
+class Description:
+    name: str
+    key: str
+    translation_key: str
+    device_class: BinarySensorDeviceClass
+
+
 FLAG_SENSORS = [
-    BinarySensorEntityDescription(
+    Description(
         name="Leak",
         key="leak`",
         translation_key="leak",
         device_class=BinarySensorDeviceClass.MOISTURE,
     ),
-    BinarySensorEntityDescription(
+    Description(
         name="EmptyPipe",
         key="empty_pipe",
         translation_key="emptypipe",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
-    BinarySensorEntityDescription(
+    Description(
         name="Tamper",
         key="tamper",
         translation_key="tamper",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
-    BinarySensorEntityDescription(
+    Description(
         name="CoverRemoved",
         key="cover_removed",
         translation_key="coverremoved",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
-    BinarySensorEntityDescription(
+    Description(
         name="ReverseFlow",
         key="reverse_flow",
         translation_key="reverseflow",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
-    BinarySensorEntityDescription(
+    Description(
         name="LowBattery",
         key="low_battery",
+        translation_key="lowbattery",
         device_class=BinarySensorDeviceClass.BATTERY,
     ),
-    BinarySensorEntityDescription(
+    Description(
         name="BatteryCharging",
         key="battery_charging",
+        translation_key="batterycharging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
     ),
 ]
@@ -82,11 +93,11 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self,
         meter: Meter,
         coordinator: DataUpdateCoordinator,
-        description: BinarySensorEntityDescription,
+        description: Description,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self.entity_description = description
+        self.entity_description = BinarySensorEntityDescription(key=description.key, device_class=description.device_class, translation_key=description.translation_key)
         self.meter = meter
         self._state = False
         self._available = False

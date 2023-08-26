@@ -30,7 +30,7 @@ class Description:
 FLAG_SENSORS = [
     Description(
         name="Leak",
-        key="leak`",
+        key="leak",
         translation_key="leak",
         device_class=BinarySensorDeviceClass.MOISTURE,
     ),

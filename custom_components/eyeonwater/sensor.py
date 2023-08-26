@@ -1,8 +1,9 @@
 """Support for EyeOnWater sensors."""
 import datetime
 import logging
+from typing import Any
 
-from pyonwater import Meter
+from pyonwater import DataPoint, Meter
 import pytz
 
 from homeassistant.components.recorder import get_instance
@@ -78,7 +79,10 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.TOTAL
 
     def __init__(
-        self, meter: Meter, last_imported_time, coordinator: DataUpdateCoordinator
+        self,
+        meter: Meter,
+        last_imported_time: datetime.datetime,
+        coordinator: DataUpdateCoordinator,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -91,7 +95,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
         )
-        self._last_historical_data = []
+        self._last_historical_data: list[DataPoint] = []
         self._last_imported_time = last_imported_time
 
     @property
@@ -105,9 +109,9 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         return self._state
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return the device specific state attributes."""
-        return self.meter.attributes["register_0"]
+        return self.meter.meter_info.reading.dict()
 
     @callback
     def _state_update(self):
@@ -119,11 +123,11 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             self._last_historical_data = self.meter.last_historical_data.copy()
             if self._last_imported_time and self._last_historical_data:
                 _LOGGER.info(
-                    f"_last_imported_time {self._last_imported_time} - self._last_historical_data {self._last_historical_data[-1]['dt']}"
+                    f"_last_imported_time {self._last_imported_time} - self._last_historical_data {self._last_historical_data[-1].dt}"
                 )
                 self._last_historical_data = list(
                     filter(
-                        lambda r: r["dt"] > self._last_imported_time,
+                        lambda r: r.dt > self._last_imported_time,
                         self._last_historical_data,
                     )
                 )
@@ -134,7 +138,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             if self._last_historical_data:
                 self.import_historical_data()
 
-                self._last_imported_time = self._last_historical_data[-1]["dt"]
+                self._last_imported_time = self._last_historical_data[-1].dt
 
         self.async_write_ha_state()
 
@@ -161,9 +165,9 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
 
         statistics = [
             StatisticData(
-                start=row["dt"],
-                sum=row["reading"],
-                state=row["reading"],
+                start=row.dt,
+                sum=row.reading,
+                state=row.reading,
             )
             for row in self._last_historical_data
         ]

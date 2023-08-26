@@ -32,7 +32,7 @@ _LOGGER.addHandler(logging.StreamHandler())
 
 
 def get_statistics_id(meter: Meter) -> str:
-    return f"sensor.water_meter_{meter.meter_id}"
+    return f"sensor.water_meter_{meter.meter_id.lower()}"
 
 
 async def get_last_imported_time(hass, meter):

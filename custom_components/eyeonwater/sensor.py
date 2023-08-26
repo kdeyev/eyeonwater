@@ -31,7 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-def get_statistics_id(meter) -> str:
+def get_statistics_id(meter: Meter) -> str:
     return f"sensor.water_meter_{meter.meter_id.lower()}"
 
 

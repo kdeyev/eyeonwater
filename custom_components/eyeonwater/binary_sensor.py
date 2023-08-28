@@ -21,7 +21,6 @@ from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
 
 @dataclass
 class Description:
-    name: str
     key: str
     translation_key: str
     device_class: BinarySensorDeviceClass

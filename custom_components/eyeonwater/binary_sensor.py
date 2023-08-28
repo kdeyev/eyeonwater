@@ -22,8 +22,8 @@ from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 @dataclass
 class Description:
     key: str
-    translation_key: str | None = None
     device_class: BinarySensorDeviceClass
+    translation_key: str | None = None
 
 
 FLAG_SENSORS = [
@@ -102,6 +102,10 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            model=self.meter.meter_info.reading.model,
+            manufacturer=self.meter.meter_info.reading.customer_name,
+            hw_version=self.meter.meter_info.reading.hardware_version,
+            sw_version=self.meter.meter_info.reading.firmware_version,
         )
 
     def get_flag(self) -> bool:

@@ -21,6 +21,8 @@ from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 
 @dataclass
 class Description:
+    """Binary sensor description."""
+
     key: str
     device_class: BinarySensorDeviceClass
     translation_key: str | None = None

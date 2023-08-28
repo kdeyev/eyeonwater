@@ -1,11 +1,18 @@
 """EyeOnWater coordinator."""
 import logging
 
+from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
+
+from .sensor import (
+    async_import_statistics,
+    convert_statistic_data,
+    get_statistic_metadata,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,3 +47,15 @@ class EyeOnWaterData:
             except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
                 raise UpdateFailed(error) from error
         return self.meters
+
+    async def import_historical_data(self, days: int):
+        """Import historical data."""
+        for meter in self.meters:
+            data = await meter.reader.read_historical_data(
+                client=self.client,
+                days_to_load=days,
+            )
+            _LOGGER.info("%i data points will be imported", len(data))
+            statistics = convert_statistic_data(data)
+            metadata = get_statistic_metadata(meter)
+            async_import_statistics(self.hass, metadata, statistics)

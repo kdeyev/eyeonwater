@@ -96,6 +96,10 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            model=self.meter.meter_info.reading.model,
+            manufacturer=self.meter.meter_info.reading.customer_name,
+            hw_version=self.meter.meter_info.reading.hardware_version,
+            sw_version=self.meter.meter_info.reading.firmware_version,
         )
         self._last_historical_data: list[DataPoint] = []
         self._last_imported_time = last_imported_time

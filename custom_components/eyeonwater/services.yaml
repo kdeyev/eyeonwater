@@ -1,13 +1,7 @@
 import_historical_data:
   description: Import historical data
   fields:
-    # entity_id:
-    #   description: Water meter
-    #   example: "switch.backyard_zone"
     days:
       description: Number of deys of history to load
       required: true
       example: 365
-      selector:
-        number:
-          min: 0

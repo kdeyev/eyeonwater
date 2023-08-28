@@ -22,7 +22,7 @@ from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 @dataclass
 class Description:
     key: str
-    translation_key: str
+    translation_key: str | None = None
     device_class: BinarySensorDeviceClass
 
 

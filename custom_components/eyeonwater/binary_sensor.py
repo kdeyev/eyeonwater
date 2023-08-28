@@ -29,45 +29,36 @@ class Description:
 
 FLAG_SENSORS = [
     Description(
-        name="Leak",
         key="leak",
         translation_key="leak",
         device_class=BinarySensorDeviceClass.MOISTURE,
     ),
     Description(
-        name="EmptyPipe",
         key="empty_pipe",
         translation_key="emptypipe",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     Description(
-        name="Tamper",
         key="tamper",
         translation_key="tamper",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
     Description(
-        name="CoverRemoved",
         key="cover_removed",
         translation_key="coverremoved",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
     Description(
-        name="ReverseFlow",
         key="reverse_flow",
         translation_key="reverseflow",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     Description(
-        name="LowBattery",
         key="low_battery",
-        translation_key="lowbattery",
         device_class=BinarySensorDeviceClass.BATTERY,
     ),
     Description(
-        name="BatteryCharging",
         key="battery_charging",
-        translation_key="batterycharging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
     ),
 ]
@@ -107,7 +98,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self.meter = meter
         self._state = False
         self._available = False
-        self._attr_unique_id = f"{description.name}_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
         self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},

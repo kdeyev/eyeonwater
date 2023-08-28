@@ -1,26 +1,11 @@
 """EyeOnWater coordinator."""
-import datetime
 import logging
-from typing import List
 
-from pyonwater import (
-    Account,
-    Client,
-    EyeOnWaterAPIError,
-    EyeOnWaterAuthError,
-    EyeOnWaterResponseIsEmpty,
-    Meter,
-)
-
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
-
-from .config_flow import create_account_from_config
-from .const import WATER_METER_NAME
+from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +24,7 @@ class EyeOnWaterData:
         self.account = account
         websession = aiohttp_client.async_get_clientsession(hass)
         self.client = Client(websession, account)
-        self.meters: list = []
+        self.meters: list[Meter] = []
         self.hass = hass
 
     async def setup(self):

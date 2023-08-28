@@ -98,19 +98,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_add_entities(sensors, update_before_add=False)
 
-    # async def async_service_handler(service):
-
-    #         key: value for key, value in service.data.items() if key != ATTR_ENTITY_ID
-    #     if entity_ids:
-
-    #     for entity in target:
-    #         if not hasattr(entity, method_name):
-
-    # hass.services.async_register(
-    #     DOMAIN,
-    #     IMPORT_HISTORICAL_DATA_SERVICE_NAME,
-    #     async_service_handler,
-
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""

@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
+from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 
 
 @dataclass
@@ -101,7 +101,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=f"Water Meter {self.meter.meter_id}",
+            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
         )
 
     def get_flag(self) -> bool:

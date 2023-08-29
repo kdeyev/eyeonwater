@@ -12,6 +12,7 @@ from homeassistant.components.recorder.statistics import (
     get_last_statistics,
 )
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
@@ -95,6 +96,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for meter in meters:
         last_imported_time = await get_last_imported_time(hass=hass, meter=meter)
         sensors.append(EyeOnWaterSensor(meter, last_imported_time, coordinator))
+        sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
 
@@ -210,3 +212,34 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         statistics = convert_statistic_data(data)
         metadata = get_statistic_metadata(self.meter)
         async_import_statistics(self.hass, metadata, statistics)
+
+
+class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
+    """Representation of an EyeOnWater temperature sensor."""
+
+    _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement=UnitOfTemperature.CELSIUS
+
+    def __init__(
+        self,
+        meter: Meter,
+        coordinator: DataUpdateCoordinator,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self.meter = meter
+        self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self.meter.meter_uuid)},
+            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            model=self.meter.meter_info.reading.model,
+            manufacturer=self.meter.meter_info.reading.customer_name,
+            hw_version=self.meter.meter_info.reading.hardware_version,
+            sw_version=self.meter.meter_info.reading.firmware_version,
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Get native value."""
+        return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min

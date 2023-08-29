@@ -29,7 +29,6 @@ DATA_SCHEMA = vol.Schema(
 
 def get_hostname_for_country(hass) -> str:
     """Return EOW hostname based on HA country."""
-
     CountryCode = hass.config.country
     if CountryCode == "CA":
         return CONF_EOW_HOSTNAME_CA
@@ -43,7 +42,6 @@ def create_account_from_config(
     data: dict[str, Any],
 ) -> Account:
     """Create account login from config."""
-
     eow_hostname = get_hostname_for_country(hass)
 
     metric_measurement_system = hass.config.units is METRIC_SYSTEM

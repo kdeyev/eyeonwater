@@ -2,16 +2,16 @@
 
 1. Follow [instruction](https://hacs.xyz/docs/faq/custom_repositories/) for adding a custom git repository to your HA.
 
-Add `https://github.com/kdeyev/eyeonwater` as Repository and select the "Integration" category.
+Add `https://github.com/kdeyev/eyeonwater` as Repository and select the `Integration` category.
 
 ![add-repository](https://github.com/kdeyev/eyeonwater/blob/master/img/add-repository.png?raw=true)
 
 2. Add EyeOnWater integration following [HACS instructions](https://github.com/hacs/integration)
 
-Follow the configuration dialog:
-- Choose EyeOnWater hostname (choose eyeonwater.com unless you are in Canada).
-- Choose the measurement system you prefer to use. "Imperial" will create a water sensor counting gallons, "Metric" will create a water sensor counting cubic meters.
-- Use your username and password, which you use to log in on eyeonwater.com
+Follow the configuration dialog and use your username and password, which you use to log in on eyeonwater.
+Pay attention to that integration uses some of your HA configurations:
+- `Country`` is used for identification if `eyeonwater.ca` should be used.
+- `Unit System` is used for switching between Metric and US customary measurement systems
 
 ![configuration](https://github.com/kdeyev/eyeonwater/blob/master/img/configuration.png?raw=true)
 
@@ -23,7 +23,7 @@ Follow the configuration dialog:
 
 ![watermeter-graph](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter-graph.png?raw=true)
 
-4. Got to Setting->Dashboards->Energy configuration.
+4. Got to `Settings`->`Dashboards`->`Energy` configuration.
 
 You should be able to choose your water meter in the Water Consumption
 
@@ -36,10 +36,18 @@ You should be able to choose your water meter in the Water Consumption
 
 Pay attention that EyeOnWater publishes the meter reading once in several hours (even when they accumulate the meter reading once in several minutes). So data may come with a delay of several hours.
 
+# Import historical data
+The integration allows to import of historical water data usage after it was installed.
+- Go to `Developer Tools` -> Servies`.
+- Enter the `EyeOnWater: import_historical_data` service name.
+- Choose how many days of historical data you want to import.
+- Pay attention that the import may take some time.
+![import-historical-data](https://github.com/kdeyev/eyeonwater/blob/master/img/import-historical-data.png?raw=true)
+
 
 # Unsupported state class
 
-Please pay attention: If you look at the "Developer Tools -> Statistics", you will see an error message associated with the water sensor:
+Please pay attention: If you look at the `Developer Tools` -> `Statistics`, you will see an error message associated with the water sensor:
 ```
 The state class '' of this entity is not supported.
 ```

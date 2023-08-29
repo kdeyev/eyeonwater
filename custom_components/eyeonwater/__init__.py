@@ -17,6 +17,9 @@ from .const import (
     DATA_SMART_METER,
     DEBOUNCE_COOLDOWN,
     DOMAIN,
+    IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,
+    IMPORT_HISTORICAL_DATA_DAYS_NAME,
+    IMPORT_HISTORICAL_DATA_SERVICE_NAME,
     SCAN_INTERVAL,
 )
 from .coordinator import EyeOnWaterData
@@ -41,16 +44,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await eye_on_water_data.setup()
-    except Exception as e:
-        _LOGGER.error(f"Fetching meters failed: {e}")
-        raise e
+    except Exception:
+        _LOGGER.exception("Fetching meters failed")
+        raise
 
     # Fetch actual meter_info for all meters
     try:
         await eye_on_water_data.read_meters(days_to_load=30)
-    except Exception as e:
-        _LOGGER.error(f"Reading meters failed: {e}")
-        raise e
+    except Exception:
+        _LOGGER.exception("Reading meters failed")
+        raise
 
     for meter in eye_on_water_data.meters:
         _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)
@@ -80,11 +83,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SMART_METER: eye_on_water_data,
     }
 
-    watch_task = asyncio.create_task(coordinator.async_refresh())
+    _ = asyncio.create_task(coordinator.async_refresh())
 
     _LOGGER.debug("Start setup platforms")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _LOGGER.debug("End setup platforms")
+
+    async def async_service_handler(call):
+        days = call.data.get(
+            IMPORT_HISTORICAL_DATA_DAYS_NAME,
+            IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,
+        )
+        await eye_on_water_data.import_historical_data(days)
+
+    hass.services.async_register(
+        DOMAIN,
+        IMPORT_HISTORICAL_DATA_SERVICE_NAME,
+        async_service_handler,
+    )
+
     return True
 
 

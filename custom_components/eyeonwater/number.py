@@ -8,6 +8,7 @@ from homeassistant.components.number import (
     NumberEntity,
     NumberEntityDescription,
 )
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -49,7 +50,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(sensors, False)
 
 
-class EyeOnWaterNumberSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
+class EyeOnWaterNumberSensor(CoordinatorEntity, RestoreEntity, NumberEntity):
     """Representation of an EyeOnWater number sensor."""
 
     _attr_has_entity_name = True
@@ -84,21 +85,3 @@ class EyeOnWaterNumberSensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
       """Update the current value."""
       return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
 
-    @callback
-    def _state_update(self):
-        """Call when the coordinator has an update."""
-        self._available = self.coordinator.last_update_success
-        if self._available:
-            self._state = self.get_flag()
-        self.async_write_ha_state()
-
-    async def async_added_to_hass(self):
-        """Subscribe to updates."""
-        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
-
-        if self.coordinator.last_update_success:
-            return
-
-        if last_state := await self.async_get_last_state():
-            self._state = last_state.state
-            self._available = True

@@ -9,9 +9,7 @@ from homeassistant.components.number import (
     NumberEntityDescription,
 )
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -50,7 +48,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(sensors, False)
 
 
-class EyeOnWaterNumberSensor(CoordinatorEntity, RestoreEntity, NumberEntity):
+class EyeOnWaterNumberSensor(CoordinatorEntity, NumberEntity):
     """Representation of an EyeOnWater number sensor."""
 
     _attr_has_entity_name = True
@@ -70,7 +68,6 @@ class EyeOnWaterNumberSensor(CoordinatorEntity, RestoreEntity, NumberEntity):
             native_unit_of_measurement=description.native_unit_of_measurement,
         )
         self.meter = meter
-        self._available = False
         self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
@@ -81,7 +78,11 @@ class EyeOnWaterNumberSensor(CoordinatorEntity, RestoreEntity, NumberEntity):
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
 
-    def set_native_value(self, value: float) -> None:
-      """Update the current value."""
-      return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+    @property
+    def native_value(self) -> float | None:
+        """Get native value."""
+        return 10
 
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min

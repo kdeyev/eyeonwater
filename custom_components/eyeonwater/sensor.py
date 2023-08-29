@@ -229,7 +229,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"temperature_{self.meter.meter_uuid}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",

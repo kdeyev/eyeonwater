@@ -1,7 +1,7 @@
 import_historical_data:
   fields:
     days:
-      description: Number of deys of history to load
+      description: Number of days of history to load
       required: true
       example: 365
       selector:

@@ -44,7 +44,6 @@ def create_account_from_config(
     """Create account login from config."""
     eow_hostname = get_hostname_for_country(hass)
 
-    metric_measurement_system = hass.config.units is METRIC_SYSTEM
     username = data[CONF_USERNAME]
     password = data[CONF_PASSWORD]
 
@@ -52,7 +51,6 @@ def create_account_from_config(
         eow_hostname=eow_hostname,
         username=username,
         password=password,
-        metric_measurement_system=metric_measurement_system,
     )
 
 

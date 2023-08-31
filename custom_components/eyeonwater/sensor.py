@@ -109,6 +109,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
             # We should not specify the state_class for workarounding the #30 issue
             self._attr_state_class = None
             self._attr_unique_id += "_statistic"
+            self._attr_name = self._attr_device_info.name + " Statistic"
 
     @property
     def available(self):

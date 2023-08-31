@@ -53,7 +53,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         meter: Meter,
-        last_imported_time: datetime.datetime,
+        last_imported_time: datetime.datetime | None,
         coordinator: DataUpdateCoordinator,
     ) -> None:
         """Initialize the sensor."""

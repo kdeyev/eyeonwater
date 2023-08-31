@@ -16,8 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-def get_device_name(meter_id: str, historical_sensor: bool) -> str:
-    """Generate statistics ID for meter."""
+def get_statistic_name(meter_id: str, historical_sensor: bool) -> str:
+    """Generate statistic name for a meter."""
     if historical_sensor:
         return f"{WATER_METER_NAME} {meter_id} Statistic"
     else:
@@ -25,7 +25,7 @@ def get_device_name(meter_id: str, historical_sensor: bool) -> str:
 
 
 def get_statistics_id(meter_id: str, historical_sensor: bool) -> str:
-    """Generate statistics ID for meter."""
+    """Generate statistic ID for a meter."""
     if historical_sensor:
         return f"sensor.water_meter_{meter_id.lower()}_statistic"
     else:
@@ -34,7 +34,9 @@ def get_statistics_id(meter_id: str, historical_sensor: bool) -> str:
 
 def get_statistic_metadata(meter: Meter, historical_sensor: bool) -> StatisticMetaData:
     """Build statistic metadata for a given meter."""
-    name = get_device_name(meter_id=meter.meter_id, historical_sensor=historical_sensor)
+    name = get_statistic_name(
+        meter_id=meter.meter_id, historical_sensor=historical_sensor
+    )
     statistic_id = get_statistics_id(
         meter.meter_id, historical_sensor=historical_sensor
     )

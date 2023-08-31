@@ -23,7 +23,6 @@ from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .statistic_helper import (
     convert_statistic_data,
     filter_newer_data,
-    get_device_name,
     get_last_imported_time,
     get_statistic_metadata,
 )
@@ -94,9 +93,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=get_device_name(
-                meter_id=self.meter.meter_id, historical_sensor=self._historical_sensor
-            ),
+            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
             model=self.meter.meter_info.reading.model,
             manufacturer=self.meter.meter_info.reading.customer_name,
             hw_version=self.meter.meter_info.reading.hardware_version,

@@ -1,12 +1,11 @@
 """EyeOnWater coordinator."""
 import logging
 
-from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
 
 from .sensor import (
     async_import_statistics,

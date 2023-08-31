@@ -3,12 +3,11 @@
 import datetime
 import logging
 
-from pyonwater import DataPoint, Meter
-
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import get_last_statistics
 from homeassistant.util import dt as dtutil
+from pyonwater import DataPoint, Meter
 
 from .const import WATER_METER_NAME
 

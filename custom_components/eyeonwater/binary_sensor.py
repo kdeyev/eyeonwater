@@ -1,8 +1,6 @@
 """Support for EyeOnWater binary sensors."""
 from dataclasses import dataclass
 
-from pyonwater import Meter
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -15,6 +13,7 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+from pyonwater import Meter
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 
@@ -72,10 +71,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     sensors = []
     for meter in meters:
-        for description in FLAG_SENSORS:
-            sensors.append(EyeOnWaterBinarySensor(meter, coordinator, description))
+        sensors += [
+            (EyeOnWaterBinarySensor(meter, coordinator, description))
+            for description in FLAG_SENSORS
+        ]
 
-    async_add_entities(sensors, False)
+    async_add_entities(sensors, update_before_add=False)
 
 
 class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
@@ -111,6 +112,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         )
 
     def get_flag(self) -> bool:
+        """Get flag value."""
         return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
 
     @callback

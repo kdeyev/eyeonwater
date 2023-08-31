@@ -64,7 +64,11 @@ def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:
     ]
 
 
-async def get_last_imported_time(hass, meter: Meter, historical_sensor: bool):
+async def get_last_imported_time(
+    hass,
+    meter: Meter,
+    historical_sensor: bool,
+) -> datetime.datetime | None:
     """Return last imported data datetime."""
     # https://github.com/home-assistant/core/blob/74e2d5c5c312cf3ba154b5206ceb19ba884c6fb4/homeassistant/components/tibber/sensor.py#L11
 
@@ -97,7 +101,7 @@ async def get_last_imported_time(hass, meter: Meter, historical_sensor: bool):
 
 def filter_newer_data(
     data: list[DataPoint],
-    last_imported_time: datetime.datetime,
+    last_imported_time: datetime.datetime | None,
 ) -> list[DataPoint]:
     """Filter data points that newer than given datetime."""
     _LOGGER.debug(
@@ -105,12 +109,13 @@ def filter_newer_data(
         last_imported_time,
         data[-1].dt,
     )
-    data = list(
-        filter(
-            lambda r: r.dt > last_imported_time,
-            data,
-        ),
-    )
+    if last_imported_time is not None:
+        data = list(
+            filter(
+                lambda r: r.dt > last_imported_time,
+                data,
+            ),
+        )
     _LOGGER.info("%i data points found", len(data))
 
     return data

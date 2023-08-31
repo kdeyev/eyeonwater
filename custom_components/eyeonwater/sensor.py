@@ -108,6 +108,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         if self._historical_sensor:
             # We should not specify the state_class for workarounding the #30 issue
             self._attr_state_class = None
+            self._attr_unique_id += "_statistic"
 
     @property
     def available(self):

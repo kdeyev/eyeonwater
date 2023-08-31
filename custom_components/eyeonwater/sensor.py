@@ -3,8 +3,6 @@ import datetime
 import logging
 from typing import Any
 
-from pyonwater import DataPoint, Meter
-
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -18,6 +16,7 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+from pyonwater import DataPoint, Meter
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .statistic_helper import (
@@ -40,7 +39,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for meter in meters:
         historical_sensor = True
         last_imported_time = await get_last_imported_time(
-            hass=hass, meter=meter, historical_sensor=historical_sensor
+            hass=hass,
+            meter=meter,
+            historical_sensor=historical_sensor,
         )
         sensors.append(
             EyeOnWaterSensor(
@@ -48,11 +49,13 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 last_imported_time,
                 coordinator,
                 historical_sensor=historical_sensor,
-            )
+            ),
         )
         historical_sensor = False
         last_imported_time = await get_last_imported_time(
-            hass=hass, meter=meter, historical_sensor=historical_sensor
+            hass=hass,
+            meter=meter,
+            historical_sensor=historical_sensor,
         )
         sensors.append(
             EyeOnWaterSensor(
@@ -60,7 +63,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 last_imported_time,
                 coordinator,
                 historical_sensor=historical_sensor,
-            )
+            ),
         )
 
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
@@ -159,7 +162,8 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.info("%i data points will be imported", len(self._last_historical_data))
         statistics = convert_statistic_data(self._last_historical_data)
         metadata = get_statistic_metadata(
-            self.meter, historical_sensor=self._historical_sensor
+            self.meter,
+            historical_sensor=self._historical_sensor,
         )
 
         async_import_statistics(self.hass, metadata, statistics)
@@ -170,7 +174,8 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.info("%i data points will be imported", len(data))
         statistics = convert_statistic_data(data)
         metadata = get_statistic_metadata(
-            self.meter, historical_sensor=self._historical_sensor
+            self.meter,
+            historical_sensor=self._historical_sensor,
         )
         async_import_statistics(self.hass, metadata, statistics)
 

@@ -7,7 +7,7 @@ from .config_flow import get_hostname_for_country
 
 @callback
 def async_register(
-    hass: HomeAssistant,
+    _: HomeAssistant,
     register: system_health.SystemHealthRegistration,
 ) -> None:
     """Register system health callbacks."""

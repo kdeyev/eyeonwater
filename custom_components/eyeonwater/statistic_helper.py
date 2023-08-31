@@ -3,12 +3,11 @@
 import datetime
 import logging
 
-from pyonwater import DataPoint, Meter
-
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import get_last_statistics
 from homeassistant.util import dt as dtutil
+from pyonwater import DataPoint, Meter
 
 from .const import WATER_METER_NAME
 
@@ -20,25 +19,27 @@ def get_statistic_name(meter_id: str, historical_sensor: bool) -> str:
     """Generate statistic name for a meter."""
     if historical_sensor:
         return f"{WATER_METER_NAME} {meter_id} Statistic"
-    else:
-        return f"{WATER_METER_NAME} {meter_id}"
+
+    return f"{WATER_METER_NAME} {meter_id}"
 
 
 def get_statistics_id(meter_id: str, historical_sensor: bool) -> str:
     """Generate statistic ID for a meter."""
     if historical_sensor:
         return f"sensor.water_meter_{meter_id.lower()}_statistic"
-    else:
-        return f"sensor.water_meter_{meter_id.lower()}"
+
+    return f"sensor.water_meter_{meter_id.lower()}"
 
 
 def get_statistic_metadata(meter: Meter, historical_sensor: bool) -> StatisticMetaData:
     """Build statistic metadata for a given meter."""
     name = get_statistic_name(
-        meter_id=meter.meter_id, historical_sensor=historical_sensor
+        meter_id=meter.meter_id,
+        historical_sensor=historical_sensor,
     )
     statistic_id = get_statistics_id(
-        meter.meter_id, historical_sensor=historical_sensor
+        meter.meter_id,
+        historical_sensor=historical_sensor,
     )
 
     return StatisticMetaData(
@@ -68,7 +69,8 @@ async def get_last_imported_time(hass, meter: Meter, historical_sensor: bool):
     # https://github.com/home-assistant/core/blob/74e2d5c5c312cf3ba154b5206ceb19ba884c6fb4/homeassistant/components/tibber/sensor.py#L11
 
     statistic_id = get_statistics_id(
-        meter.meter_id, historical_sensor=historical_sensor
+        meter.meter_id,
+        historical_sensor=historical_sensor,
     )
 
     last_stats = await get_instance(hass).async_add_executor_job(

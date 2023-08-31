@@ -57,5 +57,10 @@ class EyeOnWaterData:
             )
             _LOGGER.info("%i data points will be imported", len(data))
             statistics = convert_statistic_data(data)
-            metadata = get_statistic_metadata(meter)
+
+            # Get data once - import twice
+            metadata = get_statistic_metadata(meter, historical_sensor=True)
+            async_import_statistics(self.hass, metadata, statistics)
+
+            metadata = get_statistic_metadata(meter, historical_sensor=False)
             async_import_statistics(self.hass, metadata, statistics)

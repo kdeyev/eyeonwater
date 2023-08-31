@@ -122,8 +122,6 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._state = None
         self._available = False
         self._attr_unique_id = meter.meter_uuid
-        self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
-        #self._attr_native_unit_of_measurement = meter.meter_info.reading.latest_read.units
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
@@ -146,8 +144,8 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         return self._state
 
     @property
-    def unit_of_measurment(self) -> str:
-        """Get the unit of measument from reading."""
+    def native_unit_of_measurement(self) -> str:
+        """Get the unit of measurement from reading."""
         if self.meter.meter_info.reading.latest_read.units == "GAL":
             return UnitOfVolume.GALLONS
         else:

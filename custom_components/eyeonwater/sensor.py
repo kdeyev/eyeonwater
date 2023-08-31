@@ -3,8 +3,6 @@ import datetime
 import logging
 from typing import Any
 
-from pyonwater import DataPoint, Meter
-
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import UnitOfTemperature
@@ -14,6 +12,7 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+from pyonwater import DataPoint, Meter
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .statistic_helper import (

@@ -45,7 +45,13 @@ The integration allows to import of historical water data usage after it was ins
 ![import-historical-data](https://github.com/kdeyev/eyeonwater/blob/master/img/import-historical-data.png?raw=true)
 
 
-# Unsupported state class
+
+# Weird negative values of water meter usage
+If you see weird negative values of water meter usage in the Energy Dashboard - it's a known issue, discussed [here](https://github.com/kdeyev/eyeonwater/issues/30)
+In this case, you may want to use another water meter sensor with the "Statistic" suffix, this one should eliminate the negative values issues but may have some other minor side effects, like the warning messages shown below.
+
+
+## Unsupported state class
 
 Please pay attention: If you look at the `Developer Tools` -> `Statistics`, you will see an error message associated with the water sensor:
 ```

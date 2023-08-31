@@ -12,7 +12,7 @@ from homeassistant.components.recorder.statistics import (
     get_last_statistics,
 )
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import UnitOfTemperature, UnitOfVolume
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
@@ -144,6 +144,14 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     def native_value(self):
         """Get the latest reading."""
         return self._state
+
+    @property
+    def unit_of_measurment(self) -> str:
+        """Get the unit of measument from reading."""
+        if self.meter.meter_info.reading.latest_read.units == "GAL":
+            return UnitOfVolume.GALLONS
+        else:
+            return UnitOfVolume.MILLILITERS
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

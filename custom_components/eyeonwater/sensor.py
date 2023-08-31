@@ -10,7 +10,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -30,39 +30,49 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def build_water_meter_sensor(
+    hass: HomeAssistant,
+    meter: Meter,
+    coordinator: Any,
+    historical_sensor: bool,
+) -> "EyeOnWaterSensor":
+    """Build water meter sensor."""
+    last_imported_time = await get_last_imported_time(
+        hass=hass,
+        meter=meter,
+        historical_sensor=historical_sensor,
+    )
+    return EyeOnWaterSensor(
+        meter,
+        last_imported_time,
+        coordinator,
+        historical_sensor=historical_sensor,
+    )
+
+
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
 
     sensors = []
     for meter in meters:
-        historical_sensor = True
-        last_imported_time = await get_last_imported_time(
-            hass=hass,
-            meter=meter,
-            historical_sensor=historical_sensor,
-        )
+        # Add regular water meter sensor
         sensors.append(
-            EyeOnWaterSensor(
+            await build_water_meter_sensor(
+                hass,
                 meter,
-                last_imported_time,
                 coordinator,
-                historical_sensor=historical_sensor,
+                historical_sensor=False,
             ),
         )
-        historical_sensor = False
-        last_imported_time = await get_last_imported_time(
-            hass=hass,
-            meter=meter,
-            historical_sensor=historical_sensor,
-        )
+        # Add "statistic" water meter sensor
         sensors.append(
-            EyeOnWaterSensor(
+            await build_water_meter_sensor(
+                hass,
                 meter,
-                last_imported_time,
                 coordinator,
-                historical_sensor=historical_sensor,
+                historical_sensor=True,
             ),
         )
 

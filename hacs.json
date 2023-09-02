@@ -1,6 +1,5 @@
 {
   "name": "Eye On Water",
-  "domains": ["sensor"],
   "iot_class": "Cloud Pull",
   "render_readme": true
 }

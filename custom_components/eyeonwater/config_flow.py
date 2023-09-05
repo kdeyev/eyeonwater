@@ -3,14 +3,13 @@ import asyncio
 import logging
 from typing import Any
 
-from aiohttp import ClientError
-from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 import voluptuous as vol
-
+from aiohttp import ClientError
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import aiohttp_client
 from homeassistant.util.unit_system import METRIC_SYSTEM
+from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 from .const import DOMAIN
 
@@ -29,13 +28,11 @@ DATA_SCHEMA = vol.Schema(
 
 def get_hostname_for_country(hass) -> str:
     """Return EOW hostname based on HA country."""
-
-    CountryCode = hass.config.country
-    if CountryCode == "CA":
+    if hass.config.country == "CA":
         return CONF_EOW_HOSTNAME_CA
-    else:
-        # There are some users from Europe that use .com domain
-        return CONF_EOW_HOSTNAME_COM
+
+    # There are some users from Europe that use .com domain
+    return CONF_EOW_HOSTNAME_COM
 
 
 def create_account_from_config(
@@ -43,7 +40,6 @@ def create_account_from_config(
     data: dict[str, Any],
 ) -> Account:
     """Create account login from config."""
-
     eow_hostname = get_hostname_for_country(hass)
 
     metric_measurement_system = hass.config.units is METRIC_SYSTEM
@@ -78,7 +74,7 @@ async def validate_input(hass: core.HomeAssistant, data):
     return {"title": account.username}
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     """Handle a config flow for EyeOnWater."""
 
     VERSION = 1

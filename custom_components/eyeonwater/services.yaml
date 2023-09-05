@@ -1,0 +1,10 @@
+import_historical_data:
+  fields:
+    days:
+      description: Number of days of history to load
+      required: true
+      example: 365
+      selector:
+        number:
+          min: 0
+          mode: box

@@ -37,5 +37,18 @@
                 "name": "Reverse Waterflow"
             }
         }
+    },
+    "services": {
+        "import_historical_data": {
+            "name": "Import historical data",
+            "description": "Import historical data from eyeonwater.",
+            "fields": {
+                "days": {
+                    "name": "Days to import",
+                    "description": "The number days of history."
+                }
+            }
+        }
     }
+
 }

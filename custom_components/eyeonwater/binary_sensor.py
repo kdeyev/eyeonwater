@@ -1,8 +1,6 @@
 """Support for EyeOnWater binary sensors."""
 from dataclasses import dataclass
 
-from pyonwater import Meter
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -15,59 +13,52 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+from pyonwater import Meter
 
-from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN
+from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 
 
 @dataclass
 class Description:
-    name: str
+    """Binary sensor description."""
+
     key: str
-    translation_key: str
     device_class: BinarySensorDeviceClass
+    translation_key: str | None = None
 
 
 FLAG_SENSORS = [
     Description(
-        name="Leak",
         key="leak",
         translation_key="leak",
         device_class=BinarySensorDeviceClass.MOISTURE,
     ),
     Description(
-        name="EmptyPipe",
         key="empty_pipe",
         translation_key="emptypipe",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     Description(
-        name="Tamper",
         key="tamper",
         translation_key="tamper",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
     Description(
-        name="CoverRemoved",
         key="cover_removed",
         translation_key="coverremoved",
         device_class=BinarySensorDeviceClass.TAMPER,
     ),
     Description(
-        name="ReverseFlow",
         key="reverse_flow",
         translation_key="reverseflow",
         device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     Description(
-        name="LowBattery",
         key="low_battery",
-        translation_key="lowbattery",
         device_class=BinarySensorDeviceClass.BATTERY,
     ),
     Description(
-        name="BatteryCharging",
         key="battery_charging",
-        translation_key="batterycharging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
     ),
 ]
@@ -80,10 +71,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     sensors = []
     for meter in meters:
-        for description in FLAG_SENSORS:
-            sensors.append(EyeOnWaterBinarySensor(meter, coordinator, description))
+        sensors += [
+            (EyeOnWaterBinarySensor(meter, coordinator, description))
+            for description in FLAG_SENSORS
+        ]
 
-    async_add_entities(sensors, False)
+    async_add_entities(sensors, update_before_add=False)
 
 
 class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
@@ -107,14 +100,19 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self.meter = meter
         self._state = False
         self._available = False
-        self._attr_unique_id = f"{description.name}_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
         self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=f"Water Meter {self.meter.meter_id}",
+            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            model=self.meter.meter_info.reading.model,
+            manufacturer=self.meter.meter_info.reading.customer_name,
+            hw_version=self.meter.meter_info.reading.hardware_version,
+            sw_version=self.meter.meter_info.reading.firmware_version,
         )
 
     def get_flag(self) -> bool:
+        """Get flag value."""
         return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
 
     @callback

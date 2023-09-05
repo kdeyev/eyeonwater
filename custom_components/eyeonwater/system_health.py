@@ -7,7 +7,8 @@ from .config_flow import get_hostname_for_country
 
 @callback
 def async_register(
-    hass: HomeAssistant, register: system_health.SystemHealthRegistration
+    _: HomeAssistant,
+    register: system_health.SystemHealthRegistration,
 ) -> None:
     """Register system health callbacks."""
     register.async_register_info(system_health_info)
@@ -15,11 +16,11 @@ def async_register(
 
 async def system_health_info(hass):
     """Get info for the info page."""
-
     eow_hostname = get_hostname_for_country(hass)
 
     return {
         "api_endpoint_reachable": system_health.async_check_can_reach_url(
-            hass, f"https://{eow_hostname}"
-        )
+            hass,
+            f"https://{eow_hostname}",
+        ),
     }

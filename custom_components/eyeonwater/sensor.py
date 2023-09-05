@@ -42,7 +42,7 @@ async def build_water_meter_sensor(
         meter=meter,
         historical_sensor=historical_sensor,
     )
-    return EyeOnWaterSensor(
+    return EyeOnWaterStatistic(
         meter,
         last_imported_time,
         coordinator,

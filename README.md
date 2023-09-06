@@ -45,7 +45,7 @@ The integration allows to import of historical water data usage after it was ins
 ![import-historical-data](https://github.com/kdeyev/eyeonwater/blob/master/img/import-historical-data.png?raw=true)
 
 
-## Unsupported state class
+# Unsupported state class
 
 Please pay attention: If you look at the `Developer Tools` -> `Statistics`, you will see an error message associated with the water sensor:
 ```

@@ -15,32 +15,19 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-def get_statistic_name(meter_id: str, historical_sensor: bool) -> str:
+def get_statistic_name(meter_id: str) -> str:
     """Generate statistic name for a meter."""
-    if historical_sensor:
-        return f"{WATER_METER_NAME} {meter_id} Statistic"
+    return f"{WATER_METER_NAME} {meter_id} Statistic"
 
-    return f"{WATER_METER_NAME} {meter_id}"
-
-
-def get_statistics_id(meter_id: str, historical_sensor: bool) -> str:
+def get_statistics_id(meter_id: str) -> str:
     """Generate statistic ID for a meter."""
-    if historical_sensor:
-        return f"sensor.water_meter_{meter_id.lower()}_statistic"
-
-    return f"sensor.water_meter_{meter_id.lower()}"
+    return f"sensor.water_meter_{meter_id.lower()}_statistic"
 
 
-def get_statistic_metadata(meter: Meter, historical_sensor: bool) -> StatisticMetaData:
+def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
     """Build statistic metadata for a given meter."""
-    name = get_statistic_name(
-        meter_id=meter.meter_id,
-        historical_sensor=historical_sensor,
-    )
-    statistic_id = get_statistics_id(
-        meter.meter_id,
-        historical_sensor=historical_sensor,
-    )
+    name = get_statistic_name(meter_id=meter.meter_id)
+    statistic_id = get_statistics_id(meter.meter_id)
 
     return StatisticMetaData(
         has_mean=False,
@@ -67,15 +54,11 @@ def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:
 async def get_last_imported_time(
     hass,
     meter: Meter,
-    historical_sensor: bool,
 ) -> datetime.datetime | None:
     """Return last imported data datetime."""
     # https://github.com/home-assistant/core/blob/74e2d5c5c312cf3ba154b5206ceb19ba884c6fb4/homeassistant/components/tibber/sensor.py#L11
 
-    statistic_id = get_statistics_id(
-        meter.meter_id,
-        historical_sensor=historical_sensor,
-    )
+    statistic_id = get_statistics_id(meter.meter_id)
 
     last_stats = await get_instance(hass).async_add_executor_job(
         get_last_statistics,

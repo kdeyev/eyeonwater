@@ -2,7 +2,7 @@
 name = "eyeonwater"
 version = "0.2.5"
 description = "EyeOnWater HomeAssistant Integration."
-authors = ["Konstantin Deev <kn.deev@gmail.com>"]
+authors = []
 license = "MIT"
 readme = "README.md"
 

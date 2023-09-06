@@ -57,14 +57,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     sensors = []
     for meter in meters:
-        # Add regular water meter sensor
-        sensors.append(
-            EyeOnWaterSensor(
-                hass,
-                meter,
-                coordinator,
-            ),
-        )
         # Add "statistic" water meter sensor
         sensors.append(
             await build_water_meter_sensor(
@@ -74,7 +66,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                 historical_sensor=True,
             ),
         )
-
+        sensors.append(EyeOnWaterSensor(meter, coordinator))
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
@@ -230,6 +222,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._available = False
 
         self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_device_class = SensorDeviceClass.WATER
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_unique_id = meter.meter_uuid

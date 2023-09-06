@@ -72,7 +72,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
         self._last_historical_data: list[DataPoint] = []
-        self._last_imported_time = get_last_imported_time(HomeAssistant, meter, True)
+        self._last_imported_time = get_last_imported_time(HomeAssistant, meter)
 
     @property
     def available(self):

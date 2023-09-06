@@ -30,26 +30,6 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-async def build_water_meter_sensor(
-    hass: HomeAssistant,
-    meter: Meter,
-    coordinator: Any,
-    historical_sensor: bool,
-) -> "EyeOnWaterSensor":
-    """Build water meter sensor."""
-    last_imported_time = await get_last_imported_time(
-        hass=hass,
-        meter=meter,
-        historical_sensor=historical_sensor,
-    )
-    return EyeOnWaterStatistic(
-        meter,
-        last_imported_time,
-        coordinator,
-        historical_sensor=historical_sensor,
-    )
-
-
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
@@ -57,15 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     sensors = []
     for meter in meters:
-        # Add "statistic" water meter sensor
-        sensors.append(
-            await build_water_meter_sensor(
-                hass,
-                meter,
-                coordinator,
-                historical_sensor=True,
-            ),
-        )
+        sensors.append(EyeOnWaterStatistic(meter, coordinator))
         sensors.append(EyeOnWaterSensor(meter, coordinator))
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
@@ -76,18 +48,15 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
     def __init__(
-        self,
         meter: Meter,
-        last_imported_time: datetime.datetime | None,
         coordinator: DataUpdateCoordinator,
-        historical_sensor: bool,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
         self._state = None
         self._available = False
-        self._historical_sensor = historical_sensor
+        self._historical_sensor = True
 
         self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
         self._attr_device_class = SensorDeviceClass.WATER
@@ -102,7 +71,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
         self._last_historical_data: list[DataPoint] = []
-        self._last_imported_time = last_imported_time
+        self._last_imported_time = get_last_imported_time(HomeAssistant, meter, True)
 
     @property
     def available(self):

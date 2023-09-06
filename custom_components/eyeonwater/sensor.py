@@ -1,5 +1,4 @@
 """Support for EyeOnWater sensors."""
-import datetime
 import logging
 from typing import Any
 
@@ -121,10 +120,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
 
         _LOGGER.info("%i data points will be imported", len(self._last_historical_data))
         statistics = convert_statistic_data(self._last_historical_data)
-        metadata = get_statistic_metadata(
-            self.meter,
-            historical_sensor=self._historical_sensor,
-        )
+        metadata = get_statistic_metadata(self.meter)
 
         async_import_statistics(self.hass, metadata, statistics)
 
@@ -133,10 +129,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         data = await self.meter.reader.read_historical_data(days)
         _LOGGER.info("%i data points will be imported", len(data))
         statistics = convert_statistic_data(data)
-        metadata = get_statistic_metadata(
-            self.meter,
-            historical_sensor=self._historical_sensor,
-        )
+        metadata = get_statistic_metadata(self.meter)
         async_import_statistics(self.hass, metadata, statistics)
 
 

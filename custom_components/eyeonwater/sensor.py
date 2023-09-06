@@ -48,6 +48,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
     def __init__(
+        self,
         meter: Meter,
         coordinator: DataUpdateCoordinator,
     ) -> None:

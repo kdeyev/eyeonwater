@@ -114,11 +114,6 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         """Get the latest reading."""
         return self._state
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the device specific state attributes."""
-        return self.meter.meter_info.reading.dict()
-
     @callback
     def _state_update(self):
         """Call when the coordinator has an update."""

@@ -59,8 +59,8 @@ class EyeOnWaterData:
             statistics = convert_statistic_data(data)
 
             # Import regular sensor
-            metadata = get_statistic_metadata(meter, historical_sensor=True)
+            metadata = get_statistic_metadata(meter)
             async_import_statistics(self.hass, metadata, statistics)
             # Import "statistic" sensor
-            metadata = get_statistic_metadata(meter, historical_sensor=False)
+            metadata = get_statistic_metadata(meter)
             async_import_statistics(self.hass, metadata, statistics)

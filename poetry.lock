@@ -453,13 +453,13 @@ email = ["email-validator (>=1.0.3)"]
 
 [[package]]
 name = "pyonwater"
-version = "0.3.0b1"
+version = "0.3.0"
 description = "EyeOnWater client library."
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "pyonwater-0.3.0b1-py3-none-any.whl", hash = "sha256:273c17a80e9e0cdb47ecf753b8cb376ec911b7e768105f73128c16830c6b0859"},
-    {file = "pyonwater-0.3.0b1.tar.gz", hash = "sha256:c4274826fa3377381693bcabad909e08a59a7cd1cf83808e1c225c2b8c739a3f"},
+    {file = "pyonwater-0.3.0-py3-none-any.whl", hash = "sha256:f1fa043a91c870cc127c6738624ede12fadca9e8bd24467b26d90ea414fe2d50"},
+    {file = "pyonwater-0.3.0.tar.gz", hash = "sha256:0ead6323eca3186715a07b4664d024f5129c0f082aa144a4d7558d95e07c353f"},
 ]
 
 [package.dependencies]
@@ -631,4 +631,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6398a82100cfb7fab3f39e5ba870a8ae5124c79512b7d3fe331a29dfc779d4ac"
+content-hash = "03a700c6e867de44adb639839165cc981155bd8b929c6c59ad4f6ab2f380b249"

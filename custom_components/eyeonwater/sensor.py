@@ -64,7 +64,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state = None
+        self._state: DataPoint | None = None
         self._available = False
         self._historical_sensor = True
 
@@ -91,7 +91,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Get the latest reading."""
-        return self._state
+        return self._state.reading
 
     @callback
     def _state_update(self):

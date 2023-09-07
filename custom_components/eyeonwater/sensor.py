@@ -64,7 +64,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state = None
+        self._state: DataPoint | None = None
         self._available = False
         self._historical_sensor = True
 
@@ -72,6 +72,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.WATER
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
@@ -91,7 +92,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Get the latest reading."""
-        return self._state
+        return self._state.reading
 
     @callback
     def _state_update(self):
@@ -185,7 +186,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state = None
+        self._state: DataPoint | None = None
         self._available = False
 
         self._attr_has_entity_name = True
@@ -194,6 +195,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_unique_id = meter.meter_uuid
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
@@ -211,7 +213,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Get the latest reading."""
-        return self._state
+        return self._state.reading
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

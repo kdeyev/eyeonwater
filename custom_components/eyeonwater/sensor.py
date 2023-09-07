@@ -72,6 +72,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.WATER
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
@@ -194,6 +195,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_unique_id = meter.meter_uuid
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",

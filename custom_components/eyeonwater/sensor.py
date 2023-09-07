@@ -185,7 +185,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state = None
+        self._state: DataPoint | None = None
         self._available = False
 
         self._attr_has_entity_name = True
@@ -211,7 +211,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Get the latest reading."""
-        return self._state
+        return self._state.reading
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

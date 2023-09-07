@@ -1,4 +1,5 @@
 """Support for EyeOnWater sensors."""
+import datetime
 import logging
 from typing import Any
 
@@ -36,7 +37,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     sensors = []
     for meter in meters:
-        sensors.append(EyeOnWaterStatistic(meter, coordinator))
+        last_imported_time = await get_last_imported_time(hass, meter)
+
+        sensors.append(
+            EyeOnWaterStatistic(
+                meter,
+                coordinator,
+                last_imported_time=last_imported_time,
+            ),
+        )
         sensors.append(EyeOnWaterSensor(meter, coordinator))
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
@@ -50,6 +59,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         self,
         meter: Meter,
         coordinator: DataUpdateCoordinator,
+        last_imported_time: datetime.datetime | None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -71,7 +81,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
         self._last_historical_data: list[DataPoint] = []
-        self._last_imported_time = get_last_imported_time(HomeAssistant, meter)
+        self._last_imported_time = last_imported_time
 
     @property
     def available(self):

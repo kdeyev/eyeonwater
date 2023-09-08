@@ -3,6 +3,7 @@ import datetime
 import logging
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,

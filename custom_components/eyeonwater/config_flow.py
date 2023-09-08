@@ -72,7 +72,7 @@ async def validate_input(hass: core.HomeAssistant, data):
     return {"title": account.username}
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN): # type: ignore[call-arg]
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     """Handle a config flow for EyeOnWater."""
 
     VERSION = 1

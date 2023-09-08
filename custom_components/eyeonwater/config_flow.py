@@ -1,6 +1,7 @@
 """Config flow for EyeOnWater integration."""
 import asyncio
 import logging
+from types import MappingProxyType
 from typing import Any
 
 import voluptuous as vol
@@ -25,7 +26,7 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
-def get_hostname_for_country(hass) -> str:
+def get_hostname_for_country(hass: core.HomeAssistant) -> str:
     """Return EOW hostname based on HA country."""
     if hass.config.country == "CA":
         return CONF_EOW_HOSTNAME_CA
@@ -36,7 +37,7 @@ def get_hostname_for_country(hass) -> str:
 
 def create_account_from_config(
     hass: core.HomeAssistant,
-    data: dict[str, Any],
+    data: MappingProxyType[str, Any],
 ) -> Account:
     """Create account login from config."""
     eow_hostname = get_hostname_for_country(hass)
@@ -71,7 +72,7 @@ async def validate_input(hass: core.HomeAssistant, data):
     return {"title": account.username}
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EyeOnWater."""
 
     VERSION = 1

@@ -1,7 +1,7 @@
 """Support for EyeOnWater sensors."""
 import datetime
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
@@ -9,9 +9,11 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -26,16 +28,23 @@ from .statistic_helper import (
     get_statistic_metadata,
 )
 
+if TYPE_CHECKING:
+    from homeassistant.helpers.entity import Entity
+
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
 
-    sensors = []
+    sensors: list[Entity] = []
     for meter in meters:
         last_imported_time = await get_last_imported_time(hass, meter)
 
@@ -178,6 +187,11 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
     def __init__(
         self,
         meter: Meter,
@@ -189,10 +203,6 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._state: DataPoint | None = None
         self._available = False
 
-        self._attr_has_entity_name = True
-        self._attr_name = None
-        self._attr_device_class = SensorDeviceClass.WATER
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_unique_id = meter.meter_uuid
         self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
         self._attr_suggested_display_precision = 0

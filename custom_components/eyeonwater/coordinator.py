@@ -1,7 +1,6 @@
 """EyeOnWater coordinator."""
 import logging
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -22,11 +21,9 @@ class EyeOnWaterData:
     def __init__(
         self,
         hass: HomeAssistant,
-        entry: ConfigEntry,
         account: Account,
     ) -> None:
         """Initialize the data coordintator."""
-        self._entry = entry
         self.account = account
         websession = aiohttp_client.async_get_clientsession(hass)
         self.client = Client(websession, account)

@@ -32,7 +32,7 @@ PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Eye On Water from a config entry."""
     account = create_account_from_config(hass, entry.data)
-    eye_on_water_data = EyeOnWaterData(hass, entry, account)
+    eye_on_water_data = EyeOnWaterData(hass, account)
     try:
         await eye_on_water_data.client.authenticate()
     except EyeOnWaterAuthError:
@@ -53,9 +53,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception:
         _LOGGER.exception("Reading meters failed")
         raise
-
-    for meter in eye_on_water_data.meters:
-        _LOGGER.debug(meter.meter_uuid, meter.meter_id, meter.meter_info)
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
@@ -84,9 +81,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _ = asyncio.create_task(coordinator.async_refresh())
 
-    _LOGGER.debug("Start setup platforms")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    _LOGGER.debug("End setup platforms")
 
     async def async_service_handler(call):
         days = call.data.get(

@@ -22,6 +22,9 @@ pyonwater = "0.3.1"
 [tool.poetry.group.dev.dependencies]
 types-pytz = "^2023.3.0.1"
 pytest-homeassistant-custom-component = "^0.13.53"
+homeassistant = "^2023.9.1"
+psutil-home-assistant = "^0.0.1"
+fnv-hash-fast = "^0.4.1"
 
 [tool.black]
 target-version = ["py39", "py310"]

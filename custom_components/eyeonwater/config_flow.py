@@ -4,12 +4,13 @@ import logging
 from types import MappingProxyType
 from typing import Any
 
-import voluptuous as vol
 from aiohttp import ClientError
+from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
+import voluptuous as vol
+
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import aiohttp_client
-from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 from .const import DOMAIN
 
@@ -72,7 +73,7 @@ async def validate_input(hass: core.HomeAssistant, data):
     return {"title": account.username}
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EyeOnWater."""
 
     VERSION = 1

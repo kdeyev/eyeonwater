@@ -2,13 +2,14 @@
 import asyncio
 import logging
 
+from pyonwater import EyeOnWaterAuthError
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import debounce
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from pyonwater import EyeOnWaterAuthError
 
 from .config_flow import create_account_from_config
 from .const import (
@@ -16,17 +17,13 @@ from .const import (
     DATA_SMART_METER,
     DEBOUNCE_COOLDOWN,
     DOMAIN,
-    IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,
-    IMPORT_HISTORICAL_DATA_DAYS_NAME,
-    IMPORT_HISTORICAL_DATA_SERVICE_NAME,
     SCAN_INTERVAL,
 )
 from .coordinator import EyeOnWaterData
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.StreamHandler())
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -49,14 +46,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Fetch actual meter_info for all meters
     try:
-        await eye_on_water_data.read_meters(days_to_load=30)
+        await eye_on_water_data.read_meters()
     except Exception:
         _LOGGER.exception("Reading meters failed")
         raise
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
-        await eye_on_water_data.read_meters(days_to_load=3)
+        await eye_on_water_data.read_meters()
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(
@@ -82,20 +79,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _ = asyncio.create_task(coordinator.async_refresh())
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    async def async_service_handler(call):
-        days = call.data.get(
-            IMPORT_HISTORICAL_DATA_DAYS_NAME,
-            IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,
-        )
-        await eye_on_water_data.import_historical_data(days)
-
-    hass.services.async_register(
-        DOMAIN,
-        IMPORT_HISTORICAL_DATA_SERVICE_NAME,
-        async_service_handler,
-    )
-
     return True
 
 

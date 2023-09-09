@@ -1,16 +1,11 @@
 """EyeOnWater coordinator."""
 import logging
 
+from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
-
-from .sensor import (
-    async_import_statistics,
-    convert_statistic_data,
-    get_statistic_metadata,
-)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,33 +30,11 @@ class EyeOnWaterData:
         self.meters = await self.account.fetch_meters(self.client)
         _LOGGER.debug("Discovered %s meter(s)", len(self.meters))
 
-    async def read_meters(self, days_to_load=3):
+    async def read_meters(self):
         """Read each meter."""
         for meter in self.meters:
             try:
                 await meter.read_meter_info(client=self.client)
-                await meter.read_historical_data(
-                    client=self.client,
-                    days_to_load=days_to_load,
-                )
             except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
                 raise UpdateFailed(error) from error
         return self.meters
-
-    async def import_historical_data(self, days: int):
-        """Import historical data."""
-        for meter in self.meters:
-            data = await meter.reader.read_historical_data(
-                client=self.client,
-                days_to_load=days,
-            )
-            _LOGGER.info("%i data points will be imported", len(data))
-            # Get data once - import twice
-            statistics = convert_statistic_data(data)
-
-            # Import regular sensor
-            metadata = get_statistic_metadata(meter)
-            async_import_statistics(self.hass, metadata, statistics)
-            # Import "statistic" sensor
-            metadata = get_statistic_metadata(meter)
-            async_import_statistics(self.hass, metadata, statistics)

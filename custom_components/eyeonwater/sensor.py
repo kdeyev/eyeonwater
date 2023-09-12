@@ -43,8 +43,8 @@ def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
         return "cf"
     elif unit == pyonwater.NativeUnits.cm:
         return "m\u00b3"
-    else:
-        raise Exception("Unrecognized pyonwater unit {unit}")
+     msg = "Unrecognized pyonwater unit {unit}"
+     raise Exception(msg)
 
 
 async def async_setup_entry(
@@ -92,7 +92,9 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
         self._attr_device_class = SensorDeviceClass.WATER
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
-        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
+        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
+            meter.native_unit_of_measurement
+        )
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
@@ -216,7 +218,9 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._available = False
 
         self._attr_unique_id = meter.meter_uuid
-        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
+        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
+            meter.native_unit_of_measurement
+        )
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},

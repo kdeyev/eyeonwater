@@ -3,6 +3,7 @@ import datetime
 import logging
 from typing import TYPE_CHECKING, Any
 
+import pyonwater
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -18,7 +19,6 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
-import pyonwater
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .statistic_helper import (
@@ -36,7 +36,7 @@ _LOGGER.addHandler(logging.StreamHandler())
 
 
 def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
-    """Convert pyonwater native units to HA native units"""
+    """Convert pyonwater native units to HA native units."""
     if unit == pyonwater.NativeUnits.gal:
         return "gal"
     elif unit == pyonwater.NativeUnits.cf:

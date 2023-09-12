@@ -48,7 +48,7 @@ def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
         return "cf"
     if unit == pyonwater.NativeUnits.cm:
         return "m\u00b3"
-    
+
     msg = "Unrecognized pyonwater unit {unit}"
     raise UnrecognizedUnitError(msg)
 

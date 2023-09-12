@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
-from pyonwater import DataPoint, Meter
+import pyonwater
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .statistic_helper import (
@@ -35,7 +35,8 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-def get_hass_native_unit_of_measurement(unit: pyonwater.NativeUnits):
+def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
+    """Convert pyonwater native units to HA native units"""
     if unit == pyonwater.NativeUnits.gal:
         return "gal"
     elif unit == pyonwater.NativeUnits.cf:
@@ -77,21 +78,21 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
 
     def __init__(
         self,
-        meter: Meter,
+        meter: pyonwater.Meter,
         coordinator: DataUpdateCoordinator,
         last_imported_time: datetime.datetime | None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state: DataPoint | None = None
+        self._state: pyonwater.DataPoint | None = None
         self._available = False
         self._historical_sensor = True
 
         self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
         self._attr_device_class = SensorDeviceClass.WATER
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
-        self._attr_native_unit_of_measurement = get_hass_native_unit_of_measurement(meter.native_unit_of_measurement)
+        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
@@ -101,7 +102,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             hw_version=self.meter.meter_info.reading.hardware_version,
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
-        self._last_historical_data: list[DataPoint] = []
+        self._last_historical_data: list[pyonwater.DataPoint] = []
         self._last_imported_time = last_imported_time
 
     @property
@@ -173,7 +174,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
     def __init__(
         self,
-        meter: Meter,
+        meter: pyonwater.Meter,
         coordinator: DataUpdateCoordinator,
     ) -> None:
         """Initialize the sensor."""
@@ -205,17 +206,17 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
 
     def __init__(
         self,
-        meter: Meter,
+        meter: pyonwater.Meter,
         coordinator: DataUpdateCoordinator,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state: DataPoint | None = None
+        self._state: pyonwater.DataPoint | None = None
         self._available = False
 
         self._attr_unique_id = meter.meter_uuid
-        self._attr_native_unit_of_measurement = get_hass_native_unit_of_measurement(meter.native_unit_of_measurement)
+        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},

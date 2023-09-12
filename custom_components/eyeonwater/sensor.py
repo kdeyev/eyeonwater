@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import pyonwater
+from homeassistant import exceptions
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -35,16 +36,21 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
+class UnrecognizedUnitError(exceptions.HomeAssistantError):
+    """Error to indicate unrecognized pyonwater native unit."""
+
+
 def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
     """Convert pyonwater native units to HA native units."""
     if unit == pyonwater.NativeUnits.gal:
         return "gal"
-    elif unit == pyonwater.NativeUnits.cf:
+    if unit == pyonwater.NativeUnits.cf:
         return "cf"
-    elif unit == pyonwater.NativeUnits.cm:
+    if unit == pyonwater.NativeUnits.cm:
         return "m\u00b3"
+    
     msg = "Unrecognized pyonwater unit {unit}"
-    raise Exception(msg)
+    raise UnrecognizedUnitError(msg)
 
 
 async def async_setup_entry(

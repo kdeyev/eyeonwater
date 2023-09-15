@@ -15,6 +15,19 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
+def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
+    """Convert pyonwater native units to HA native units."""
+    if unit == pyonwater.NativeUnits.gal:
+        return "gal"
+    if unit == pyonwater.NativeUnits.cf:
+        return "cf"
+    if unit == pyonwater.NativeUnits.cm:
+        return "m\u00b3"
+
+    msg = "Unrecognized pyonwater unit {unit}"
+    raise UnrecognizedUnitError(msg)
+
+
 def get_statistic_name(meter_id: str) -> str:
     """Generate statistic name for a meter."""
     return f"{WATER_METER_NAME} {meter_id} Statistic"
@@ -36,7 +49,9 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
         name=name,
         source="recorder",
         statistic_id=statistic_id,
-        unit_of_measurement=meter.native_unit_of_measurement,
+        unit_of_measurement=get_ha_native_unit_of_measurement(
+            meter.native_unit_of_measurement
+        ),
     )
 
 

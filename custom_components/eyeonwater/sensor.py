@@ -25,6 +25,7 @@ from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .statistic_helper import (
     convert_statistic_data,
     filter_newer_data,
+    get_ha_native_unit_of_measurement,
     get_last_imported_time,
     get_statistic_metadata,
 )
@@ -38,19 +39,6 @@ _LOGGER.addHandler(logging.StreamHandler())
 
 class UnrecognizedUnitError(exceptions.HomeAssistantError):
     """Error to indicate unrecognized pyonwater native unit."""
-
-
-def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
-    """Convert pyonwater native units to HA native units."""
-    if unit == pyonwater.NativeUnits.gal:
-        return "gal"
-    if unit == pyonwater.NativeUnits.cf:
-        return "cf"
-    if unit == pyonwater.NativeUnits.cm:
-        return "m\u00b3"
-
-    msg = "Unrecognized pyonwater unit {unit}"
-    raise UnrecognizedUnitError(msg)
 
 
 async def async_setup_entry(

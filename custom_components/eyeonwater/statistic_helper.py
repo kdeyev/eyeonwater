@@ -3,6 +3,8 @@
 import datetime
 import logging
 
+import pyonwater
+from homeassistant import exceptions
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import get_last_statistics
@@ -13,6 +15,23 @@ from .const import WATER_METER_NAME
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
+
+
+class UnrecognizedUnitError(exceptions.HomeAssistantError):
+    """Error to indicate unrecognized pyonwater native unit."""
+
+
+def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
+    """Convert pyonwater native units to HA native units."""
+    if unit == pyonwater.NativeUnits.gal:
+        return "gal"
+    if unit == pyonwater.NativeUnits.cf:
+        return "cf"
+    if unit == pyonwater.NativeUnits.cm:
+        return "m\u00b3"
+
+    msg = "Unrecognized pyonwater unit {unit}"
+    raise UnrecognizedUnitError(msg)
 
 
 def get_statistic_name(meter_id: str) -> str:
@@ -36,7 +55,9 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
         name=name,
         source="recorder",
         statistic_id=statistic_id,
-        unit_of_measurement=meter.native_unit_of_measurement,
+        unit_of_measurement=get_ha_native_unit_of_measurement(
+            meter.native_unit_of_measurement,
+        ),
     )
 
 

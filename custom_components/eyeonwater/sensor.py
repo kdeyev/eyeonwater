@@ -4,7 +4,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import pyonwater
-from homeassistant import exceptions
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,

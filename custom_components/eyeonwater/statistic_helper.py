@@ -3,6 +3,7 @@
 import datetime
 import logging
 
+import pyonwater
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import get_last_statistics

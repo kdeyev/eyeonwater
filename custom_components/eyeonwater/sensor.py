@@ -37,10 +37,6 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-class UnrecognizedUnitError(exceptions.HomeAssistantError):
-    """Error to indicate unrecognized pyonwater native unit."""
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,

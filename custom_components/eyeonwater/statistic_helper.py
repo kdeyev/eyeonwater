@@ -16,6 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
+class UnrecognizedUnitError(exceptions.HomeAssistantError):
+    """Error to indicate unrecognized pyonwater native unit."""
+
+
 def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
     """Convert pyonwater native units to HA native units."""
     if unit == pyonwater.NativeUnits.gal:

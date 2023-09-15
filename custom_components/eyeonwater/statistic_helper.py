@@ -4,6 +4,7 @@ import datetime
 import logging
 
 import pyonwater
+from homeassistant import exceptions
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import get_last_statistics
@@ -55,7 +56,7 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
         source="recorder",
         statistic_id=statistic_id,
         unit_of_measurement=get_ha_native_unit_of_measurement(
-            meter.native_unit_of_measurement
+            meter.native_unit_of_measurement,
         ),
     )
 

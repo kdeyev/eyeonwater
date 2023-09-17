@@ -24,6 +24,7 @@ PYONWATER_UNIT_MAP: dict[pyonwater.NativeUnits, UnitOfVolume] = {
     pyonwater.NativeUnits.cm: UnitOfVolume.CUBIC_METERS,
 }
 
+
 class UnrecognizedUnitError(exceptions.HomeAssistantError):
     """Error to indicate unrecognized pyonwater native unit."""
 

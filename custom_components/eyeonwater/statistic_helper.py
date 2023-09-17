@@ -8,6 +8,7 @@ from homeassistant import exceptions
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import get_last_statistics
+from homeassistant.const import UnitOfVolume
 from homeassistant.util import dt as dtutil
 from pyonwater import DataPoint, Meter
 
@@ -24,11 +25,11 @@ class UnrecognizedUnitError(exceptions.HomeAssistantError):
 def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
     """Convert pyonwater native units to HA native units."""
     if unit == pyonwater.NativeUnits.gal:
-        return "gal"
+        return UnitOfVolume.GALLONS
     if unit == pyonwater.NativeUnits.cf:
-        return "cf"
+        return UnitOfVolume.CUBIC_FEET
     if unit == pyonwater.NativeUnits.cm:
-        return "m\u00b3"
+        return UnitOfVolume.CUBIC_METERS
 
     msg = "Unrecognized pyonwater unit {unit}"
     raise UnrecognizedUnitError(msg)

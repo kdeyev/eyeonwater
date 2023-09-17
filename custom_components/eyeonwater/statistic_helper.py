@@ -18,21 +18,23 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
+PYONWATER_UNIT_MAP: dict[pyonwater.NativeUnits, UnitOfVolume] = {
+    pyonwater.NativeUnits.gal: UnitOfVolume.GALLONS,
+    pyonwater.NativeUnits.cf: UnitOfVolume.CUBIC_FEET,
+    pyonwater.NativeUnits.cm: UnitOfVolume.CUBIC_METERS,
+}
+
 class UnrecognizedUnitError(exceptions.HomeAssistantError):
     """Error to indicate unrecognized pyonwater native unit."""
 
 
 def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
     """Convert pyonwater native units to HA native units."""
-    if unit == pyonwater.NativeUnits.gal:
-        return UnitOfVolume.GALLONS
-    if unit == pyonwater.NativeUnits.cf:
-        return UnitOfVolume.CUBIC_FEET
-    if unit == pyonwater.NativeUnits.cm:
-        return UnitOfVolume.CUBIC_METERS
-
-    msg = "Unrecognized pyonwater unit {unit}"
-    raise UnrecognizedUnitError(msg)
+    ha_unit = PYONWATER_UNIT_MAP.get(unit, None)
+    if ha_unit is None:
+        msg = "Unrecognized pyonwater unit {unit}"
+        raise UnrecognizedUnitError(msg)
+    return ha_unit
 
 
 def get_statistic_name(meter_id: str) -> str:

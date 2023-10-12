@@ -19,9 +19,9 @@ _LOGGER.addHandler(logging.StreamHandler())
 
 
 PYONWATER_UNIT_MAP: dict[pyonwater.NativeUnits, UnitOfVolume] = {
-    pyonwater.NativeUnits.gal: UnitOfVolume.GALLONS,
-    pyonwater.NativeUnits.cf: UnitOfVolume.CUBIC_FEET,
-    pyonwater.NativeUnits.cm: UnitOfVolume.CUBIC_METERS,
+    pyonwater.NativeUnits.GAL: UnitOfVolume.GALLONS,
+    pyonwater.NativeUnits.CF: UnitOfVolume.CUBIC_FEET,
+    pyonwater.NativeUnits.CM: UnitOfVolume.CUBIC_METERS,
 }
 
 

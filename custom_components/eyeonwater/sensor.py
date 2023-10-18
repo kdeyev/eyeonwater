@@ -147,14 +147,6 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
 
         async_import_statistics(self.hass, metadata, statistics)
 
-    async def import_historical_data_handler(self, days: int):
-        """Import historical data."""
-        data = await self.meter.reader.read_historical_data(days)
-        _LOGGER.info("%i data points will be imported", len(data))
-        statistics = convert_statistic_data(data)
-        metadata = get_statistic_metadata(self.meter)
-        async_import_statistics(self.hass, metadata, statistics)
-
 
 class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater temperature sensor."""

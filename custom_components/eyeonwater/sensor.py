@@ -184,7 +184,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
-    # Leaving this class in-place for now incase we need it in the future
+    # Leaving this class in-place for now in case we need it in the future
 
     _attr_has_entity_name = True
     _attr_name = None

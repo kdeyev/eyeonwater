@@ -56,7 +56,7 @@ async def async_setup_entry(
                 last_imported_time=last_imported_time,
             ),
         )
-        sensors.append(EyeOnWaterSensor(meter, coordinator))
+        #sensors.append(EyeOnWaterSensor(meter, coordinator))
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
@@ -64,6 +64,11 @@ async def async_setup_entry(
 
 class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
+
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(
         self,
@@ -78,8 +83,6 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         self._available = False
         self._historical_sensor = True
 
-        self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
-        self._attr_device_class = SensorDeviceClass.WATER
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
         self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,
@@ -181,6 +184,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
+    # Leaving this class in-place for now incase we need it in the future
 
     _attr_has_entity_name = True
     _attr_name = None

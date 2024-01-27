@@ -56,7 +56,7 @@ async def async_setup_entry(
                 last_imported_time=last_imported_time,
             ),
         )
-        sensors.append(EyeOnWaterSensor(meter, coordinator))
+        #sensors.append(EyeOnWaterSensor(meter, coordinator))
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
@@ -64,6 +64,11 @@ async def async_setup_entry(
 
 class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
+
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(
         self,
@@ -78,8 +83,6 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         self._available = False
         self._historical_sensor = True
 
-        self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
-        self._attr_device_class = SensorDeviceClass.WATER
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
         self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,
@@ -113,12 +116,18 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         if self._available:
             self._state = self.meter.reading
 
+            if not self.meter.last_historical_data:
+                raise Exception("Meter doesn't have recent readings")
+                                
             self._last_historical_data = filter_newer_data(
                 self.meter.last_historical_data,
                 self._last_imported_time,
             )
             if self._last_historical_data:
                 self.import_historical_data()
+                if not self.meter._last_historical_data:
+                    raise Exception("No historical data loaded")
+                
                 self._last_imported_time = self._last_historical_data[-1].dt
 
         self.async_write_ha_state()
@@ -181,6 +190,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
+    # Leaving this class in-place for now in case we need it in the future
 
     _attr_has_entity_name = True
     _attr_name = None

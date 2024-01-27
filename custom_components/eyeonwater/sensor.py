@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import pyonwater
+from homeassistant import exceptions
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -56,10 +57,13 @@ async def async_setup_entry(
                 last_imported_time=last_imported_time,
             ),
         )
-        #sensors.append(EyeOnWaterSensor(meter, coordinator))
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
+
+
+class NoDataFound(exceptions.HomeAssistantError):
+    """Error to indicate there is no data."""
 
 
 class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
@@ -117,8 +121,9 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             self._state = self.meter.reading
 
             if not self.meter.last_historical_data:
-                raise Exception("Meter doesn't have recent readings")
-                                
+                msg = "Meter doesn't have recent readings"
+                raise NoDataFound(msg)
+
             self._last_historical_data = filter_newer_data(
                 self.meter.last_historical_data,
                 self._last_imported_time,
@@ -126,8 +131,9 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             if self._last_historical_data:
                 self.import_historical_data()
                 if not self.meter._last_historical_data:
-                    raise Exception("No historical data loaded")
-                
+                    msg = "No historical data loaded"
+                    raise NoDataFound(msg)
+
                 self._last_imported_time = self._last_historical_data[-1].dt
 
         self.async_write_ha_state()
@@ -190,6 +196,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
+
     # Leaving this class in-place for now in case we need it in the future
 
     _attr_has_entity_name = True

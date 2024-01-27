@@ -1,41 +1,52 @@
 """Support for EyeOnWater sensors."""
 import datetime
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+import pyonwater
+from homeassistant import exceptions
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
-from pyonwater import DataPoint, Meter
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
 from .statistic_helper import (
     convert_statistic_data,
     filter_newer_data,
+    get_ha_native_unit_of_measurement,
     get_last_imported_time,
     get_statistic_metadata,
 )
+
+if TYPE_CHECKING:
+    from homeassistant.helpers.entity import Entity
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
 
-    sensors = []
+    sensors: list[Entity] = []
     for meter in meters:
         last_imported_time = await get_last_imported_time(hass, meter)
 
@@ -46,32 +57,40 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                 last_imported_time=last_imported_time,
             ),
         )
-        sensors.append(EyeOnWaterSensor(meter, coordinator))
         sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
 
 
+class NoDataFound(exceptions.HomeAssistantError):
+    """Error to indicate there is no data."""
+
+
 class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
     def __init__(
         self,
-        meter: Meter,
+        meter: pyonwater.Meter,
         coordinator: DataUpdateCoordinator,
         last_imported_time: datetime.datetime | None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state: DataPoint | None = None
+        self._state: pyonwater.DataPoint | None = None
         self._available = False
         self._historical_sensor = True
 
-        self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
-        self._attr_device_class = SensorDeviceClass.WATER
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
-        self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
+            meter.native_unit_of_measurement,
+        )
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},
@@ -81,7 +100,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             hw_version=self.meter.meter_info.reading.hardware_version,
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
-        self._last_historical_data: list[DataPoint] = []
+        self._last_historical_data: list[pyonwater.DataPoint] = []
         self._last_imported_time = last_imported_time
 
     @property
@@ -101,12 +120,20 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         if self._available:
             self._state = self.meter.reading
 
+            if not self.meter.last_historical_data:
+                msg = "Meter doesn't have recent readings"
+                raise NoDataFound(msg)
+
             self._last_historical_data = filter_newer_data(
                 self.meter.last_historical_data,
                 self._last_imported_time,
             )
             if self._last_historical_data:
                 self.import_historical_data()
+                if not self.meter._last_historical_data:
+                    msg = "No historical data loaded"
+                    raise NoDataFound(msg)
+
                 self._last_imported_time = self._last_historical_data[-1].dt
 
         self.async_write_ha_state()
@@ -135,14 +162,6 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
 
         async_import_statistics(self.hass, metadata, statistics)
 
-    async def import_historical_data_handler(self, days: int):
-        """Import historical data."""
-        data = await self.meter.reader.read_historical_data(days)
-        _LOGGER.info("%i data points will be imported", len(data))
-        statistics = convert_statistic_data(data)
-        metadata = get_statistic_metadata(self.meter)
-        async_import_statistics(self.hass, metadata, statistics)
-
 
 class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater temperature sensor."""
@@ -153,7 +172,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
     def __init__(
         self,
-        meter: Meter,
+        meter: pyonwater.Meter,
         coordinator: DataUpdateCoordinator,
     ) -> None:
         """Initialize the sensor."""
@@ -178,23 +197,28 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
+    # Leaving this class in-place for now in case we need it in the future
+
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
     def __init__(
         self,
-        meter: Meter,
+        meter: pyonwater.Meter,
         coordinator: DataUpdateCoordinator,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._state: DataPoint | None = None
+        self._state: pyonwater.DataPoint | None = None
         self._available = False
 
-        self._attr_has_entity_name = True
-        self._attr_name = None
-        self._attr_device_class = SensorDeviceClass.WATER
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_unique_id = meter.meter_uuid
-        self._attr_native_unit_of_measurement = meter.native_unit_of_measurement
+        self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
+            meter.native_unit_of_measurement,
+        )
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.meter.meter_uuid)},

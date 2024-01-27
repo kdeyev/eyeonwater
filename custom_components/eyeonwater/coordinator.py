@@ -1,7 +1,6 @@
 """EyeOnWater coordinator."""
 import logging
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -22,11 +21,9 @@ class EyeOnWaterData:
     def __init__(
         self,
         hass: HomeAssistant,
-        entry: ConfigEntry,
         account: Account,
     ) -> None:
         """Initialize the data coordintator."""
-        self._entry = entry
         self.account = account
         websession = aiohttp_client.async_get_clientsession(hass)
         self.client = Client(websession, account)
@@ -54,17 +51,11 @@ class EyeOnWaterData:
     async def import_historical_data(self, days: int):
         """Import historical data."""
         for meter in self.meters:
-            data = await meter.reader.read_historical_data(
+            data = await meter.read_historical_data(
                 client=self.client,
                 days_to_load=days,
             )
             _LOGGER.info("%i data points will be imported", len(data))
-            # Get data once - import twice
             statistics = convert_statistic_data(data)
-
-            # Import regular sensor
-            metadata = get_statistic_metadata(meter)
-            async_import_statistics(self.hass, metadata, statistics)
-            # Import "statistic" sensor
             metadata = get_statistic_metadata(meter)
             async_import_statistics(self.hass, metadata, statistics)

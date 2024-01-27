@@ -116,12 +116,18 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         if self._available:
             self._state = self.meter.reading
 
+            if not self.meter.last_historical_data:
+                raise Exception("Meter doesn't have recent readings")
+                                
             self._last_historical_data = filter_newer_data(
                 self.meter.last_historical_data,
                 self._last_imported_time,
             )
             if self._last_historical_data:
                 self.import_historical_data()
+                if not self.meter._last_historical_data:
+                    raise Exception("No historical data loaded")
+                
                 self._last_imported_time = self._last_historical_data[-1].dt
 
         self.async_write_ha_state()

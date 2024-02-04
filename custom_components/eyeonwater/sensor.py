@@ -131,7 +131,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             )
             if self._last_historical_data:
                 self.import_historical_data()
-                if not self.meter._last_historical_data:
+                if not self._last_historical_data:
                     msg = "No historical data loaded"
                     raise NoDataFound(msg)
 

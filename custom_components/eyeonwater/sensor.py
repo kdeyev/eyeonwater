@@ -128,10 +128,6 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
             )
             if self._last_historical_data:
                 self.import_historical_data()
-                if not self._last_historical_data:
-                    msg = "No historical data loaded"
-                    raise NoDataFound(msg)
-
                 self._last_imported_time = self._last_historical_data[-1].dt
 
         self.async_write_ha_state()

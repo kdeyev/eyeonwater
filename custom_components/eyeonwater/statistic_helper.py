@@ -97,11 +97,9 @@ async def get_last_imported_time(
 
     if last_stats:
         date = last_stats[statistic_id][0]["start"]
-        _LOGGER.debug("date %d", date)
         date = datetime.datetime.fromtimestamp(date, tz=dtutil.DEFAULT_TIME_ZONE)
-        _LOGGER.debug("date %d", date)
         date = dtutil.as_local(date)
-        _LOGGER.debug("date %d", date)
+        _LOGGER.debug("date %s", date)
 
         return date
     return None
@@ -113,7 +111,7 @@ def filter_newer_data(
 ) -> list[DataPoint]:
     """Filter data points that newer than given datetime."""
     _LOGGER.debug(
-        "last_imported_time %d - data %d",
+        "last_imported_time %s - data %s",
         last_imported_time,
         data[-1].dt,
     )

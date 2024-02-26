@@ -33,7 +33,7 @@ class EyeOnWaterData:
     async def setup(self):
         """Fetch all of the user's meters."""
         self.meters = await self.account.fetch_meters(self.client)
-        _LOGGER.debug("Discovered %s meter(s)", len(self.meters))
+        _LOGGER.debug("Discovered %i meter(s)", len(self.meters))
 
     async def read_meters(self, days_to_load=3):
         """Read each meter."""
@@ -51,17 +51,11 @@ class EyeOnWaterData:
     async def import_historical_data(self, days: int):
         """Import historical data."""
         for meter in self.meters:
-            data = await meter.reader.read_historical_data(
+            data = await meter.read_historical_data(
                 client=self.client,
                 days_to_load=days,
             )
             _LOGGER.info("%i data points will be imported", len(data))
-            # Get data once - import twice
             statistics = convert_statistic_data(data)
-
-            # Import regular sensor
-            metadata = get_statistic_metadata(meter)
-            async_import_statistics(self.hass, metadata, statistics)
-            # Import "statistic" sensor
             metadata = get_statistic_metadata(meter)
             async_import_statistics(self.hass, metadata, statistics)

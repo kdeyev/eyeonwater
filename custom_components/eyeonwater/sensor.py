@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import pyonwater
+from homeassistant import exceptions
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -62,6 +63,10 @@ async def async_setup_entry(
     async_add_entities(sensors, update_before_add=False)
 
 
+class NoDataFound(exceptions.HomeAssistantError):
+    """Error to indicate there is no data."""
+
+
 class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
@@ -113,6 +118,10 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         if self._available:
             self._state = self.meter.reading
 
+            if not self.meter.last_historical_data:
+                msg = "Meter doesn't have recent readings"
+                raise NoDataFound(msg)
+
             self._last_historical_data = filter_newer_data(
                 self.meter.last_historical_data,
                 self._last_imported_time,
@@ -145,14 +154,6 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         statistics = convert_statistic_data(self._last_historical_data)
         metadata = get_statistic_metadata(self.meter)
 
-        async_import_statistics(self.hass, metadata, statistics)
-
-    async def import_historical_data_handler(self, days: int):
-        """Import historical data."""
-        data = await self.meter.reader.read_historical_data(days)
-        _LOGGER.info("%i data points will be imported", len(data))
-        statistics = convert_statistic_data(data)
-        metadata = get_statistic_metadata(self.meter)
         async_import_statistics(self.hass, metadata, statistics)
 
 

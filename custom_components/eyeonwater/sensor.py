@@ -85,6 +85,9 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
 
         self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
         self._attr_device_class = SensorDeviceClass.WATER
+
+        # state class property is commented out due to a bug in HA, that generates negative statistics values
+
         self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
         self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,

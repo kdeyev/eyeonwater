@@ -6,6 +6,6 @@
   "dependencies": ["recorder"],
   "documentation": "https://github.com/kdeyev/eyeonwater",
   "iot_class": "cloud_polling",
-  "requirements": ["pyonwater==0.3.9"],
-  "version": "2.0.7"
+  "requirements": ["pyonwater==0.3.10"],
+  "version": "2.5.7"
 }

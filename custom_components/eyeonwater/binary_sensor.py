@@ -98,12 +98,14 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
             translation_key=description.translation_key,
         )
         self.meter = meter
+        chars = [c if c.isalnum() or c == "_" else "_" for c in meter.meter_uuid]
+        self._uuid = "".join(chars)
         self._state = False
         self._available = False
-        self._attr_unique_id = f"{description.key}_{self.meter.meter_uuid}"
+        self._attr_unique_id = f"{description.key}_{self._uuid}"
         self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.meter.meter_uuid)},
+            identifiers={(DOMAIN, self._uuid)},
             name=f"{WATER_METER_NAME} {self.meter.meter_id}",
             model=self.meter.meter_info.reading.model,
             manufacturer=self.meter.meter_info.reading.customer_name,

@@ -210,6 +210,9 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
+        chars = [c if c.isalnum() or c == "_" else "_" for c in meter.meter_uuid]
+        self._uuid = "".join(chars)
+
         self._state: pyonwater.DataPoint | None = None
         self._available = False
 

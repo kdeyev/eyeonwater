@@ -47,13 +47,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.exception("Fetching meters failed")
         raise
 
-    # Fetch actual meter_info for all meters
-    try:
-        await eye_on_water_data.read_meters(days_to_load=30)
-    except Exception:
-        _LOGGER.exception("Reading meters failed")
-        raise
-
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
         await eye_on_water_data.read_meters(days_to_load=3)

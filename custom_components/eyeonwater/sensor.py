@@ -28,6 +28,7 @@ from .statistic_helper import (
     get_ha_native_unit_of_measurement,
     get_last_imported_time,
     get_statistic_metadata,
+    normalize_id,
 )
 
 if TYPE_CHECKING:
@@ -58,7 +59,8 @@ async def async_setup_entry(
             ),
         )
         sensors.append(EyeOnWaterSensor(meter, coordinator))
-        sensors.append(EyeOnWaterTempSensor(meter, coordinator))
+        if meter.meter_info.sensors and meter.meter_info.sensors.endpoint_temperature:
+            sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
 
@@ -79,20 +81,23 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
+        self._uuid = normalize_id(meter.meter_uuid)
+        self._id = normalize_id(meter.meter_id)
+
         self._state: pyonwater.DataPoint | None = None
         self._available = False
         self._historical_sensor = True
 
-        self._attr_name = f"{WATER_METER_NAME} {self.meter.meter_id} Statistic"
+        self._attr_name = f"{WATER_METER_NAME} {self._id} Statistic"
         self._attr_device_class = SensorDeviceClass.WATER
-        self._attr_unique_id = f"{self.meter.meter_uuid}_statistic"
+        self._attr_unique_id = f"{self._uuid}_statistic"
         self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,
         )
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            identifiers={(DOMAIN, self._uuid)},
+            name=f"{WATER_METER_NAME} {self._id}",
             model=self.meter.meter_info.reading.model,
             manufacturer=self.meter.meter_info.reading.customer_name,
             hw_version=self.meter.meter_info.reading.hardware_version,
@@ -172,10 +177,13 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        self._attr_unique_id = f"{self.meter.meter_uuid}_temperature"
+        self._uuid = normalize_id(meter.meter_uuid)
+        self._id = normalize_id(meter.meter_id)
+
+        self._attr_unique_id = f"{self._uuid}_temperature"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            identifiers={(DOMAIN, self._uuid)},
+            name=f"{WATER_METER_NAME} {self._id}",
             model=self.meter.meter_info.reading.model,
             manufacturer=self.meter.meter_info.reading.customer_name,
             hw_version=self.meter.meter_info.reading.hardware_version,
@@ -185,7 +193,13 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Get native value."""
-        return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+        if (
+            self.meter.meter_info.sensors
+            and self.meter.meter_info.sensors.endpoint_temperature
+        ):
+            return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+
+        return None
 
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
@@ -204,17 +218,20 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
+        self._uuid = normalize_id(meter.meter_uuid)
+        self._id = normalize_id(meter.meter_id)
+
         self._state: pyonwater.DataPoint | None = None
         self._available = False
 
-        self._attr_unique_id = meter.meter_uuid
+        self._attr_unique_id = self._uuid
         self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,
         )
         self._attr_suggested_display_precision = 0
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.meter.meter_uuid)},
-            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            identifiers={(DOMAIN, self._uuid)},
+            name=f"{WATER_METER_NAME} {self._id}",
             model=self.meter.meter_info.reading.model,
             manufacturer=self.meter.meter_info.reading.customer_name,
             hw_version=self.meter.meter_info.reading.hardware_version,

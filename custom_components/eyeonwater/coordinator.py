@@ -35,15 +35,11 @@ class EyeOnWaterData:
         self.meters = await self.account.fetch_meters(self.client)
         _LOGGER.debug("Discovered %i meter(s)", len(self.meters))
 
-    async def read_meters(self, days_to_load=3):
+    async def read_meters(self):
         """Read each meter."""
         for meter in self.meters:
             try:
                 await meter.read_meter_info(client=self.client)
-                await meter.read_historical_data(
-                    client=self.client,
-                    days_to_load=days_to_load,
-                )
             except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
                 raise UpdateFailed(error) from error
         return self.meters

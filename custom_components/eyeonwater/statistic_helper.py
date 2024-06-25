@@ -9,6 +9,7 @@ from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import get_last_statistics
 from homeassistant.const import UnitOfVolume
+from homeassistant.core import valid_entity_id
 from homeassistant.util import dt as dtutil
 from pyonwater import DataPoint, Meter
 
@@ -43,15 +44,27 @@ def get_statistic_name(meter_id: str) -> str:
     return f"{WATER_METER_NAME} {meter_id} Statistic"
 
 
-def get_statistics_id(meter_id: str) -> str:
+def normalize_id(uuid: str) -> str:
+    """Normalize ID."""
+    chars = [c if c.isalnum() or c == "_" else "_" for c in uuid]
+    uuid = "".join(chars)
+    return uuid.lower()
+
+
+def get_statistics_id(meter_uuid: str) -> str:
     """Generate statistic ID for a meter."""
-    return f"sensor.water_meter_{meter_id.lower()}_statistic"
+    meter_uuid = normalize_id(meter_uuid)
+    return f"sensor.water_meter_{meter_uuid}_statistic"
 
 
 def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
     """Build statistic metadata for a given meter."""
     name = get_statistic_name(meter_id=meter.meter_id)
-    statistic_id = get_statistics_id(meter.meter_id)
+    statistic_id = get_statistics_id(meter.meter_uuid)  # should it be meter id or uuid?
+
+    if not valid_entity_id(statistic_id):
+        msg = "Invalid statistic_id {statistic_id} for meter {meter.meter_id}"
+        raise Exception(msg)  # noqa: TRY002
 
     return StatisticMetaData(
         has_mean=False,
@@ -84,7 +97,7 @@ async def get_last_imported_time(
     """Return last imported data datetime."""
     # https://github.com/home-assistant/core/blob/74e2d5c5c312cf3ba154b5206ceb19ba884c6fb4/homeassistant/components/tibber/sensor.py#L11
 
-    statistic_id = get_statistics_id(meter.meter_id)
+    statistic_id = get_statistics_id(meter.meter_uuid)  # should it be meter id or uuid?
     last_stats = await get_instance(hass).async_add_executor_job(
         get_last_statistics,
         hass,

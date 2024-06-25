@@ -28,6 +28,7 @@ from .statistic_helper import (
     get_ha_native_unit_of_measurement,
     get_last_imported_time,
     get_statistic_metadata,
+    normalize_id,
 )
 
 if TYPE_CHECKING:
@@ -58,7 +59,8 @@ async def async_setup_entry(
             ),
         )
         sensors.append(EyeOnWaterSensor(meter, coordinator))
-        sensors.append(EyeOnWaterTempSensor(meter, coordinator))
+        if meter.meter_info.sensors and meter.meter_info.sensors.endpoint_temperature:
+            sensors.append(EyeOnWaterTempSensor(meter, coordinator))
 
     async_add_entities(sensors, update_before_add=False)
 
@@ -79,8 +81,7 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        chars = [c if c.isalnum() or c == "_" else "_" for c in meter.meter_uuid]
-        self._uuid = "".join(chars)
+        self._uuid = normalize_id(meter.meter_uuid)
 
         self._state: pyonwater.DataPoint | None = None
         self._available = False
@@ -175,8 +176,7 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        chars = [c if c.isalnum() or c == "_" else "_" for c in meter.meter_uuid]
-        self._uuid = "".join(chars)
+        self._uuid = normalize_id(meter.meter_uuid)
 
         self._attr_unique_id = f"{self._uuid}_temperature"
         self._attr_device_info = DeviceInfo(
@@ -191,7 +191,13 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Get native value."""
-        return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+        if (
+            self.meter.meter_info.sensors
+            and self.meter.meter_info.sensors.endpoint_temperature
+        ):
+            return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+
+        return None
 
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
@@ -210,8 +216,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.meter = meter
-        chars = [c if c.isalnum() or c == "_" else "_" for c in meter.meter_uuid]
-        self._uuid = "".join(chars)
+        self._uuid = normalize_id(meter.meter_uuid)
 
         self._state: pyonwater.DataPoint | None = None
         self._available = False

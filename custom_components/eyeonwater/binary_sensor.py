@@ -16,6 +16,7 @@ from homeassistant.helpers.update_coordinator import (
 from pyonwater import Meter
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
+from .statistic_helper import normalize_id
 
 
 @dataclass
@@ -98,8 +99,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
             translation_key=description.translation_key,
         )
         self.meter = meter
-        chars = [c if c.isalnum() or c == "_" else "_" for c in meter.meter_uuid]
-        self._uuid = "".join(chars)
+        self._uuid = normalize_id(meter.meter_uuid)
         self._state = False
         self._available = False
         self._attr_unique_id = f"{description.key}_{self._uuid}"

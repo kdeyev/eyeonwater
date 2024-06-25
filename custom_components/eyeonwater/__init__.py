@@ -49,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
-        await eye_on_water_data.read_meters()
+        await eye_on_water_data.read_meters(days_to_load=3)
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(

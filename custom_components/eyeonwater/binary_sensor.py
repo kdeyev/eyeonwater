@@ -100,13 +100,14 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         )
         self.meter = meter
         self._uuid = normalize_id(meter.meter_uuid)
+        self._id = normalize_id(meter.meter_id)
         self._state = False
         self._available = False
         self._attr_unique_id = f"{description.key}_{self._uuid}"
         self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._uuid)},
-            name=f"{WATER_METER_NAME} {self.meter.meter_id}",
+            name=f"{WATER_METER_NAME} {self._id}",
             model=self.meter.meter_info.reading.model,
             manufacturer=self.meter.meter_info.reading.customer_name,
             hw_version=self.meter.meter_info.reading.hardware_version,

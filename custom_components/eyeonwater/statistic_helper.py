@@ -41,6 +41,7 @@ def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
 
 def get_statistic_name(meter_id: str) -> str:
     """Generate statistic name for a meter."""
+    meter_id = normalize_id(meter_id)
     return f"{WATER_METER_NAME} {meter_id} Statistic"
 
 
@@ -51,16 +52,16 @@ def normalize_id(uuid: str) -> str:
     return uuid.lower()
 
 
-def get_statistics_id(meter_uuid: str) -> str:
+def get_statistics_id(meter_id: str) -> str:
     """Generate statistic ID for a meter."""
-    meter_uuid = normalize_id(meter_uuid)
-    return f"sensor.water_meter_{meter_uuid}_statistic"
+    meter_id = normalize_id(meter_id)
+    return f"sensor.water_meter_{meter_id}_statistic"
 
 
 def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
     """Build statistic metadata for a given meter."""
     name = get_statistic_name(meter_id=meter.meter_id)
-    statistic_id = get_statistics_id(meter.meter_uuid)  # should it be meter id or uuid?
+    statistic_id = get_statistics_id(meter.meter_id)  # if should be meter id
 
     if not valid_entity_id(statistic_id):
         msg = "Invalid statistic_id {statistic_id} for meter {meter.meter_id}"
@@ -97,7 +98,7 @@ async def get_last_imported_time(
     """Return last imported data datetime."""
     # https://github.com/home-assistant/core/blob/74e2d5c5c312cf3ba154b5206ceb19ba884c6fb4/homeassistant/components/tibber/sensor.py#L11
 
-    statistic_id = get_statistics_id(meter.meter_uuid)  # should it be meter id or uuid?
+    statistic_id = get_statistics_id(meter.meter_id)  # if should be meter id
     last_stats = await get_instance(hass).async_add_executor_job(
         get_last_statistics,
         hass,

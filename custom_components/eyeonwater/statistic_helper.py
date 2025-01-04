@@ -40,12 +40,21 @@ def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
 
 def get_statistic_name(meter_id: str) -> str:
     """Generate statistic name for a meter."""
+    meter_id = normalize_id(meter_id)
     return f"{WATER_METER_NAME} {meter_id} Statistic"
+
+
+def normalize_id(uuid: str) -> str:
+    """Normalize ID."""
+    chars = [c if c.isalnum() or c == "_" else "_" for c in uuid]
+    uuid = "".join(chars)
+    return uuid.lower()
 
 
 def get_statistics_id(meter_id: str) -> str:
     """Generate statistic ID for a meter."""
-    return f"sensor.water_meter_{meter_id.lower()}_statistic"
+    meter_id = normalize_id(meter_id)
+    return f"sensor.water_meter_{meter_id}_statistic"
 
 
 def get_statistic_metadata(meter: Meter) -> StatisticMetaData:

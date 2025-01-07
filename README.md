@@ -10,7 +10,7 @@ Add `https://github.com/kdeyev/eyeonwater` as Repository and select the `Integra
 
 Follow the configuration dialog and use your username and password, which you use to log in on eyeonwater.
 Pay attention to that integration uses some of your HA configurations:
-- `Country`` is used for identification if `eyeonwater.ca` should be used.
+- `Country` is used for identification if `eyeonwater.ca` should be used.
 - `Unit System` is used for switching between Metric and US customary measurement systems
 
 ![configuration](https://github.com/kdeyev/eyeonwater/blob/master/img/configuration.png?raw=true)
@@ -25,10 +25,13 @@ Pay attention to that integration uses some of your HA configurations:
 
 4. Got to `Settings`->`Dashboards`->`Energy` configuration.
 
-You should be able to choose your water meter in the Water Consumption
+You should be able to choose your water meter in the Water Consumption.
 
-![water-consumption-configuration](https://github.com/kdeyev/eyeonwater/blob/master/img/water-consumption-configuration.png?raw=true)
-![water-consumption](https://github.com/kdeyev/eyeonwater/blob/master/img/water-consumption.png?raw=true)
+Pay attention that you will see 2 different meters, please choose that one that ending with "Statistics".
+
+<img width="343" alt="image" src="https://github.com/user-attachments/assets/fb521562-22e9-407e-9796-13a422e36e6b" />
+
+You may see an error message like: `The state class '' of this entity is not supported.` It's expected, for more details please look at https://github.com/kdeyev/eyeonwater/issues/30
 
 5. Have fun and watch your utilities in the Energy Dashboard.
 
@@ -46,7 +49,6 @@ The integration allows to import of historical water data usage after it was ins
 
 
 # Unsupported state class
-
 Please pay attention: If you look at the `Developer Tools` -> `Statistics`, you will see an error message associated with the water sensor:
 ```
 The state class '' of this entity is not supported.

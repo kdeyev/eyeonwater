@@ -9,6 +9,7 @@ from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
@@ -84,10 +85,10 @@ class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
 
         self._state: pyonwater.DataPoint | None = None
         self._available = False
-        self._historical_sensor = True
 
         self._attr_has_entity_name = True
         self._attr_device_class = SensorDeviceClass.WATER
+        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_unique_id = self._uuid
         self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,

@@ -52,7 +52,7 @@ async def async_setup_entry(
         last_imported_time = await get_last_imported_time(hass, meter)
 
         sensors.append(
-            EyeOnWaterStatistic(
+            EyeOnWater(
                 meter,
                 coordinator,
                 last_imported_time=last_imported_time,
@@ -68,7 +68,7 @@ class NoDataFound(exceptions.HomeAssistantError):
     """Error to indicate there is no data."""
 
 
-class EyeOnWaterStatistic(CoordinatorEntity, SensorEntity):
+class EyeOnWater(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
     def __init__(

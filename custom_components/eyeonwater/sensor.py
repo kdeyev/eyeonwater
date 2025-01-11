@@ -131,6 +131,10 @@ class EyeOnWater(CoordinatorEntity, SensorEntity):
                 msg = "Meter doesn't have recent readings"
                 raise NoDataFound(msg)
 
+            if self._state.reading < self._last_historical_data[-1].reading:
+                msg = "Meter reading is less than last historical data"
+                raise NoDataFound(msg)
+
             self._last_historical_data = filter_newer_data(
                 self.meter.last_historical_data,
                 self._last_imported_time,

@@ -128,10 +128,11 @@ class EyeOnWater(CoordinatorEntity, SensorEntity):
             self._state = self.meter.reading
 
             if not self.meter.last_historical_data:
-                msg = "Meter doesn't have recent readings"
-                raise NoDataFound(msg)
+                _LOGGER.debug("Meter has no historical data")
+                self.async_write_ha_state()
+                return
 
-            if self._state.reading < self._last_historical_data[-1].reading:
+            if self._state.reading < self.meter.last_historical_data[-1].reading:
                 msg = "Meter reading is less than last historical data"
                 raise NoDataFound(msg)
 

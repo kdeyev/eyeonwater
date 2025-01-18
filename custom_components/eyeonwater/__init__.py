@@ -49,7 +49,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async def async_update_data():
         _LOGGER.debug("Fetching latest data")
-        await eye_on_water_data.read_meters(days_to_load=0)
+        # import last 3 days of statistics. It should cover short downtimes.
+        # For longer downtimes, the user has to trigger import_historical_data service.
+        await eye_on_water_data.read_meters(days_to_load=3)
         return eye_on_water_data
 
     coordinator = DataUpdateCoordinator(

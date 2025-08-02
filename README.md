@@ -41,7 +41,7 @@ Pay attention that EyeOnWater publishes the meter reading once in several hours 
 
 # Import historical data
 The integration allows to import of historical water data usage after it was installed.
-- Go to `Developer Tools` -> Servies`.
+- Go to `Developer Tools` -> `Actions`.
 - Enter the `EyeOnWater: import_historical_data` service name.
 - Choose how many days of historical data you want to import.
 - Pay attention that the import may take some time.

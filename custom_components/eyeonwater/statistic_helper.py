@@ -10,7 +10,7 @@ from homeassistant.components.recorder.models import StatisticData, StatisticMet
 from homeassistant.components.recorder.statistics import get_last_statistics
 from homeassistant.const import UnitOfVolume
 from homeassistant.util import dt as dtutil
-from pyonwater import DataPoint, Meter
+from pyonwater import DataPoint, Meter, enforce_monotonic_total, filter_points_after
 
 from .const import WATER_METER_NAME
 
@@ -75,14 +75,21 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
 
 
 def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:
-    """Convert statistics data to HA StatisticData format."""
+    """Convert statistics data to HA StatisticData format.
+
+    Applies monotonic enforcement to ensure readings only increase,
+    preventing negative deltas in the recorder statistics.
+    """
+    # Enforce monotonic increasing readings to handle data anomalies
+    normalized_data = enforce_monotonic_total(data)
+
     return [
         StatisticData(
             start=row.dt,
             sum=row.reading,
             state=row.reading,
         )
-        for row in data
+        for row in normalized_data
     ]
 
 
@@ -118,19 +125,21 @@ def filter_newer_data(
     data: list[DataPoint],
     last_imported_time: datetime.datetime | None,
 ) -> list[DataPoint]:
-    """Filter data points that newer than given datetime."""
+    """Filter data points newer than given datetime.
+
+    Uses pyonwater's filter_points_after for optimized filtering.
+    """
+    if not data:
+        return data
+
     _LOGGER.debug(
         "last_imported_time %s - data %s",
         last_imported_time,
-        data[-1].dt,
+        data[-1].dt if data else None,
     )
-    if last_imported_time is not None:
-        data = list(
-            filter(
-                lambda r: r.dt > last_imported_time,
-                data,
-            ),
-        )
-    _LOGGER.info("%i data points found", len(data))
 
+    if last_imported_time is not None:
+        data = filter_points_after(data, last_imported_time)
+
+    _LOGGER.info("%i data points found", len(data))
     return data

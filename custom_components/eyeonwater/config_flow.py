@@ -38,7 +38,7 @@ def get_hostname_for_country(hass: core.HomeAssistant) -> str:
 
 def create_account_from_config(
     hass: core.HomeAssistant,
-    data: MappingProxyType[str, Any],
+    data: dict[str, Any] | MappingProxyType[str, Any],
 ) -> Account:
     """Create account login from config."""
     eow_hostname = get_hostname_for_country(hass)
@@ -53,7 +53,10 @@ def create_account_from_config(
     )
 
 
-async def validate_input(hass: core.HomeAssistant, data):
+async def validate_input(
+    hass: core.HomeAssistant,
+    data: dict[str, Any] | MappingProxyType[str, Any],
+) -> dict[str, str]:
     """Validate the user input allows us to connect.
 
     Data has the keys from DATA_SCHEMA with values provided by the user.
@@ -78,9 +81,38 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     VERSION = 1
 
-    async def async_step_user(self, user_input=None):
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        """Get the options flow for this config entry."""
+        return EyeOnWaterOptionsFlow(config_entry)
+
+    async def async_step_import(
+        self,
+        import_data: dict[str, Any],
+    ) -> config_entries.ConfigFlowResult:
+        """Handle import from configuration.yaml."""
+        return await self.async_step_user(import_data)
+
+    @classmethod
+    def async_supports_options_flow(
+        cls,
+        config_entry: config_entries.ConfigEntry,  # noqa: ARG003
+    ) -> bool:
+        """Return options flow support for this config entry."""
+        return True
+
+    def is_matching(self, other_flow: config_entries.ConfigFlow) -> bool:
+        """Return True if the flow matches this config flow."""
+        return other_flow.__class__ is self.__class__
+
+    async def async_step_user(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ):
         """Handle the initial step."""
-        errors = {}
+        errors: dict[str, str] = {}
         if user_input is not None:
             try:
                 info = await validate_input(self.hass, user_input)
@@ -105,20 +137,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
             errors=errors,
         )
 
-    @staticmethod
-    def async_get_options_flow(config_entry):
-        """Get the options flow for this config entry."""
-        return EyeOnWaterOptionsFlow(config_entry)
-
 
 class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow for EyeOnWater."""
 
-    def __init__(self, config_entry):
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        super().__init__()
+        self._config_entry = config_entry
 
-    async def async_step_init(self, user_input=None):
+    async def async_step_init(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ):
         """Handle the initial options step (Phase 2)."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
@@ -129,7 +160,7 @@ class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Optional(
                         USE_SINGLE_SENSOR_MODE,
-                        default=self.config_entry.options.get(
+                        default=self._config_entry.options.get(
                             USE_SINGLE_SENSOR_MODE,
                             USE_SINGLE_SENSOR_MODE_DEFAULT,
                         ),

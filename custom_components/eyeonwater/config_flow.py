@@ -1,4 +1,5 @@
 """Config flow for EyeOnWater integration."""
+
 import asyncio
 import logging
 from types import MappingProxyType
@@ -11,7 +12,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import aiohttp_client
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
-from .const import DOMAIN
+from .const import DOMAIN, USE_SINGLE_SENSOR_MODE, USE_SINGLE_SENSOR_MODE_DEFAULT
 
 CONF_EOW_HOSTNAME_COM = "eyeonwater.com"
 CONF_EOW_HOSTNAME_CA = "eyeonwater.ca"
@@ -102,6 +103,45 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
             step_id="user",
             data_schema=DATA_SCHEMA,
             errors=errors,
+        )
+
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this config entry."""
+        return EyeOnWaterOptionsFlow(config_entry)
+
+
+class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
+    """Handle options flow for EyeOnWater."""
+
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Handle the initial options step (Phase 2)."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        USE_SINGLE_SENSOR_MODE,
+                        default=self.config_entry.options.get(
+                            USE_SINGLE_SENSOR_MODE,
+                            USE_SINGLE_SENSOR_MODE_DEFAULT,
+                        ),
+                    ): bool,
+                },
+            ),
+            description_placeholders={
+                "single_sensor_info": (
+                    "Enable to use the new single-sensor mode (Phase 2). "
+                    "Disable to use the legacy two-sensor mode (deprecated)."
+                ),
+            },
         )
 
 

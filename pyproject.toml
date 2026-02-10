@@ -25,7 +25,17 @@ types-pytz = "^2023.3.0.1"
 
 [tool.black]
 target-version = ["py39", "py310"]
-exclude = 'generated'
+line-length = 88
+exclude = '''
+/(
+    \.venv
+  | \.git
+  | __pycache__
+  | \.eggs
+  | \*.egg-info
+  | generated
+)/
+'''
 
 [tool.isort]
 profile = "black"
@@ -34,8 +44,16 @@ known_first_party = [
     "homeassistant",
 ]
 combine_as_imports = true
+skip = [".venv", ".git", "__pycache__", "*.egg-info"]
 
 [tool.ruff]
+line-length = 88
+exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    "*.egg-info",
+]
 select = [
     "ALL",
     "D",  # pydocstyle
@@ -55,7 +73,6 @@ select = [
     "ANN", # flake8-annotations
 ]
 ignore = [
-    "E501",  # line too long, handled by black
     "B008",  # do not perform function calls in argument defaults
     "B905",  # ignore zip() without an explicit strict= parameter, only support with python >3.10
 ]
@@ -80,3 +97,4 @@ warn_unused_ignores = true
 no_implicit_optional = true
 show_error_codes = true
 implicit_reexport = true
+exclude = [".venv", "__pycache__", ".eggs", "*.egg-info"]

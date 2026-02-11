@@ -77,6 +77,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Add listener for options changes to reload entry when sensor mode is toggled
+    entry.async_on_modify(lambda: hass.async_create_task(
+        hass.config_entries.async_reload(entry.entry_id)
+    ))
+
     async def async_service_handler(call: ServiceCall) -> None:
         days = call.data.get(
             IMPORT_HISTORICAL_DATA_DAYS_NAME,

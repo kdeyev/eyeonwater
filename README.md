@@ -4,57 +4,70 @@
 
 Add `https://github.com/kdeyev/eyeonwater` as Repository and select the `Integration` category.
 
-![add-repository](https://github.com/kdeyev/eyeonwater/blob/master/img/add-repository.png?raw=true)
+![add-repository](img/add-repository.png)
 
-2. Add EyeOnWater integration following [HACS instructions](https://github.com/hacs/integration)
+1. Add EyeOnWater integration following [HACS instructions](https://github.com/hacs/integration)
 
 Follow the configuration dialog and use your username and password, which you use to log in on eyeonwater.
-Pay attention to that integration uses some of your HA configurations:
+
+![configuration](img/configuration.png)
+
+1. Configure integration options by clicking "Options" on the integration card:
+
+The integration uses some of your HA configurations:
+
 - `Country` is used for identification if `eyeonwater.ca` should be used.
 - `Unit System` is used for switching between Metric and US customary measurement systems
+- `Use unified sensor` toggle allows you to choose between a single sensor per meter or multiple sensors (consumption, consumption today, etc.)
 
-![configuration](https://github.com/kdeyev/eyeonwater/blob/master/img/configuration.png?raw=true)
+![options](img/options.png)
 
-3. After successful initialization you should see the integration card appear:
+1. After successful initialization you should see the integration card appear:
 
-![integration-card](https://github.com/kdeyev/eyeonwater/blob/master/img/integration-card.png?raw=true)
+![integration-card](img/integration-card.png)
 
-![watermeter](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter.png?raw=true)
+![watermeter](img/watermeter.png)
 
-![watermeter-graph](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter-graph.png?raw=true)
+![watermeter-graph](img/watermeter-graph.png)
 
-4. Got to `Settings`->`Dashboards`->`Energy` configuration.
+1. Got to `Settings`->`Dashboards`->`Energy` configuration.
 
 You should be able to choose your water meter in the Water Consumption.
 
 Pay attention that you will see 2 different meters, please choose that one that ending with "Statistics".
 
-<img width="343" alt="image" src="https://github.com/user-attachments/assets/fb521562-22e9-407e-9796-13a422e36e6b" />
+![image](https://github.com/user-attachments/assets/fb521562-22e9-407e-9796-13a422e36e6b)
 
-You may see an error message like: `The state class '' of this entity is not supported.` It's expected, for more details please look at https://github.com/kdeyev/eyeonwater/issues/30
+You may see an error message like: `The state class '' of this entity is not supported.` It's expected, for more details please look at <https://github.com/kdeyev/eyeonwater/issues/30>
 
-5. Have fun and watch your utilities in the Energy Dashboard.
+1. Have fun and watch your utilities in the Energy Dashboard.
 
-![energy-dashboard](https://github.com/kdeyev/eyeonwater/blob/master/img/energy-dashboard.png?raw=true)
+![energy-dashboard](img/energy-dashboard.png)
 
 Pay attention that EyeOnWater publishes the meter reading once in several hours (even when they accumulate the meter reading once in several minutes). So data may come with a delay of several hours.
 
-# Import historical data
+## Import historical data
+
 The integration allows to import of historical water data usage after it was installed.
+
 - Go to `Developer Tools` -> Servies`.
 - Enter the `EyeOnWater: import_historical_data` service name.
 - Choose how many days of historical data you want to import.
 - Pay attention that the import may take some time.
-![import-historical-data](https://github.com/kdeyev/eyeonwater/blob/master/img/import-historical-data.png?raw=true)
 
+![import-historical-data](img/import-historical-data.png)
 
-# Unsupported state class
+## Unsupported state class
+
 Please pay attention: If you look at the `Developer Tools` -> `Statistics`, you will see an error message associated with the water sensor:
-```
+
+```text
 The state class '' of this entity is not supported.
 ```
+
 or
-```
+
+```text
 Unsupported state class
 The state class of this entity, is not supported.
 Statistics cannot be generated until this entity has a supported state class.
@@ -66,4 +79,4 @@ If you have set this state class yourself, please correct it. The different stat
 Do you want to permanently remove the long term statistics of sensor.water_meter_200010108 from your database?
 ```
 
-It's a side-effect of the way we prevent the HA from recalculating the sensor statistics. You can find more information [here](https://github.com/kdeyev/eyeonwater/issues/30)
+It's a side-effect of the way we prevent the HA from recalculating the sensor statistics. You can find more information [in issue #30](https://github.com/kdeyev/eyeonwater/issues/30)

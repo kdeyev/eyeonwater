@@ -10,11 +10,23 @@
         },
         "step": {
             "user": {
-                "description": "Eye On Water configuration.",
+                "description": "Use your EyeOnWater username and password.\n\n{system_settings_info}",
                 "title": "EyeOnWater Integration",
                 "data": {
                     "password": "Password",
-                    "username": "Username"
+                    "username": "Username",
+                    "use_single_sensor_mode": "Use unified sensor (single entity per meter)"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "EyeOnWater Options",
+                "description": "{system_settings_info}\n\n{single_sensor_info}",
+                "data": {
+                    "use_single_sensor_mode": "Use unified sensor (single entity per meter)"
                 }
             }
         }

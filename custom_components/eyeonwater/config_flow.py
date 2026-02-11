@@ -10,6 +10,7 @@ from aiohttp import ClientError
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import aiohttp_client
+from homeassistant.util.unit_system import METRIC_SYSTEM
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 from .const import DOMAIN, USE_SINGLE_SENSOR_MODE, USE_SINGLE_SENSOR_MODE_DEFAULT
@@ -23,6 +24,10 @@ DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
+        vol.Optional(
+            USE_SINGLE_SENSOR_MODE,
+            default=USE_SINGLE_SENSOR_MODE_DEFAULT,
+        ): bool,
     },
 )
 
@@ -129,12 +134,43 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
                     await self.async_set_unique_id(user_input[CONF_USERNAME])
                     self._abort_if_unique_id_configured()
 
-                    return self.async_create_entry(title=info["title"], data=user_input)
+                    data = {
+                        CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    }
+                    options = {
+                        USE_SINGLE_SENSOR_MODE: user_input.get(
+                            USE_SINGLE_SENSOR_MODE,
+                            USE_SINGLE_SENSOR_MODE_DEFAULT,
+                        ),
+                    }
+                    return self.async_create_entry(
+                        title=info["title"],
+                        data=data,
+                        options=options,
+                    )
+
+        # Build dynamic system parameters display
+        country = self.hass.config.country or "Not set"
+        is_metric = self.hass.config.units is METRIC_SYSTEM
+        unit_system = "Metric" if is_metric else "Imperial"
+
+        system_settings_info = (
+            f"**System Parameters**\n"
+            f"  • Country: {country}\n"
+            f"  • Units: {unit_system}\n"
+            f"\n"
+            f"*These values can be changed in "
+            f"[Settings > System > General](/config/general)*"
+        )
 
         return self.async_show_form(
             step_id="user",
             data_schema=DATA_SCHEMA,
             errors=errors,
+            description_placeholders={
+                "system_settings_info": system_settings_info,
+            },
         )
 
 
@@ -150,9 +186,23 @@ class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
         self,
         user_input: dict[str, Any] | None = None,
     ):
-        """Handle the initial options step (Phase 2)."""
+        """Handle the initial options step."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
+
+        # Build dynamic system parameters display
+        country = self.hass.config.country or "Not set"
+        is_metric = self.hass.config.units is METRIC_SYSTEM
+        unit_system = "Metric" if is_metric else "Imperial"
+
+        system_settings_info = (
+            f"**System Parameters**\n"
+            f"  • Country: {country}\n"
+            f"  • Units: {unit_system}\n"
+            f"\n"
+            f"*These values can be changed in "
+            f"[Settings > System > General](/config/general)*"
+        )
 
         return self.async_show_form(
             step_id="init",
@@ -169,9 +219,10 @@ class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
             ),
             description_placeholders={
                 "single_sensor_info": (
-                    "Enable to use the new single-sensor mode (Phase 2). "
-                    "Disable to use the legacy two-sensor mode (deprecated)."
+                    "Optional feature: Enable a unified single sensor per meter. "
+                    "Disable to keep the legacy two-sensor layout."
                 ),
+                "system_settings_info": system_settings_info,
             },
         )
 

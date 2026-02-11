@@ -2,9 +2,11 @@
   "config": {
     "step": {
       "user": {
+        "description": "Use your EyeOnWater username and password.\n\n{system_settings_info}",
         "data": {
           "username": "[%key:common::config_flow::data::username%]",
-          "password": "[%key:common::config_flow::data::password%]"
+          "password": "[%key:common::config_flow::data::password%]",
+          "use_single_sensor_mode": "Use unified sensor (single entity per meter)"
         }
       }
     },
@@ -15,6 +17,17 @@
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "EyeOnWater Options",
+        "description": "{system_settings_info}\n\n{single_sensor_info}",
+        "data": {
+          "use_single_sensor_mode": "Use unified sensor (single entity per meter)"
+        }
+      }
     }
   },
   "entity": {

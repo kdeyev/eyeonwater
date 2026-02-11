@@ -24,7 +24,7 @@ pyonwater = "0.3.17"
 types-pytz = "^2025.2.0.20251108"
 
 [tool.black]
-target-version = ["py312", "py313"]
+target-version = ["py312"]
 line-length = 88
 exclude = '''
 /(

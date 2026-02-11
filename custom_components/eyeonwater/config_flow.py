@@ -160,7 +160,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
             f"  • Country: {country}\n"
             f"  • Units: {unit_system}\n"
             f"\n"
-            f"*These values can be changed in [Settings > System > General](/config/general)*"
+            f"*These values can be changed in "
+            f"[Settings > System > General](/config/general)*"
         )
 
         return self.async_show_form(
@@ -185,7 +186,7 @@ class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
         self,
         user_input: dict[str, Any] | None = None,
     ):
-        """Handle the initial options step (Phase 2)."""
+        """Handle the initial options step."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
@@ -199,7 +200,8 @@ class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
             f"  • Country: {country}\n"
             f"  • Units: {unit_system}\n"
             f"\n"
-            f"*These values can be changed in [Settings > System > General](/config/general)*"
+            f"*These values can be changed in "
+            f"[Settings > System > General](/config/general)*"
         )
 
         return self.async_show_form(

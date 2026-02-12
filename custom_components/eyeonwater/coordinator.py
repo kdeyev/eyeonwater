@@ -1,5 +1,4 @@
 """EyeOnWater coordinator."""
-
 import logging
 
 from homeassistant.core import HomeAssistant
@@ -31,25 +30,26 @@ class EyeOnWaterData:
         self.meters: list[Meter] = []
         self.hass = hass
 
-    async def setup(self) -> None:
+    async def setup(self):
         """Fetch all of the user's meters."""
         self.meters = await self.account.fetch_meters(self.client)
         _LOGGER.debug("Discovered %i meter(s)", len(self.meters))
 
-    async def read_meters(self, days_to_load: int = 3) -> list[Meter]:
+    async def read_meters(self, days_to_load=3):
         """Read each meter."""
         for meter in self.meters:
             try:
                 await meter.read_meter_info(client=self.client)
-                await meter.read_historical_data(
-                    client=self.client,
-                    days_to_load=days_to_load,
-                )
+                if days_to_load > 0:
+                    await meter.read_historical_data(
+                        client=self.client,
+                        days_to_load=days_to_load,
+                    )
             except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
                 raise UpdateFailed(error) from error
         return self.meters
 
-    async def import_historical_data(self, days: int) -> None:
+    async def import_historical_data(self, days: int):
         """Import historical data."""
         for meter in self.meters:
             data = await meter.read_historical_data(

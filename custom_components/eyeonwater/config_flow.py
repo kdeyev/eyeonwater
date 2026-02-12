@@ -1,5 +1,4 @@
 """Config flow for EyeOnWater integration."""
-
 import asyncio
 import logging
 from types import MappingProxyType
@@ -10,10 +9,9 @@ from aiohttp import ClientError
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import aiohttp_client
-from homeassistant.util.unit_system import METRIC_SYSTEM
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
-from .const import DOMAIN, USE_SINGLE_SENSOR_MODE, USE_SINGLE_SENSOR_MODE_DEFAULT
+from .const import DOMAIN
 
 CONF_EOW_HOSTNAME_COM = "eyeonwater.com"
 CONF_EOW_HOSTNAME_CA = "eyeonwater.ca"
@@ -24,10 +22,6 @@ DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
-        vol.Optional(
-            USE_SINGLE_SENSOR_MODE,
-            default=USE_SINGLE_SENSOR_MODE_DEFAULT,
-        ): bool,
     },
 )
 
@@ -43,7 +37,7 @@ def get_hostname_for_country(hass: core.HomeAssistant) -> str:
 
 def create_account_from_config(
     hass: core.HomeAssistant,
-    data: dict[str, Any] | MappingProxyType[str, Any],
+    data: MappingProxyType[str, Any],
 ) -> Account:
     """Create account login from config."""
     eow_hostname = get_hostname_for_country(hass)
@@ -58,10 +52,7 @@ def create_account_from_config(
     )
 
 
-async def validate_input(
-    hass: core.HomeAssistant,
-    data: dict[str, Any] | MappingProxyType[str, Any],
-) -> dict[str, str]:
+async def validate_input(hass: core.HomeAssistant, data):
     """Validate the user input allows us to connect.
 
     Data has the keys from DATA_SCHEMA with values provided by the user.
@@ -86,38 +77,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
 
     VERSION = 1
 
-    @staticmethod
-    def async_get_options_flow(
-        config_entry: config_entries.ConfigEntry,
-    ) -> config_entries.OptionsFlow:
-        """Get the options flow for this config entry."""
-        return EyeOnWaterOptionsFlow(config_entry)
-
-    async def async_step_import(
-        self,
-        import_data: dict[str, Any],
-    ) -> config_entries.ConfigFlowResult:
-        """Handle import from configuration.yaml."""
-        return await self.async_step_user(import_data)
-
-    @classmethod
-    def async_supports_options_flow(
-        cls,
-        config_entry: config_entries.ConfigEntry,  # noqa: ARG003
-    ) -> bool:
-        """Return options flow support for this config entry."""
-        return True
-
-    def is_matching(self, other_flow: config_entries.ConfigFlow) -> bool:
-        """Return True if the flow matches this config flow."""
-        return other_flow.__class__ is self.__class__
-
-    async def async_step_user(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ):
+    async def async_step_user(self, user_input=None):
         """Handle the initial step."""
-        errors: dict[str, str] = {}
+        errors = {}
         if user_input is not None:
             try:
                 info = await validate_input(self.hass, user_input)
@@ -134,96 +96,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
                     await self.async_set_unique_id(user_input[CONF_USERNAME])
                     self._abort_if_unique_id_configured()
 
-                    data = {
-                        CONF_USERNAME: user_input[CONF_USERNAME],
-                        CONF_PASSWORD: user_input[CONF_PASSWORD],
-                    }
-                    options = {
-                        USE_SINGLE_SENSOR_MODE: user_input.get(
-                            USE_SINGLE_SENSOR_MODE,
-                            USE_SINGLE_SENSOR_MODE_DEFAULT,
-                        ),
-                    }
-                    return self.async_create_entry(
-                        title=info["title"],
-                        data=data,
-                        options=options,
-                    )
-
-        # Build dynamic system parameters display
-        country = self.hass.config.country or "Not set"
-        is_metric = self.hass.config.units is METRIC_SYSTEM
-        unit_system = "Metric" if is_metric else "Imperial"
-
-        system_settings_info = (
-            f"**System Parameters**\n"
-            f"  • Country: {country}\n"
-            f"  • Units: {unit_system}\n"
-            f"\n"
-            f"*These values can be changed in "
-            f"[Settings > System > General](/config/general)*"
-        )
+                    return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(
             step_id="user",
             data_schema=DATA_SCHEMA,
             errors=errors,
-            description_placeholders={
-                "system_settings_info": system_settings_info,
-            },
-        )
-
-
-class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
-    """Handle options flow for EyeOnWater."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        super().__init__()
-        self._config_entry = config_entry
-
-    async def async_step_init(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ):
-        """Handle the initial options step."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
-
-        # Build dynamic system parameters display
-        country = self.hass.config.country or "Not set"
-        is_metric = self.hass.config.units is METRIC_SYSTEM
-        unit_system = "Metric" if is_metric else "Imperial"
-
-        system_settings_info = (
-            f"**System Parameters**\n"
-            f"  • Country: {country}\n"
-            f"  • Units: {unit_system}\n"
-            f"\n"
-            f"*These values can be changed in "
-            f"[Settings > System > General](/config/general)*"
-        )
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        USE_SINGLE_SENSOR_MODE,
-                        default=self._config_entry.options.get(
-                            USE_SINGLE_SENSOR_MODE,
-                            USE_SINGLE_SENSOR_MODE_DEFAULT,
-                        ),
-                    ): bool,
-                },
-            ),
-            description_placeholders={
-                "single_sensor_info": (
-                    "Optional feature: Enable a unified single sensor per meter. "
-                    "Disable to keep the legacy two-sensor layout."
-                ),
-                "system_settings_info": system_settings_info,
-            },
         )
 
 

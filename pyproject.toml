@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "eyeonwater"
-version = "2.5.15"
+version = "2.5.7"
 description = "EyeOnWater HomeAssistant Integration."
 authors = []
 license = "MIT"
@@ -12,30 +12,20 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.15"
+python = "^3.9"
 aiohttp = "^3.8.5"
 tenacity = "^8.2.3"
 pytz = "^2023.3"
 python-dateutil = "^2.8.2"
-pydantic = "^2"
-pyonwater = "0.3.17"
+pydantic = "<2"
+pyonwater = "0.3.14"
 
 [tool.poetry.group.dev.dependencies]
-types-pytz = "^2025.2.0.20251108"
+types-pytz = "^2023.3.0.1"
 
 [tool.black]
-target-version = ["py312"]
-line-length = 88
-exclude = '''
-/(
-    \.venv
-  | \.git
-  | __pycache__
-  | \.eggs
-  | \*.egg-info
-  | generated
-)/
-'''
+target-version = ["py39", "py310"]
+exclude = 'generated'
 
 [tool.isort]
 profile = "black"
@@ -44,16 +34,8 @@ known_first_party = [
     "homeassistant",
 ]
 combine_as_imports = true
-skip = [".venv", ".git", "__pycache__", "*.egg-info"]
 
 [tool.ruff]
-line-length = 88
-exclude = [
-    ".venv",
-    ".git",
-    "__pycache__",
-    "*.egg-info",
-]
 select = [
     "ALL",
     "D",  # pydocstyle
@@ -73,6 +55,7 @@ select = [
     "ANN", # flake8-annotations
 ]
 ignore = [
+    "E501",  # line too long, handled by black
     "B008",  # do not perform function calls in argument defaults
     "B905",  # ignore zip() without an explicit strict= parameter, only support with python >3.10
 ]
@@ -97,4 +80,3 @@ warn_unused_ignores = true
 no_implicit_optional = true
 show_error_codes = true
 implicit_reexport = true
-exclude = [".venv", "__pycache__", ".eggs", "*.egg-info"]

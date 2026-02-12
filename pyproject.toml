@@ -13,7 +13,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-aiohttp = "^3.8.5"
+aiohttp = "^3.9.4"
 tenacity = "^8.2.3"
 pytz = "^2023.3"
 python-dateutil = "^2.8.2"

@@ -55,7 +55,7 @@ async def async_setup_entry(
     """Set up the EyeOnWater sensors.
 
     Supports two modes:
-    - Single-sensor mode (new): One sensor per meter with state
+    - Single-sensor mode (new, Phase 2): One sensor per meter with state
     - Two-sensor mode (legacy, deprecated): Separate statistics and display
     """
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
@@ -72,7 +72,7 @@ async def async_setup_entry(
         last_imported_time = await get_last_imported_time(hass, meter)
 
         if use_single_sensor:
-            # Single-sensor mode (new architecture)
+            # Phase 2: Single-sensor mode (new architecture)
             sensors.append(
                 EyeOnWaterUnifiedSensor(
                     meter,
@@ -108,7 +108,7 @@ class NoDataFound(exceptions.HomeAssistantError):
 
 
 class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
-    """Unified EyeOnWater sensor (Single Sensor Mode).
+    """Unified EyeOnWater sensor (Phase 2 - Single Sensor Mode).
 
     Combines historical data import and live readings into a single sensor.
     Replaces legacy two-sensor with cleaner single-sensor design.
@@ -170,7 +170,7 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the device specific state attributes."""
         if self._state:
-            return self.meter.meter_info.reading.model_dump()
+            return self.meter.meter_info.reading.dict()
         return {}
 
     @callback
@@ -225,7 +225,7 @@ class EyeOnWaterStatistic(RestoreEntity, SensorEntity):
     """Representation of an EyeOnWater historical statistics sensor.
 
     DEPRECATED: This is part of the legacy two-sensor architecture.
-    Use EyeOnWaterUnifiedSensor instead.
+    Use EyeOnWaterUnifiedSensor instead (Phase 2 - Single Sensor Mode).
     """
 
     def __init__(
@@ -387,7 +387,7 @@ class EyeOnWaterSensor(RestoreEntity, SensorEntity):
     """Representation of an EyeOnWater live readings sensor.
 
     DEPRECATED: This is part of the legacy two-sensor architecture.
-    Use EyeOnWaterUnifiedSensor instead.
+    Use EyeOnWaterUnifiedSensor instead (Phase 2 - Single Sensor Mode).
     """
 
     _attr_has_entity_name = True
@@ -442,7 +442,7 @@ class EyeOnWaterSensor(RestoreEntity, SensorEntity):
     @cached_property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the device specific state attributes."""
-        return self.meter.meter_info.reading.model_dump()
+        return self.meter.meter_info.reading.dict()
 
     @callback
     def _state_update(self):

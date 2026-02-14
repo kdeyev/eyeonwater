@@ -15,6 +15,6 @@ IMPORT_HISTORICAL_DATA_SERVICE_NAME = "import_historical_data"
 IMPORT_HISTORICAL_DATA_DAYS_NAME = "days"
 IMPORT_HISTORICAL_DATA_DAYS_DEFAULT = 365
 
-# Single-sensor mode configuration
+# Single-sensor mode configuration (Phase 2)
 USE_SINGLE_SENSOR_MODE = "use_single_sensor_mode"
 USE_SINGLE_SENSOR_MODE_DEFAULT = False  # Default: use legacy two-sensor mode

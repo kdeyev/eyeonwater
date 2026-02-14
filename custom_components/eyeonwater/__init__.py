@@ -1,11 +1,10 @@
 """EyeOnWater integration."""
-
 import asyncio
 import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import debounce
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -73,20 +72,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SMART_METER: eye_on_water_data,
     }
 
-    hass.async_create_task(coordinator.async_refresh())
+    _ = asyncio.create_task(coordinator.async_refresh())
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Add listener for options changes to reload entry when sensor mode is toggled
-    async def async_options_update_listener(
-        hass: HomeAssistant,
-        config_entry: ConfigEntry,
-    ) -> None:
-        await hass.config_entries.async_reload(config_entry.entry_id)
-
-    entry.add_update_listener(async_options_update_listener)
-
-    async def async_service_handler(call: ServiceCall) -> None:
+    async def async_service_handler(call):
         days = call.data.get(
             IMPORT_HISTORICAL_DATA_DAYS_NAME,
             IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,

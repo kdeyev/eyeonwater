@@ -1,5 +1,4 @@
 """Support for EyeOnWater binary sensors."""
-
 from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
@@ -7,13 +6,13 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.core import callback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from propcache.api import cached_property
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 from pyonwater import Meter
 
 from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
@@ -66,16 +65,12 @@ FLAG_SENSORS = [
 ]
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
 
-    sensors: list[EyeOnWaterBinarySensor] = []
+    sensors = []
     for meter in meters:
         sensors += [
             (EyeOnWaterBinarySensor(meter, coordinator, description))
@@ -85,11 +80,10 @@ async def async_setup_entry(
     async_add_entities(sensors, update_before_add=False)
 
 
-class EyeOnWaterBinarySensor(RestoreEntity, BinarySensorEntity):
+class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
     """Representation of an EyeOnWater binary flag sensor."""
 
     _attr_has_entity_name = True
-    _attr_should_poll = False
 
     def __init__(
         self,
@@ -98,8 +92,7 @@ class EyeOnWaterBinarySensor(RestoreEntity, BinarySensorEntity):
         description: Description,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__()
-        self.coordinator = coordinator
+        super().__init__(coordinator)
         self.entity_description = BinarySensorEntityDescription(
             key=description.key,
             device_class=description.device_class,
@@ -124,11 +117,6 @@ class EyeOnWaterBinarySensor(RestoreEntity, BinarySensorEntity):
     def get_flag(self) -> bool:
         """Get flag value."""
         return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
-
-    @cached_property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self._available
 
     @callback
     def _state_update(self):

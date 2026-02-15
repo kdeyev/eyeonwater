@@ -6,7 +6,17 @@ import logging
 import pyonwater
 from homeassistant import exceptions
 from homeassistant.components.recorder import get_instance
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.models import (
+    StatisticData,
+    StatisticMetaData,
+)
+
+try:
+    from homeassistant.components.recorder.models import StatisticMeanType
+
+    _HAS_MEAN_TYPE = True
+except ImportError:
+    _HAS_MEAN_TYPE = False
 from homeassistant.components.recorder.statistics import get_last_statistics
 from homeassistant.const import UnitOfVolume
 from homeassistant.util import dt as dtutil
@@ -62,16 +72,21 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
     name = get_statistic_name(meter_id=meter.meter_id)
     statistic_id = get_statistics_id(meter.meter_id)
 
-    return StatisticMetaData(
-        has_mean=False,
-        has_sum=True,
-        name=name,
-        source="recorder",
-        statistic_id=statistic_id,
-        unit_of_measurement=get_ha_native_unit_of_measurement(
-            meter.native_unit_of_measurement,
-        ),
-    )
+    unit = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
+
+    kwargs: dict = {
+        "has_mean": False,
+        "has_sum": True,
+        "name": name,
+        "source": "recorder",
+        "statistic_id": statistic_id,
+        "unit_of_measurement": unit,
+    }
+    if _HAS_MEAN_TYPE:
+        kwargs["mean_type"] = StatisticMeanType.NONE
+        kwargs["unit_class"] = "volume"
+
+    return StatisticMetaData(**kwargs)
 
 
 def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:

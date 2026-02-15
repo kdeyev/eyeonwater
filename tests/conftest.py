@@ -39,12 +39,41 @@ class FakeFlags:
 
 
 @dataclass
+class FakeFlow:
+    this_week: float = 10.5
+    last_week: float = 20.3
+    this_month: float = 45.2
+    last_month: float = 90.1
+
+
+@dataclass
+class FakeBattery:
+    level: float = 85.0
+
+
+@dataclass
+class FakePwr:
+    signal_strength: float = -65.0
+
+
+@dataclass
+class FakeEndpointTemperature:
+    seven_day_min: float = 12.0
+    seven_day_average: float = 15.5
+    seven_day_max: float = 19.0
+    latest_average: float = 16.2
+
+
+@dataclass
 class FakeReading:
     model: str = "TestModel"
     customer_name: str = "TestCustomer"
     hardware_version: str = "1.0"
     firmware_version: str = "2.0"
     flags: FakeFlags = field(default_factory=FakeFlags)
+    flow: FakeFlow | None = None
+    battery: FakeBattery | None = None
+    pwr: FakePwr | None = None
 
     def dict(self):
         return {
@@ -57,7 +86,7 @@ class FakeReading:
 
 @dataclass
 class FakeSensors:
-    endpoint_temperature: None = None
+    endpoint_temperature: FakeEndpointTemperature | None = None
 
 
 @dataclass

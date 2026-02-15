@@ -55,8 +55,7 @@ async def test_setup_entry_success(config_entry) -> None:
         ) as mock_data_cls,
         patch(
             "custom_components.eyeonwater.DataUpdateCoordinator",
-            return_value=MagicMock(),
-        ),
+        ) as mock_coordinator_cls,
         patch(
             "custom_components.eyeonwater.debounce.Debouncer",
             return_value=MagicMock(),
@@ -69,6 +68,10 @@ async def test_setup_entry_success(config_entry) -> None:
         data_instance.read_meters = AsyncMock(return_value=[meter])
         data_instance.meters = [meter]
         mock_data_cls.return_value = data_instance
+
+        coordinator_instance = MagicMock()
+        coordinator_instance.async_refresh = AsyncMock()
+        mock_coordinator_cls.return_value = coordinator_instance
 
         from custom_components.eyeonwater import async_setup_entry
 

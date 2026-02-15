@@ -205,6 +205,15 @@ class EyeOnWaterDiagnosticSensor(CoordinatorEntity, SensorEntity):
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
 
+        # Set unit dynamically for flow sensors (uses meter's native unit).
+        if (
+            description.device_class == SensorDeviceClass.WATER
+            and not description.native_unit_of_measurement
+        ):
+            self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
+                meter.native_unit_of_measurement,
+            )
+
     @property
     def native_value(self) -> float | None:
         """Get native value."""

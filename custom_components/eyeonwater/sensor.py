@@ -53,7 +53,6 @@ def _temp_available(meter: pyonwater.Meter) -> bool:
     )
 
 
-
 def _battery_available(meter: pyonwater.Meter) -> bool:
     """Check if battery data is available."""
     return meter.meter_info.reading.battery is not None
@@ -150,9 +149,7 @@ SIGNAL_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
 )
 
 
-ALL_DIAGNOSTIC_SENSORS = (
-    TEMPERATURE_SENSORS + BATTERY_SENSORS + SIGNAL_SENSORS
-)
+ALL_DIAGNOSTIC_SENSORS = TEMPERATURE_SENSORS + BATTERY_SENSORS + SIGNAL_SENSORS
 
 
 async def async_setup_entry(

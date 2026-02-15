@@ -23,15 +23,9 @@ Pay attention to that integration uses some of your HA configurations:
 
 ![watermeter-graph](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter-graph.png?raw=true)
 
-4. Got to `Settings`->`Dashboards`->`Energy` configuration.
+4. Go to `Settings`->`Dashboards`->`Energy` configuration.
 
-You should be able to choose your water meter in the Water Consumption.
-
-Pay attention that you will see 2 different meters, please choose that one that ending with "Statistics".
-
-<img width="343" alt="image" src="https://github.com/user-attachments/assets/fb521562-22e9-407e-9796-13a422e36e6b" />
-
-You may see an error message like: `The state class '' of this entity is not supported.` It's expected, for more details please look at https://github.com/kdeyev/eyeonwater/issues/30
+You should be able to choose your water meter in the Water Consumption. Select the external statistic named **"Water Meter xxxxx Statistic"** (with the `eyeonwater:` prefix) — this is the one populated with accurate hourly data from EyeOnWater.
 
 5. Have fun and watch your utilities in the Energy Dashboard.
 
@@ -48,22 +42,34 @@ The integration allows to import of historical water data usage after it was ins
 ![import-historical-data](https://github.com/kdeyev/eyeonwater/blob/master/img/import-historical-data.png?raw=true)
 
 
-# Unsupported state class
-Please pay attention: If you look at the `Developer Tools` -> `Statistics`, you will see an error message associated with the water sensor:
-```
-The state class '' of this entity is not supported.
-```
-or
-```
-Unsupported state class
-The state class of this entity, is not supported.
-Statistics cannot be generated until this entity has a supported state class.
+# Architecture: How Statistics Work
 
-If this state class was provided by an integration, this is a bug. Please report an issue.
+This integration uses Home Assistant's **external statistics** API (`async_add_external_statistics`) to import accurate hourly water usage data from EyeOnWater.
 
-If you have set this state class yourself, please correct it. The different state classes and when to use which can be found in the developer documentation. If the state class has permanently changed, you may want to remove the long term statistics of it from your database.
+## The Problem with Standard Statistics
 
-Do you want to permanently remove the long term statistics of sensor.water_meter_200010108 from your database?
-```
+EyeOnWater reports water meter readings **retroactively**: data for 12 PM–6 PM may only become available at 6 PM. Home Assistant's sensor statistics system has no native support for retroactive data — it assumes sensor state updates always represent "now."
 
-It's a side-effect of the way we prevent the HA from recalculating the sensor statistics. You can find more information [here](https://github.com/kdeyev/eyeonwater/issues/30)
+When a sensor has `state_class = total_increasing`, HA's recorder automatically compiles statistics every 5 minutes by calculating deltas between consecutive state changes. If an integration also imports retroactive historical data for the **same statistic ID**, HA sees two conflicting sum timelines — the auto-compiled deltas and the retroactively imported cumulative readings — producing **massive negative spikes** equal to the full lifetime meter reading.
+
+## The Solution
+
+This integration avoids the conflict by using **external statistics** with a separate namespace:
+
+| Component | Statistic ID | Source | Purpose |
+|-----------|-------------|--------|---------|
+| Live sensor | `sensor.water_meter_xxxxx` | HA auto-compiles | Real-time display |
+| External statistic | `eyeonwater:water_meter_xxxxx` | Integration imports via `async_add_external_statistics` | **Energy Dashboard** (accurate hourly usage) |
+
+Because external statistics use the `eyeonwater:` source prefix, they are completely independent from HA's automatic `compile_statistics()` pipeline. The integration imports retroactive data without any conflict, and negative values never appear.
+
+### How It Works
+
+1. The **live sensor** (`sensor.water_meter_xxxxx`) still has `state_class = total_increasing` and provides real-time meter readings.
+2. On each coordinator update, the integration fetches historical data from the EyeOnWater API and imports only new data points as **external statistics** under the `eyeonwater:water_meter_xxxxx` ID.
+3. For the **Energy Dashboard**, select the `eyeonwater:water_meter_xxxxx` statistic — this contains the accurate hourly usage data.
+
+### HA Core Tracking
+
+The underlying limitation in HA Core (no support for retroactive/delayed sensor data) is discussed upstream:
+- [home-assistant/architecture#964](https://github.com/home-assistant/architecture/discussions/964) — Delayed data sensors

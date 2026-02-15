@@ -4,14 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pyonwater
 import pytest
-from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import UnitOfTemperature, UnitOfVolume
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from custom_components.eyeonwater.const import DOMAIN, WATER_METER_NAME
 from custom_components.eyeonwater.sensor import (
     EyeOnWaterSensor,
-    EyeOnWaterStatistic,
     EyeOnWaterTempSensor,
 )
 from custom_components.eyeonwater.statistic_helper import normalize_id
@@ -52,10 +51,10 @@ class TestEyeOnWaterSensor:
         sensor = EyeOnWaterSensor(meter, coordinator)
         assert sensor._attr_device_class == SensorDeviceClass.WATER
 
-    def test_state_class(self, coordinator) -> None:
+    def test_no_state_class(self, coordinator) -> None:
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
-        assert sensor._attr_state_class == SensorStateClass.TOTAL_INCREASING
+        assert not hasattr(sensor, "_attr_state_class")
 
     def test_unit_gallons(self, coordinator) -> None:
         meter = _make_meter(native_unit=pyonwater.NativeUnits.GAL)
@@ -106,39 +105,6 @@ class TestEyeOnWaterSensor:
         sensor = EyeOnWaterSensor(meter, coordinator)
         info = sensor._attr_device_info
         assert (DOMAIN, normalize_id(MOCK_METER_UUID)) in info["identifiers"]
-
-
-# ---------- EyeOnWaterStatistic ----------
-
-
-class TestEyeOnWaterStatistic:
-    """Tests for the statistic sensor."""
-
-    def test_unique_id(self, coordinator) -> None:
-        meter = _make_meter()
-        sensor = EyeOnWaterStatistic(meter, coordinator, last_imported_time=None)
-        assert sensor._attr_unique_id == f"{normalize_id(MOCK_METER_UUID)}_statistic"
-
-    def test_name(self, coordinator) -> None:
-        meter = _make_meter()
-        sensor = EyeOnWaterStatistic(meter, coordinator, last_imported_time=None)
-        expected_id = normalize_id(MOCK_METER_ID)
-        assert sensor._attr_name == f"{WATER_METER_NAME} {expected_id} Statistic"
-
-    def test_device_class(self, coordinator) -> None:
-        meter = _make_meter()
-        sensor = EyeOnWaterStatistic(meter, coordinator, last_imported_time=None)
-        assert sensor._attr_device_class == SensorDeviceClass.WATER
-
-    def test_import_historical_data_empty(self, coordinator) -> None:
-        """No data to import should be a no-op."""
-        meter = _make_meter()
-        sensor = EyeOnWaterStatistic(meter, coordinator, last_imported_time=None)
-        sensor.hass = MagicMock()
-        sensor._last_historical_data = []
-
-        # Should not raise
-        sensor.import_historical_data()
 
 
 # ---------- EyeOnWaterTempSensor ----------

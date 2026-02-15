@@ -26,6 +26,12 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+          # Detect pre-release: any version containing a hyphen (e.g. 2.5.17-beta.1, 2.5.17-rc.1)
+          if echo "$NEW_VERSION" | grep -q '-'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create release
         if: steps.version.outputs.changed == 'true'
@@ -34,3 +40,4 @@ jobs:
           tag_name: v${{ steps.version.outputs.new }}
           name: v${{ steps.version.outputs.new }}
           generate_release_notes: true
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}

@@ -24,4 +24,8 @@ jobs:
             echo "::error::Version in manifest.json has not been updated. Please bump the version before merging to master."
             exit 1
           fi
+          # Warn (but don't fail) on pre-release versions
+          if echo "$NEW_VERSION" | grep -q '-'; then
+            echo "::warning::Version $NEW_VERSION is a pre-release. The GitHub release will be marked as pre-release."
+          fi
           echo "Version updated: $OLD_VERSION -> $NEW_VERSION"

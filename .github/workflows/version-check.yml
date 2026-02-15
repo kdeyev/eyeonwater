@@ -1,0 +1,27 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version has been updated
+        run: |
+          NEW_VERSION=$(jq -r '.version' custom_components/eyeonwater/manifest.json)
+          OLD_VERSION=$(git show origin/master:custom_components/eyeonwater/manifest.json 2>/dev/null | jq -r '.version' 2>/dev/null || echo "")
+          echo "PR version: $NEW_VERSION"
+          echo "Master version: $OLD_VERSION"
+          if [ "$NEW_VERSION" = "$OLD_VERSION" ]; then
+            echo "::error::Version in manifest.json has not been updated. Please bump the version before merging to master."
+            exit 1
+          fi
+          echo "Version updated: $OLD_VERSION -> $NEW_VERSION"

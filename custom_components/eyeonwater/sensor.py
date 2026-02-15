@@ -50,8 +50,7 @@ class EyeOnWaterSensorDescription(SensorEntityDescription):
 def _temp_available(meter: pyonwater.Meter) -> bool:
     """Check if temperature data is available."""
     return bool(
-        meter.meter_info.sensors
-        and meter.meter_info.sensors.endpoint_temperature
+        meter.meter_info.sensors and meter.meter_info.sensors.endpoint_temperature,
     )
 
 
@@ -132,7 +131,9 @@ FLOW_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
         translation_key="flow_this_week",
         state_class=SensorStateClass.TOTAL,
         device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.this_week if _flow_available(m) else None,
+        value_fn=lambda m: m.meter_info.reading.flow.this_week
+        if _flow_available(m)
+        else None,
         available_fn=_flow_available,
     ),
     EyeOnWaterSensorDescription(
@@ -140,7 +141,9 @@ FLOW_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
         translation_key="flow_last_week",
         state_class=SensorStateClass.TOTAL,
         device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.last_week if _flow_available(m) else None,
+        value_fn=lambda m: m.meter_info.reading.flow.last_week
+        if _flow_available(m)
+        else None,
         available_fn=_flow_available,
     ),
     EyeOnWaterSensorDescription(
@@ -148,7 +151,9 @@ FLOW_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
         translation_key="flow_this_month",
         state_class=SensorStateClass.TOTAL,
         device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.this_month if _flow_available(m) else None,
+        value_fn=lambda m: m.meter_info.reading.flow.this_month
+        if _flow_available(m)
+        else None,
         available_fn=_flow_available,
     ),
     EyeOnWaterSensorDescription(
@@ -156,7 +161,9 @@ FLOW_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
         translation_key="flow_last_month",
         state_class=SensorStateClass.TOTAL,
         device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.last_month if _flow_available(m) else None,
+        value_fn=lambda m: m.meter_info.reading.flow.last_month
+        if _flow_available(m)
+        else None,
         available_fn=_flow_available,
     ),
 )
@@ -169,7 +176,9 @@ BATTERY_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
         device_class=SensorDeviceClass.BATTERY,
         native_unit_of_measurement=PERCENTAGE,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda m: m.meter_info.reading.battery.level if _battery_available(m) else None,
+        value_fn=lambda m: m.meter_info.reading.battery.level
+        if _battery_available(m)
+        else None,
         available_fn=_battery_available,
     ),
 )
@@ -182,7 +191,9 @@ SIGNAL_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda m: m.meter_info.reading.pwr.signal_strength if _signal_available(m) else None,
+        value_fn=lambda m: m.meter_info.reading.pwr.signal_strength
+        if _signal_available(m)
+        else None,
         available_fn=_signal_available,
     ),
 )
@@ -205,11 +216,11 @@ async def async_setup_entry(
     sensors: list[Entity] = []
     for meter in meters:
         sensors.append(EyeOnWaterSensor(meter, coordinator))
-        for description in ALL_DIAGNOSTIC_SENSORS:
-            if description.available_fn(meter):
-                sensors.append(
-                    EyeOnWaterDiagnosticSensor(meter, coordinator, description),
-                )
+        sensors.extend(
+            EyeOnWaterDiagnosticSensor(meter, coordinator, description)
+            for description in ALL_DIAGNOSTIC_SENSORS
+            if description.available_fn(meter)
+        )
 
     async_add_entities(sensors, update_before_add=False)
 

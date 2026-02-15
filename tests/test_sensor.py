@@ -135,21 +135,28 @@ class TestTemperatureSensors:
         meter.meter_info.sensors.endpoint_temperature = FakeEndpointTemperature()
         for desc in TEMPERATURE_SENSORS:
             sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor._attr_unique_id == f"{normalize_id(MOCK_METER_UUID)}_{desc.key}"
+            assert (
+                sensor._attr_unique_id == f"{normalize_id(MOCK_METER_UUID)}_{desc.key}"
+            )
 
     def test_device_class(self, coordinator) -> None:
         meter = _make_meter()
         meter.meter_info.sensors.endpoint_temperature = FakeEndpointTemperature()
         for desc in TEMPERATURE_SENSORS:
             sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor.entity_description.device_class == SensorDeviceClass.TEMPERATURE
+            assert (
+                sensor.entity_description.device_class == SensorDeviceClass.TEMPERATURE
+            )
 
     def test_unit(self, coordinator) -> None:
         meter = _make_meter()
         meter.meter_info.sensors.endpoint_temperature = FakeEndpointTemperature()
         for desc in TEMPERATURE_SENSORS:
             sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor.entity_description.native_unit_of_measurement == UnitOfTemperature.CELSIUS
+            assert (
+                sensor.entity_description.native_unit_of_measurement
+                == UnitOfTemperature.CELSIUS
+            )
 
     def test_values_with_temperature_data(self, coordinator) -> None:
         meter = _make_meter()
@@ -286,14 +293,19 @@ class TestSignalSensors:
         meter.meter_info.reading.pwr = FakePwr()
         desc = SIGNAL_SENSORS[0]
         sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-        assert sensor.entity_description.device_class == SensorDeviceClass.SIGNAL_STRENGTH
+        assert (
+            sensor.entity_description.device_class == SensorDeviceClass.SIGNAL_STRENGTH
+        )
 
     def test_unit(self, coordinator) -> None:
         meter = _make_meter()
         meter.meter_info.reading.pwr = FakePwr()
         desc = SIGNAL_SENSORS[0]
         sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-        assert sensor.entity_description.native_unit_of_measurement == SIGNAL_STRENGTH_DECIBELS
+        assert (
+            sensor.entity_description.native_unit_of_measurement
+            == SIGNAL_STRENGTH_DECIBELS
+        )
 
     def test_value_with_signal_data(self, coordinator) -> None:
         meter = _make_meter()
@@ -331,4 +343,7 @@ class TestAllDiagnosticSensors:
         meter.meter_info.reading.flow = FakeFlow()
         main = EyeOnWaterSensor(meter, coordinator)
         diag = EyeOnWaterDiagnosticSensor(meter, coordinator, FLOW_SENSORS[0])
-        assert main._attr_device_info["identifiers"] == diag._attr_device_info["identifiers"]
+        assert (
+            main._attr_device_info["identifiers"]
+            == diag._attr_device_info["identifiers"]
+        )

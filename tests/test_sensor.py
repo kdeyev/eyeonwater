@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pyonwater
 import pytest
-from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS,
@@ -19,7 +19,6 @@ from custom_components.eyeonwater.sensor import (
     BATTERY_SENSORS,
     EyeOnWaterDiagnosticSensor,
     EyeOnWaterSensor,
-    FLOW_SENSORS,
     SIGNAL_SENSORS,
     TEMPERATURE_SENSORS,
 )
@@ -29,7 +28,6 @@ from .conftest import (
     FakeBattery,
     FakeDataPoint,
     FakeEndpointTemperature,
-    FakeFlow,
     FakeMeterInfo,
     FakePwr,
     FakeReading,
@@ -186,61 +184,6 @@ class TestTemperatureSensors:
         assert TEMPERATURE_SENSORS[0].available_fn(meter) is True
 
 
-class TestFlowSensors:
-    """Tests for the flow diagnostic sensors."""
-
-    def test_descriptions_count(self) -> None:
-        assert len(FLOW_SENSORS) == 4
-
-    def test_device_class(self, coordinator) -> None:
-        meter = _make_meter()
-        meter.meter_info.reading.flow = FakeFlow()
-        for desc in FLOW_SENSORS:
-            sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor.entity_description.device_class == SensorDeviceClass.WATER
-
-    def test_state_class(self, coordinator) -> None:
-        meter = _make_meter()
-        meter.meter_info.reading.flow = FakeFlow()
-        for desc in FLOW_SENSORS:
-            sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor.entity_description.state_class == SensorStateClass.TOTAL
-
-    def test_unit_from_meter(self, coordinator) -> None:
-        meter = _make_meter(native_unit=pyonwater.NativeUnits.GAL)
-        meter.meter_info.reading.flow = FakeFlow()
-        for desc in FLOW_SENSORS:
-            sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor._attr_native_unit_of_measurement == UnitOfVolume.GALLONS
-
-    def test_values_with_flow_data(self, coordinator) -> None:
-        meter = _make_meter()
-        meter.meter_info.reading.flow = FakeFlow()
-        expected = {
-            "flow_this_week": 10.5,
-            "flow_last_week": 20.3,
-            "flow_this_month": 45.2,
-            "flow_last_month": 90.1,
-        }
-        for desc in FLOW_SENSORS:
-            sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor.native_value == expected[desc.key]
-
-    def test_values_none_without_flow_data(self, coordinator) -> None:
-        meter = _make_meter()
-        # Default: flow is None
-        for desc in FLOW_SENSORS:
-            sensor = EyeOnWaterDiagnosticSensor(meter, coordinator, desc)
-            assert sensor.native_value is None
-
-    def test_available_fn(self) -> None:
-        meter = _make_meter()
-        assert FLOW_SENSORS[0].available_fn(meter) is False
-
-        meter.meter_info.reading.flow = FakeFlow()
-        assert FLOW_SENSORS[0].available_fn(meter) is True
-
-
 class TestBatterySensors:
     """Tests for the battery diagnostic sensor."""
 
@@ -332,7 +275,7 @@ class TestAllDiagnosticSensors:
     """Cross-cutting tests for all diagnostic sensor descriptions."""
 
     def test_total_count(self) -> None:
-        assert len(ALL_DIAGNOSTIC_SENSORS) == 10
+        assert len(ALL_DIAGNOSTIC_SENSORS) == 6
 
     def test_unique_keys(self) -> None:
         keys = [d.key for d in ALL_DIAGNOSTIC_SENSORS]
@@ -340,9 +283,9 @@ class TestAllDiagnosticSensors:
 
     def test_device_info_shared_with_main_sensor(self, coordinator) -> None:
         meter = _make_meter()
-        meter.meter_info.reading.flow = FakeFlow()
+        meter.meter_info.reading.battery = FakeBattery()
         main = EyeOnWaterSensor(meter, coordinator)
-        diag = EyeOnWaterDiagnosticSensor(meter, coordinator, FLOW_SENSORS[0])
+        diag = EyeOnWaterDiagnosticSensor(meter, coordinator, BATTERY_SENSORS[0])
         assert (
             main._attr_device_info["identifiers"]
             == diag._attr_device_info["identifiers"]

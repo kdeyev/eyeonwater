@@ -7,6 +7,7 @@ from homeassistant.const import UnitOfVolume
 
 from custom_components.eyeonwater.statistic_helper import (
     UnrecognizedUnitError,
+    _HAS_MEAN_TYPE,
     convert_statistic_data,
     filter_newer_data,
     get_ha_native_unit_of_measurement,
@@ -93,6 +94,9 @@ def test_get_statistic_metadata() -> None:
     assert meta["has_sum"] is True
     assert meta["source"] == "recorder"
     assert "meter_001" in meta["statistic_id"]
+    if _HAS_MEAN_TYPE:
+        assert meta["mean_type"] == 0  # StatisticMeanType.NONE
+        assert meta["unit_class"] == "volume"
 
 
 # ---------- convert_statistic_data ----------

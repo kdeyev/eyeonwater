@@ -68,7 +68,7 @@ working in Home Assistant 2026.11.
 Persistent repair warning in HA:
 ```
 The entity no longer has a state class
-We have generated statistics for 'Water Meter xxxx Statistic' 
+We have generated statistics for 'Water Meter xxxx Statistic'
 (sensor.water_meter_xxxx_statistic) in the past, but it no longer has a state class,
 therefore, we cannot track long term statistics for it anymore.
 ```
@@ -77,9 +77,9 @@ Running HA 2025.5.3. Has 10 thumbs-up reactions.
 
 **Developer Response (kdeyev, ~2 weeks ago):**
 > LTDR: state_class was removed intentionally.
-> 
+>
 > EyeOnWater reports water meter readings retroactively, and HomeAssistant makes an effort to calculate the water usage between readings. TLDR HomeAssistant does not have great support for sensors with retrospective readings.
-> 
+>
 > That's why we have 2 different sensors:
 > - `sensor.water_meter_xxxxx` ← standard HASS sensor with standard behavior
 > - `sensor.water_meter_xxxxx_statistics` ← manually crafted one with right water usage. Use this one for the dashboard. HASS complains "Entity not defined" and it's ok, this one is our way to prevent HASS recalculating the usage.

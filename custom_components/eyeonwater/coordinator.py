@@ -1,6 +1,6 @@
 """EyeOnWater coordinator."""
-import datetime
 import logging
+from typing import TYPE_CHECKING
 
 from homeassistant.components.recorder.statistics import async_add_external_statistics
 from homeassistant.core import HomeAssistant
@@ -14,6 +14,9 @@ from .statistic_helper import (
     get_last_imported_time,
     get_statistic_metadata,
 )
+
+if TYPE_CHECKING:
+    import datetime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,8 +43,9 @@ class EyeOnWaterData:
         _LOGGER.debug("Discovered %i meter(s)", len(self.meters))
 
         for meter in self.meters:
-            self._last_imported_times[meter.meter_id] = (
-                await get_last_imported_time(self.hass, meter)
+            self._last_imported_times[meter.meter_id] = await get_last_imported_time(
+                self.hass,
+                meter,
             )
 
     async def read_meters(self, days_to_load=3):

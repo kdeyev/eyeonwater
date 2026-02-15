@@ -53,6 +53,14 @@ async def test_setup_entry_success(config_entry) -> None:
         patch(
             "custom_components.eyeonwater.EyeOnWaterData",
         ) as mock_data_cls,
+        patch(
+            "custom_components.eyeonwater.DataUpdateCoordinator",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.eyeonwater.debounce.Debouncer",
+            return_value=MagicMock(),
+        ),
     ):
         data_instance = MagicMock()
         data_instance.client = MagicMock()

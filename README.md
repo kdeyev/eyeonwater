@@ -1,5 +1,43 @@
 # Home Assistant integration for EyeOnWater service
 
+## ⚠️ Breaking Change in v2.6.0
+
+Version 2.6.0 changes how water usage statistics are stored. If you are upgrading from a previous version, **you must reconfigure your Energy Dashboard and re-import historical data**.
+
+### What Changed
+
+| | Before (≤ 2.5.x) | After (2.6.0+) |
+|---|---|---|
+| Statistic ID | `sensor.eyeonwater:water_meter_xxxxx` | `eyeonwater:water_meter_xxxxx` |
+| Source | `recorder` | `eyeonwater` |
+| API | `async_import_statistics` | `async_add_external_statistics` |
+
+The old approach conflicted with Home Assistant's internal statistics pipeline, causing **negative water usage spikes** ([#30](https://github.com/kdeyev/eyeonwater/issues/30)). The new approach uses HA's external statistics API under a dedicated `eyeonwater:` namespace, eliminating these conflicts entirely.
+
+### Migration Steps
+
+1. **Update** the integration to v2.6.0 via HACS.
+2. **Restart** Home Assistant.
+3. **Reconfigure the Energy Dashboard:**
+   - Go to `Settings` → `Dashboards` → `Energy`.
+   - In **Water Consumption**, remove the old statistic entry.
+   - Add the new `eyeonwater:water_meter_xxxxx` statistic.
+4. **Re-import historical data:**
+   - Go to `Developer Tools` → `Services`.
+   - Call `EyeOnWater: import_historical_data` with the desired number of days.
+5. *(Optional)* Delete the old orphaned statistics via `Developer Tools` → `Statistics` if they appear as "no longer provided."
+
+### New Diagnostic Sensors
+
+v2.6.0 also adds 10 new diagnostic sensor entities (created only when the meter provides the data):
+
+- **Temperature:** 7-day min, 7-day avg, 7-day max, latest avg
+- **Flow:** usage this week, last week, this month, last month
+- **Battery:** battery level (%)
+- **Signal:** signal strength (dB)
+
+---
+
 ## Installation
 
 1. Follow the [instructions](https://hacs.xyz/docs/faq/custom_repositories/) for adding a custom git repository to your HA.

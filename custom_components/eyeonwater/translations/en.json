@@ -36,26 +36,6 @@
             "reverseflow": {
                 "name": "Reverse Waterflow"
             }
-        },
-        "sensor": {
-            "temperature_7day_min": {
-                "name": "Temperature 7-day min"
-            },
-            "temperature_7day_avg": {
-                "name": "Temperature 7-day avg"
-            },
-            "temperature_7day_max": {
-                "name": "Temperature 7-day max"
-            },
-            "temperature_latest_avg": {
-                "name": "Temperature latest avg"
-            },
-            "battery_level": {
-                "name": "Battery level"
-            },
-            "signal_strength": {
-                "name": "Signal strength"
-            }
         }
     },
     "services": {

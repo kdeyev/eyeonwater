@@ -75,7 +75,7 @@ def test_unit_mapping_unknown_raises() -> None:
 
 def test_get_statistic_name() -> None:
     name = get_statistic_name("meter-001")
-    assert name == "Water Meter meter_001 Statistic"
+    assert name == "Water Meter meter_001"
 
 
 def test_get_statistics_id() -> None:

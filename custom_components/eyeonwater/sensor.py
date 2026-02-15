@@ -1,14 +1,23 @@
 """Support for EyeOnWater sensors."""
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import pyonwater
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    SIGNAL_STRENGTH_DECIBELS,
+    EntityCategory,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -30,6 +39,171 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.StreamHandler())
 
 
+@dataclass(frozen=True, kw_only=True)
+class EyeOnWaterSensorDescription(SensorEntityDescription):
+    """Describe an EyeOnWater diagnostic sensor."""
+
+    value_fn: Callable[[pyonwater.Meter], float | None]
+    available_fn: Callable[[pyonwater.Meter], bool]
+
+
+def _temp_available(meter: pyonwater.Meter) -> bool:
+    """Check if temperature data is available."""
+    return bool(
+        meter.meter_info.sensors and meter.meter_info.sensors.endpoint_temperature,
+    )
+
+
+def _flow_available(meter: pyonwater.Meter) -> bool:
+    """Check if flow data is available."""
+    return meter.meter_info.reading.flow is not None
+
+
+def _battery_available(meter: pyonwater.Meter) -> bool:
+    """Check if battery data is available."""
+    return meter.meter_info.reading.battery is not None
+
+
+def _signal_available(meter: pyonwater.Meter) -> bool:
+    """Check if signal/pwr data is available."""
+    return meter.meter_info.reading.pwr is not None
+
+
+TEMPERATURE_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
+    EyeOnWaterSensorDescription(
+        key="temperature_7day_min",
+        translation_key="temperature_7day_min",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda m: (
+            m.meter_info.sensors.endpoint_temperature.seven_day_min
+            if _temp_available(m)
+            else None
+        ),
+        available_fn=_temp_available,
+    ),
+    EyeOnWaterSensorDescription(
+        key="temperature_7day_avg",
+        translation_key="temperature_7day_avg",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda m: (
+            m.meter_info.sensors.endpoint_temperature.seven_day_average
+            if _temp_available(m)
+            else None
+        ),
+        available_fn=_temp_available,
+    ),
+    EyeOnWaterSensorDescription(
+        key="temperature_7day_max",
+        translation_key="temperature_7day_max",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda m: (
+            m.meter_info.sensors.endpoint_temperature.seven_day_max
+            if _temp_available(m)
+            else None
+        ),
+        available_fn=_temp_available,
+    ),
+    EyeOnWaterSensorDescription(
+        key="temperature_latest_avg",
+        translation_key="temperature_latest_avg",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda m: (
+            m.meter_info.sensors.endpoint_temperature.latest_average
+            if _temp_available(m)
+            else None
+        ),
+        available_fn=_temp_available,
+    ),
+)
+
+
+FLOW_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
+    EyeOnWaterSensorDescription(
+        key="flow_this_week",
+        translation_key="flow_this_week",
+        state_class=SensorStateClass.TOTAL,
+        device_class=SensorDeviceClass.WATER,
+        value_fn=lambda m: m.meter_info.reading.flow.this_week
+        if _flow_available(m)
+        else None,
+        available_fn=_flow_available,
+    ),
+    EyeOnWaterSensorDescription(
+        key="flow_last_week",
+        translation_key="flow_last_week",
+        state_class=SensorStateClass.TOTAL,
+        device_class=SensorDeviceClass.WATER,
+        value_fn=lambda m: m.meter_info.reading.flow.last_week
+        if _flow_available(m)
+        else None,
+        available_fn=_flow_available,
+    ),
+    EyeOnWaterSensorDescription(
+        key="flow_this_month",
+        translation_key="flow_this_month",
+        state_class=SensorStateClass.TOTAL,
+        device_class=SensorDeviceClass.WATER,
+        value_fn=lambda m: m.meter_info.reading.flow.this_month
+        if _flow_available(m)
+        else None,
+        available_fn=_flow_available,
+    ),
+    EyeOnWaterSensorDescription(
+        key="flow_last_month",
+        translation_key="flow_last_month",
+        state_class=SensorStateClass.TOTAL,
+        device_class=SensorDeviceClass.WATER,
+        value_fn=lambda m: m.meter_info.reading.flow.last_month
+        if _flow_available(m)
+        else None,
+        available_fn=_flow_available,
+    ),
+)
+
+
+BATTERY_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
+    EyeOnWaterSensorDescription(
+        key="battery_level",
+        translation_key="battery_level",
+        device_class=SensorDeviceClass.BATTERY,
+        native_unit_of_measurement=PERCENTAGE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda m: m.meter_info.reading.battery.level
+        if _battery_available(m)
+        else None,
+        available_fn=_battery_available,
+    ),
+)
+
+
+SIGNAL_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
+    EyeOnWaterSensorDescription(
+        key="signal_strength",
+        translation_key="signal_strength",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda m: m.meter_info.reading.pwr.signal_strength
+        if _signal_available(m)
+        else None,
+        available_fn=_signal_available,
+    ),
+)
+
+
+ALL_DIAGNOSTIC_SENSORS = (
+    TEMPERATURE_SENSORS + FLOW_SENSORS + BATTERY_SENSORS + SIGNAL_SENSORS
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -42,31 +216,35 @@ async def async_setup_entry(
     sensors: list[Entity] = []
     for meter in meters:
         sensors.append(EyeOnWaterSensor(meter, coordinator))
-        if meter.meter_info.sensors and meter.meter_info.sensors.endpoint_temperature:
-            sensors.append(EyeOnWaterTempSensor(meter, coordinator))
+        sensors.extend(
+            EyeOnWaterDiagnosticSensor(meter, coordinator, description)
+            for description in ALL_DIAGNOSTIC_SENSORS
+            if description.available_fn(meter)
+        )
 
     async_add_entities(sensors, update_before_add=False)
 
 
-class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
-    """Representation of an EyeOnWater temperature sensor."""
+class EyeOnWaterDiagnosticSensor(CoordinatorEntity, SensorEntity):
+    """Representation of an EyeOnWater diagnostic sensor."""
 
     _attr_has_entity_name = True
-    _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    entity_description: EyeOnWaterSensorDescription
 
     def __init__(
         self,
         meter: pyonwater.Meter,
         coordinator: DataUpdateCoordinator,
+        description: EyeOnWaterSensorDescription,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
+        self.entity_description = description
         self.meter = meter
         self._uuid = normalize_id(meter.meter_uuid)
         self._id = normalize_id(meter.meter_id)
 
-        self._attr_unique_id = f"{self._uuid}_temperature"
+        self._attr_unique_id = f"{self._uuid}_{description.key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._uuid)},
             name=f"{WATER_METER_NAME} {self._id}",
@@ -76,16 +254,19 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
             sw_version=self.meter.meter_info.reading.firmware_version,
         )
 
+        # Set unit dynamically for flow sensors (uses meter's native unit).
+        if (
+            description.device_class == SensorDeviceClass.WATER
+            and not description.native_unit_of_measurement
+        ):
+            self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
+                meter.native_unit_of_measurement,
+            )
+
     @property
     def native_value(self) -> float | None:
         """Get native value."""
-        if (
-            self.meter.meter_info.sensors
-            and self.meter.meter_info.sensors.endpoint_temperature
-        ):
-            return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
-
-        return None
+        return self.entity_description.value_fn(self.meter)
 
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):

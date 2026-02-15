@@ -1,75 +1,110 @@
 # Home Assistant integration for EyeOnWater service
 
-1. Follow [instruction](https://hacs.xyz/docs/faq/custom_repositories/) for adding a custom git repository to your HA.
+## ⚠️ Breaking Change in v2.6.0
 
-Add `https://github.com/kdeyev/eyeonwater` as Repository and select the `Integration` category.
+Version 2.6.0 changes how water usage statistics are stored. If you are upgrading from a previous version, **you must reconfigure your Energy Dashboard and re-import historical data**.
 
-![add-repository](https://github.com/kdeyev/eyeonwater/blob/master/img/add-repository.png?raw=true)
+### What Changed
 
-2. Add EyeOnWater integration following [HACS instructions](https://github.com/hacs/integration)
+| | Before (≤ 2.5.x) | After (2.6.0+) |
+|---|---|---|
+| Statistic ID | `sensor.eyeonwater:water_meter_xxxxx` | `eyeonwater:water_meter_xxxxx` |
+| Source | `recorder` | `eyeonwater` |
+| API | `async_import_statistics` | `async_add_external_statistics` |
 
-Follow the configuration dialog and use your username and password, which you use to log in on eyeonwater.
-Pay attention to that integration uses some of your HA configurations:
-- `Country` is used for identification if `eyeonwater.ca` should be used.
-- `Unit System` is used for switching between Metric and US customary measurement systems
+The old approach conflicted with Home Assistant's internal statistics pipeline, causing **negative water usage spikes** ([#30](https://github.com/kdeyev/eyeonwater/issues/30)). The new approach uses HA's external statistics API under a dedicated `eyeonwater:` namespace, eliminating these conflicts entirely.
 
-![configuration](https://github.com/kdeyev/eyeonwater/blob/master/img/configuration.png?raw=true)
+### Migration Steps
 
-3. After successful initialization you should see the integration card appear:
+1. **Update** the integration to v2.6.0 via HACS.
+2. **Restart** Home Assistant.
+3. **Reconfigure the Energy Dashboard:**
+   - Go to `Settings` → `Dashboards` → `Energy`.
+   - In **Water Consumption**, remove the old statistic entry.
+   - Add the new `eyeonwater:water_meter_xxxxx` statistic.
+4. **Re-import historical data:**
+   - Go to `Developer Tools` → `Services`.
+   - Call `EyeOnWater: import_historical_data` with the desired number of days.
+5. *(Optional)* Delete the old orphaned statistics via `Developer Tools` → `Statistics` if they appear as "no longer provided."
 
-![integration-card](https://github.com/kdeyev/eyeonwater/blob/master/img/integration-card.png?raw=true)
+### New Diagnostic Sensors
 
-![watermeter](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter.png?raw=true)
+v2.6.0 also adds 10 new diagnostic sensor entities (created only when the meter provides the data):
 
-![watermeter-graph](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter-graph.png?raw=true)
+- **Temperature:** 7-day min, 7-day avg, 7-day max, latest avg
+- **Flow:** usage this week, last week, this month, last month
+- **Battery:** battery level (%)
+- **Signal:** signal strength (dB)
 
-4. Go to `Settings`->`Dashboards`->`Energy` configuration.
+---
 
-You should be able to choose your water meter in the Water Consumption. Select the external statistic named **"Water Meter xxxxx Statistic"** (with the `eyeonwater:` prefix) — this is the one populated with accurate hourly data from EyeOnWater.
+## Installation
 
-5. Have fun and watch your utilities in the Energy Dashboard.
+1. Follow the [instructions](https://hacs.xyz/docs/faq/custom_repositories/) for adding a custom git repository to your HA.
+
+   Add `https://github.com/kdeyev/eyeonwater` as Repository and select the `Integration` category.
+
+   ![add-repository](https://github.com/kdeyev/eyeonwater/blob/master/img/add-repository.png?raw=true)
+
+2. Add the EyeOnWater integration following [HACS instructions](https://github.com/hacs/integration).
+
+   Follow the configuration dialog and use the username and password you use to log in on eyeonwater.
+
+   The integration uses some of your HA configurations:
+   - **Country** — determines whether `eyeonwater.ca` should be used.
+   - **Unit System** — switches between Metric and US customary measurement systems.
+
+   ![configuration](https://github.com/kdeyev/eyeonwater/blob/master/img/configuration.png?raw=true)
+
+3. After successful initialization you should see the integration card:
+
+   ![integration-card](https://github.com/kdeyev/eyeonwater/blob/master/img/integration-card.png?raw=true)
+
+   ![watermeter](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter.png?raw=true)
+
+   ![watermeter-graph](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter-graph.png?raw=true)
+
+## Energy Dashboard Setup
+
+Go to `Settings` → `Dashboards` → `Energy` configuration.
+
+In the **Water Consumption** section, select the `eyeonwater:water_meter_xxxxx` statistic — this is the one populated with accurate hourly data from EyeOnWater.
+
+> **Note:** EyeOnWater publishes meter readings once every few hours (even though readings are accumulated every few minutes), so data may appear with a delay.
 
 ![energy-dashboard](https://github.com/kdeyev/eyeonwater/blob/master/img/energy-dashboard.png?raw=true)
 
-Pay attention that EyeOnWater publishes the meter reading once in several hours (even when they accumulate the meter reading once in several minutes). So data may come with a delay of several hours.
+## Import Historical Data
 
-# Import historical data
-The integration allows to import of historical water data usage after it was installed.
-- Go to `Developer Tools` -> Servies`.
-- Enter the `EyeOnWater: import_historical_data` service name.
-- Choose how many days of historical data you want to import.
-- Pay attention that the import may take some time.
+The integration can import historical water usage data after installation.
+
+1. Go to `Developer Tools` → `Services`.
+2. Select the `EyeOnWater: import_historical_data` service.
+3. Choose how many days of historical data you want to import.
+4. The import may take some time depending on the number of days.
+
 ![import-historical-data](https://github.com/kdeyev/eyeonwater/blob/master/img/import-historical-data.png?raw=true)
 
-
-# Architecture: How Statistics Work
+## Architecture: How Statistics Work
 
 This integration uses Home Assistant's **external statistics** API (`async_add_external_statistics`) to import accurate hourly water usage data from EyeOnWater.
 
-## The Problem with Standard Statistics
+### The Problem
 
-EyeOnWater reports water meter readings **retroactively**: data for 12 PM–6 PM may only become available at 6 PM. Home Assistant's sensor statistics system has no native support for retroactive data — it assumes sensor state updates always represent "now."
+EyeOnWater reports water meter readings **retroactively** — data for 12 PM–6 PM may only become available at 6 PM. Home Assistant's statistics system assumes sensor state updates always represent "now." When a sensor with `state_class` has retroactive data imported for the same statistic ID, HA produces **negative value spikes** due to conflicting sum timelines.
 
-When a sensor has `state_class = total_increasing`, HA's recorder automatically compiles statistics every 5 minutes by calculating deltas between consecutive state changes. If an integration also imports retroactive historical data for the **same statistic ID**, HA sees two conflicting sum timelines — the auto-compiled deltas and the retroactively imported cumulative readings — producing **massive negative spikes** equal to the full lifetime meter reading.
+### The Solution
 
-## The Solution
+The integration uses **external statistics** under a separate `eyeonwater:` namespace, completely independent from HA's automatic statistics pipeline:
 
-This integration avoids the conflict by using **external statistics** with a separate namespace:
+| Component | ID | Purpose |
+|-----------|-------------|---------|
+| Live sensor | `sensor.water_meter_xxxxx` | Real-time meter reading display |
+| External statistic | `eyeonwater:water_meter_xxxxx` | **Energy Dashboard** — accurate hourly usage |
 
-| Component | Statistic ID | Source | Purpose |
-|-----------|-------------|--------|---------|
-| Live sensor | `sensor.water_meter_xxxxx` | HA auto-compiles | Real-time display |
-| External statistic | `eyeonwater:water_meter_xxxxx` | Integration imports via `async_add_external_statistics` | **Energy Dashboard** (accurate hourly usage) |
-
-Because external statistics use the `eyeonwater:` source prefix, they are completely independent from HA's automatic `compile_statistics()` pipeline. The integration imports retroactive data without any conflict, and negative values never appear.
-
-### How It Works
-
-1. The **live sensor** (`sensor.water_meter_xxxxx`) still has `state_class = total_increasing` and provides real-time meter readings.
-2. On each coordinator update, the integration fetches historical data from the EyeOnWater API and imports only new data points as **external statistics** under the `eyeonwater:water_meter_xxxxx` ID.
-3. For the **Energy Dashboard**, select the `eyeonwater:water_meter_xxxxx` statistic — this contains the accurate hourly usage data.
+The live sensor has no `state_class`, so HA does not auto-compile statistics for it. All statistics come exclusively from the integration's retroactive imports — no conflicts, no negative values.
 
 ### HA Core Tracking
 
-The underlying limitation in HA Core (no support for retroactive/delayed sensor data) is discussed upstream:
+The underlying limitation (no support for retroactive/delayed sensor data) is discussed upstream:
 - [home-assistant/architecture#964](https://github.com/home-assistant/architecture/discussions/964) — Delayed data sensors

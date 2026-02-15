@@ -50,18 +50,6 @@
             "temperature_latest_avg": {
                 "name": "Temperature latest avg"
             },
-            "flow_this_week": {
-                "name": "Usage this week"
-            },
-            "flow_last_week": {
-                "name": "Usage last week"
-            },
-            "flow_this_month": {
-                "name": "Usage this month"
-            },
-            "flow_last_month": {
-                "name": "Usage last month"
-            },
             "battery_level": {
                 "name": "Battery level"
             },

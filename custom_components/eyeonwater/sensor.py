@@ -9,7 +9,6 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
-    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -52,11 +51,6 @@ def _temp_available(meter: pyonwater.Meter) -> bool:
     return bool(
         meter.meter_info.sensors and meter.meter_info.sensors.endpoint_temperature,
     )
-
-
-def _flow_available(meter: pyonwater.Meter) -> bool:
-    """Check if flow data is available."""
-    return meter.meter_info.reading.flow is not None
 
 
 def _battery_available(meter: pyonwater.Meter) -> bool:
@@ -125,50 +119,6 @@ TEMPERATURE_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
 )
 
 
-FLOW_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
-    EyeOnWaterSensorDescription(
-        key="flow_this_week",
-        translation_key="flow_this_week",
-        state_class=SensorStateClass.TOTAL,
-        device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.this_week
-        if _flow_available(m)
-        else None,
-        available_fn=_flow_available,
-    ),
-    EyeOnWaterSensorDescription(
-        key="flow_last_week",
-        translation_key="flow_last_week",
-        state_class=SensorStateClass.TOTAL,
-        device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.last_week
-        if _flow_available(m)
-        else None,
-        available_fn=_flow_available,
-    ),
-    EyeOnWaterSensorDescription(
-        key="flow_this_month",
-        translation_key="flow_this_month",
-        state_class=SensorStateClass.TOTAL,
-        device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.this_month
-        if _flow_available(m)
-        else None,
-        available_fn=_flow_available,
-    ),
-    EyeOnWaterSensorDescription(
-        key="flow_last_month",
-        translation_key="flow_last_month",
-        state_class=SensorStateClass.TOTAL,
-        device_class=SensorDeviceClass.WATER,
-        value_fn=lambda m: m.meter_info.reading.flow.last_month
-        if _flow_available(m)
-        else None,
-        available_fn=_flow_available,
-    ),
-)
-
-
 BATTERY_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
     EyeOnWaterSensorDescription(
         key="battery_level",
@@ -199,9 +149,7 @@ SIGNAL_SENSORS: tuple[EyeOnWaterSensorDescription, ...] = (
 )
 
 
-ALL_DIAGNOSTIC_SENSORS = (
-    TEMPERATURE_SENSORS + FLOW_SENSORS + BATTERY_SENSORS + SIGNAL_SENSORS
-)
+ALL_DIAGNOSTIC_SENSORS = TEMPERATURE_SENSORS + BATTERY_SENSORS + SIGNAL_SENSORS
 
 
 async def async_setup_entry(

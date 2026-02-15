@@ -79,7 +79,7 @@ def test_get_statistic_name() -> None:
 
 def test_get_statistics_id() -> None:
     sid = get_statistics_id("meter-001")
-    assert sid == "sensor.water_meter_meter_001_statistic"
+    assert sid == "eyeonwater:water_meter_meter_001"
 
 
 # ---------- statistic metadata ----------
@@ -91,7 +91,7 @@ def test_get_statistic_metadata() -> None:
 
     assert meta["has_mean"] is False
     assert meta["has_sum"] is True
-    assert meta["source"] == "recorder"
+    assert meta["source"] == "eyeonwater"
     assert "meter_001" in meta["statistic_id"]
 
 
@@ -153,4 +153,15 @@ def test_filter_newer_data_excludes_equal() -> None:
     exact = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
     dp = FakeDataPoint(dt=exact, reading=10.0)
     result = filter_newer_data([dp], exact)
+    assert result == []
+
+
+def test_filter_newer_data_empty_input() -> None:
+    result = filter_newer_data([], None)
+    assert result == []
+
+
+def test_filter_newer_data_empty_input_with_cutoff() -> None:
+    cutoff = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+    result = filter_newer_data([], cutoff)
     assert result == []

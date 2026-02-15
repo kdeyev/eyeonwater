@@ -54,7 +54,7 @@ def normalize_id(uuid: str) -> str:
 def get_statistics_id(meter_id: str) -> str:
     """Generate statistic ID for a meter."""
     meter_id = normalize_id(meter_id)
-    return f"sensor.water_meter_{meter_id}_statistic"
+    return f"eyeonwater:water_meter_{meter_id}"
 
 
 def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
@@ -66,7 +66,7 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
         has_mean=False,
         has_sum=True,
         name=name,
-        source="recorder",
+        source="eyeonwater",
         statistic_id=statistic_id,
         unit_of_measurement=get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,
@@ -118,7 +118,11 @@ def filter_newer_data(
     data: list[DataPoint],
     last_imported_time: datetime.datetime | None,
 ) -> list[DataPoint]:
-    """Filter data points that newer than given datetime."""
+    """Filter data points that are newer than given datetime."""
+    if not data:
+        _LOGGER.info("0 data points found (empty input)")
+        return data
+
     _LOGGER.debug(
         "last_imported_time %s - data %s",
         last_imported_time,

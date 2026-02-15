@@ -17,6 +17,7 @@ from custom_components.eyeonwater.statistic_helper import normalize_id
 
 from .conftest import (
     FakeDataPoint,
+
     FakeMeterInfo,
     FakeReading,
     FakeSensors,

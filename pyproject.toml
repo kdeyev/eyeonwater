@@ -6,13 +6,14 @@ description = "EyeOnWater HomeAssistant Integration."
 authors = []
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.15"
+python = ">=3.13.2,<3.15"
 aiohttp = "^3.8.5"
 tenacity = "^8.2.3"
 pytz = "^2023.3"
@@ -22,15 +23,19 @@ pyonwater = "0.3.22"
 
 [tool.poetry.group.dev.dependencies]
 types-pytz = "^2025.2.0.20251108"
+pre-commit = ">=3.0"
+mypy = ">=1.5"
 
 [tool.poetry.group.test.dependencies]
+pytest-homeassistant-custom-component = ">=0.13"
 homeassistant = "2026.2.2"
+pyonwater = "0.3.22"
 pytest = ">=9.0"
 pytest-asyncio = ">=1.0"
 pytest-cov = ">=7.0"
 
 [tool.black]
-target-version = ["py312"]
+target-version = ["py313"]  # requires black >= 24.3.0 (rev 25.1.0 in pre-commit)
 line-length = 88
 exclude = '''
 /(
@@ -52,7 +57,9 @@ known_first_party = [
 combine_as_imports = true
 skip = [".venv", ".git", "__pycache__", "*.egg-info"]
 
+# Based on https://github.com/home-assistant/core/blob/dev/pyproject.toml
 [tool.ruff]
+target-version = "py313"
 line-length = 88
 exclude = [
     ".venv",
@@ -60,37 +67,42 @@ exclude = [
     "__pycache__",
     "*.egg-info",
 ]
-select = [
-    "ALL",
-    "D",  # pydocstyle
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # flake8
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
-    "A",  # prevent using keywords that clobber python builtins
-    "ISC",  # implicit string concatenation
-    "UP",  # alert you when better syntax is available in your python version
-    "RUF",  # the ruff developer's own rules
-    "C90", # mccabe
-    "I", # isort
-    "N", # pep8-naming
-    "YTT", # flake8-2020
-    "ANN", # flake8-annotations
-]
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+# All the ones without a comment were the ones that are currently violated
+# by the codebase. The plan is to fix them all (when sensible) and then enable them.
 ignore = [
-    "B008",  # do not perform function calls in argument defaults
-    "B905",  # ignore zip() without an explicit strict= parameter, only support with python >3.10
-]
-fixable = [
-    "ALL",
-    "F401",  # Remove unused imports.
-    "NPY001",  # Fix numpy types, which are removed in 1.24.
-    "RUF100",  # Remove unused noqa comments.
+    "ANN",
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
+    "D203",    # Incompatible with D211 (no-blank-line-before-class) — prefer D211
+    "D213",    # Incompatible with D212 (multi-line-summary-first-line) — prefer D212
+    "D401",    # First line of docstring should be in imperative mood
+    "E501",    # line too long
+    "FBT001",  # Boolean positional arg in function definition
+    "FBT002",  # Boolean default value in function definition
+    "FIX004",  # Line contains HACK, consider resolving the issue
+    "PD901",   # df is a bad variable name. Be kinder to your future self.
+    "PERF203", # `try`-`except` within a loop incurs performance overhead
+    "PLR0913", # Too many arguments to function call (N > 5)
+    "PLR2004", # Magic value used in comparison, consider replacing X with a constant variable
+    "S101",    # Use of assert detected
+    "SLF001",  # Private member accessed
 ]
 
-[tool.ruff.per-file-ignores]
-"tests/*.py" = ["D1", "SLF001", "PLW0621"]
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["ALL"]
+".github/*.py" = ["INP001"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
@@ -103,7 +115,7 @@ warn_unused_ignores = true
 no_implicit_optional = true
 show_error_codes = true
 implicit_reexport = true
-exclude = [".venv", "__pycache__", ".eggs", "*.egg-info"]
+exclude = ["\\.venv", "__pycache__", "\\.eggs", "\\.egg-info"]
 
 [tool.pylint.MASTER]
 ignore-paths = [".venv"]
@@ -115,7 +127,33 @@ disable = [
 ]
 
 [tool.pyright]
-reportPrivateUsage = "none"  # tests intentionally access private members
+# mypy (strict) is the authoritative type checker for CI.
+# Pylance is IDE-only; suppress categories that are false positives in this codebase.
+
+# HA multi-inheritance MRO false positives (CoordinatorEntity + BinarySensorEntity etc.)
+reportIncompatibleVariableOverride = "none"
+reportIncompatibleMethodOverride = "none"
+
+# Tests intentionally access _attr_* / _state / _state_update internals
+reportPrivateUsage = "none"
+
+# cast() and isinstance() needed by mypy-strict but pyright considers redundant
+reportUnnecessaryCast = "none"
+reportUnnecessaryIsInstance = "none"
+
+# HA's public API surfaces (async_register_info, system_health, etc.) carry
+# Unknown in their stubs — not actionable here
+reportUnknownMemberType = "none"
+
+# MagicMock / lambda parameters in test helpers resolve to Unknown
+reportUnknownLambdaType = "none"
+reportUnknownParameterType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportMissingParameterType = "none"
+
+# pytest fixtures / conftest helpers named with _ are used by pytest, not directly
+reportUnusedFunction = "none"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

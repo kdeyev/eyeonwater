@@ -18,10 +18,16 @@ tenacity = "^8.2.3"
 pytz = "^2023.3"
 python-dateutil = "^2.8.2"
 pydantic = "^2"
-pyonwater = "0.3.17"
+pyonwater = "0.3.22"
 
 [tool.poetry.group.dev.dependencies]
 types-pytz = "^2025.2.0.20251108"
+
+[tool.poetry.group.test.dependencies]
+homeassistant = "2026.2.2"
+pytest = ">=9.0"
+pytest-asyncio = ">=1.0"
+pytest-cov = ">=7.0"
 
 [tool.black]
 target-version = ["py312"]
@@ -118,6 +124,7 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
 pythonpath = ["."]
+asyncio_mode = "strict"
 
 [tool.coverage.run]
 source = ["custom_components/eyeonwater", "tests"]

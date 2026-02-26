@@ -1,7 +1,7 @@
 # eyeonwater Developer Guide
 
-**Repository:** [kdeyev/eyeonwater](https://github.com/kdeyev/eyeonwater)  
-**Integration purpose:** Home Assistant custom component for [EyeOnWater](https://eyeonwater.com/) residential water meters.  
+**Repository:** [kdeyev/eyeonwater](https://github.com/kdeyev/eyeonwater)
+**Integration purpose:** Home Assistant custom component for [EyeOnWater](https://eyeonwater.com/) residential water meters.
 
 ---
 

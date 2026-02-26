@@ -699,7 +699,9 @@ async def async_write_carry_forward_stats(
     Returns the number of rows submitted.
     """
     metadata = metadata or get_statistic_metadata(
-        meter, statistic_id=statistic_id, name=statistic_name,
+        meter,
+        statistic_id=statistic_id,
+        name=statistic_name,
     )
     rows: list[StatisticData] = []
     current = from_dt + datetime.timedelta(hours=1)
@@ -762,12 +764,14 @@ async def centralized_import_statistics(
         return None
 
     # Query last_db_sum and last_db_state to keep continuity and valid deltas.
-    last_db_stat_time, fresh_last_db_state, fresh_last_db_sum = (
-        await get_last_imported_stat(
-            hass,
-            meter,
-            statistic_id=statistic_id,
-        )
+    (
+        last_db_stat_time,
+        fresh_last_db_state,
+        fresh_last_db_sum,
+    ) = await get_last_imported_stat(
+        hass,
+        meter,
+        statistic_id=statistic_id,
     )
 
     # Detect backfill / overlap: the import data starts at or before the last

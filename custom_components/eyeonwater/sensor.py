@@ -527,9 +527,11 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
 
     async def _handle_update_locked(self, latest_data: pyonwater.DataPoint) -> None:
         """Handle import and state update while holding the import lock."""
-        effective_last_time, last_stat_reading, _ = (
-            await self._resolve_effective_last_imported_time()
-        )
+        (
+            effective_last_time,
+            last_stat_reading,
+            _,
+        ) = await self._resolve_effective_last_imported_time()
 
         # Import new historical data points with proper timestamps
         self._last_historical_data = filter_newer_data(

@@ -36,6 +36,100 @@
       }
     }
   },
+  "services": {
+    "import_historical_data": {
+      "name": "Import historical data",
+      "description": "Import historical data from EyeOnWater.",
+      "fields": {
+        "days": {
+          "name": "Days to import",
+          "description": "The number of days of history to import."
+        },
+        "force_overwrite": {
+          "name": "Force overwrite",
+          "description": "Delete and re-import existing statistics rows."
+        },
+        "purge_states": {
+          "name": "Purge states",
+          "description": "Also purge entity state history from the recorder."
+        }
+      }
+    },
+    "replay_scenario": {
+      "name": "Replay scenario",
+      "description": "Replay real API payloads through the statistics pipeline.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "Target sensor entity (optional if only one meter)."
+        },
+        "meter_id": {
+          "name": "Meter ID",
+          "description": "Target meter ID (optional if entity is provided)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "Start date (ISO format)."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "End date (ISO format)."
+        },
+        "aggregation": {
+          "name": "Aggregation",
+          "description": "Aggregation level for the data window."
+        }
+      }
+    },
+    "validate_statistics_monotonic": {
+      "name": "Validate monotonic statistics",
+      "description": "Validate that cumulative sums remain monotonic.",
+      "fields": {
+        "statistic_id": {
+          "name": "Statistic ID",
+          "description": "Statistic ID to validate."
+        },
+        "entity_id": {
+          "name": "Entity",
+          "description": "Target sensor entity."
+        },
+        "meter_id": {
+          "name": "Meter ID",
+          "description": "Target meter ID."
+        },
+        "hours": {
+          "name": "Hours",
+          "description": "Recent window in hours (ignored when full scan is true)."
+        },
+        "full_scan": {
+          "name": "Full scan",
+          "description": "Scan the full dataset instead of the recent window."
+        }
+      }
+    },
+    "reset_statistics": {
+      "name": "Reset statistics",
+      "description": "Delete all statistics rows for the selected meter.",
+      "fields": {
+        "confirm": {
+          "name": "Confirm",
+          "description": "Type DELETE to confirm this destructive action."
+        },
+        "statistic_id": {
+          "name": "Statistic ID",
+          "description": "Statistic ID to reset."
+        },
+        "entity_id": {
+          "name": "Entity",
+          "description": "Target sensor entity."
+        },
+        "meter_id": {
+          "name": "Meter ID",
+          "description": "Target meter ID."
+        }
+      }
+    }
+  },
   "entity": {
     "binary_sensor": {
       "leak": {

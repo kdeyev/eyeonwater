@@ -4,13 +4,13 @@ import asyncio
 import functools
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
+import homeassistant.helpers.config_validation as cv
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import debounce
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dtutil
@@ -184,12 +184,12 @@ def _resolve_replay_meter_id(
                 available_meter_ids,
             )
             return None
-        return meter_id
+        return cast("str", meter_id)
 
     if len(meters_snapshot) == 1:
         meter_id = meters_snapshot[0].meter_id
         _LOGGER.info("Replay real payloads: defaulting meter_id to %s", meter_id)
-        return meter_id
+        return cast("str", meter_id)
 
     _LOGGER.error(
         "Replay real payloads requires meter_id when multiple meters exist",
@@ -314,7 +314,7 @@ async def _replay_range(
             end_date.date(),
         )
         raise
-    except (EyeOnWaterAuthError, asyncio.TimeoutError) as error:
+    except (TimeoutError, EyeOnWaterAuthError) as error:
         _LOGGER.warning(
             "Replay real payloads: failed to fetch data for date range: %s",
             error,
@@ -577,7 +577,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except EyeOnWaterAuthError:
             _LOGGER.exception("Username or password was not accepted")
             return False
-        except asyncio.TimeoutError as error:
+        except TimeoutError as error:
             _LOGGER.exception("Timeout during authentication")
             raise ConfigEntryNotReady from error
 

@@ -1,6 +1,5 @@
 """Config flow for EyeOnWater integration."""
 
-import asyncio
 import logging
 from types import MappingProxyType
 from typing import Any
@@ -70,7 +69,7 @@ async def validate_input(
 
     try:
         await client.authenticate()
-    except (asyncio.TimeoutError, ClientError, EyeOnWaterAPIError) as error:
+    except (TimeoutError, ClientError, EyeOnWaterAPIError) as error:
         raise CannotConnect from error
     except EyeOnWaterAuthError as error:
         raise InvalidAuth(error) from error
@@ -138,7 +137,9 @@ class EyeOnWaterOptionsFlow(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_PRICE_ENTITY,
                         default=current_price_entity or None,
-                    ): EntitySelector(EntitySelectorConfig(domain="sensor")),
+                    ): EntitySelector(
+                        EntitySelectorConfig(domain="sensor"),
+                    ),
                 },
             ),
         )
@@ -171,7 +172,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self,
         user_input: dict[str, Any] | None = None,
-    ):
+    ) -> config_entries.ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:

@@ -328,7 +328,7 @@ async def get_last_imported_stat(
             date = dtutil.as_local(
                 datetime.datetime.fromtimestamp(
                     start_time,
-                    tz=datetime.datetime.now(datetime.timezone.utc).tzinfo,
+                    tz=datetime.datetime.now(datetime.UTC).tzinfo,
                 ),
             )
             _LOGGER.debug(
@@ -449,7 +449,7 @@ async def async_get_highest_sum_stat(
         start_dt = dtutil.as_local(
             datetime.datetime.fromtimestamp(
                 row.start_ts,
-                tz=datetime.timezone.utc,
+                tz=datetime.UTC,
             ),
         )
         return start_dt, row.state, row.sum

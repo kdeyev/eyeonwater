@@ -3,7 +3,7 @@
 import asyncio
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pyonwater
 from homeassistant.components.sensor import (
@@ -197,11 +197,11 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the device specific state attributes."""
         if self._state:
-            return self.meter.meter_info.reading.model_dump()
+            return cast("dict[str, Any]", self.meter.meter_info.reading.model_dump())
         return {}
 
     @callback
-    def _state_update(self):
+    def _state_update(self) -> None:
         """Call when the coordinator has an update."""
         _LOGGER.debug(
             "Unified sensor _state_update called for meter %s",
@@ -399,9 +399,11 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
         Energy Dashboard cost column self-heals at startup.
         """
         cost_stat_id = get_cost_statistic_id(self.meter.meter_id)
-        cost_anchor_dt, _cost_anchor_state, cost_anchor_sum = (
-            await async_get_highest_sum_stat(self.hass, cost_stat_id)
-        )
+        (
+            cost_anchor_dt,
+            _cost_anchor_state,
+            cost_anchor_sum,
+        ) = await async_get_highest_sum_stat(self.hass, cost_stat_id)
         if cost_anchor_sum is None or cost_anchor_sum <= 0.01 or cost_anchor_dt is None:
             return
         cost_metadata = get_cost_statistic_metadata(
@@ -439,12 +441,14 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
         available (e.g., immediately after a manual historical import service
         call) and can also write the current-hour anchor unconditionally.
         """
-        last_stat_time, last_stat_reading_raw, last_stat_sum = (
-            await get_last_imported_stat(
-                self.hass,
-                self.meter,
-                statistic_id=self._statistic_id,
-            )
+        (
+            last_stat_time,
+            last_stat_reading_raw,
+            last_stat_sum,
+        ) = await get_last_imported_stat(
+            self.hass,
+            self.meter,
+            statistic_id=self._statistic_id,
         )
         last_stat_reading: float | None = (
             float(last_stat_reading_raw) if last_stat_reading_raw is not None else None
@@ -495,11 +499,14 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
         # compiler resets the LTS chain to sum≈0 even though last_stat_time ==
         # effective_last_time (so the "DB ahead" branch never fires).
         if last_stat_time is not None and last_stat_sum is not None:
-            new_elt, new_reading, new_sum, repaired = (
-                await self._repair_sum_monotonicity(last_stat_time, last_stat_sum)
-            )
+            (
+                new_elt,
+                new_reading,
+                new_sum,
+                repaired,
+            ) = await self._repair_sum_monotonicity(last_stat_time, last_stat_sum)
             if repaired:
-                effective_last_time = new_elt  # type: ignore[assignment]
+                effective_last_time = new_elt
                 last_stat_reading = new_reading
                 last_stat_sum = new_sum
                 consumption_repaired = True
@@ -615,7 +622,8 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
                 price_per_unit=self._resolve_price_per_unit(),
                 currency=self.hass.config.currency or "USD",
             )
-            self._last_imported_time = self._last_historical_data[-1].dt
+            imported_time: datetime.datetime = self._last_historical_data[-1].dt
+            self._last_imported_time = imported_time
 
             # Seal any carry-forward rows that exist beyond our freshly
             # imported endpoint.  Without this, a later import that overlaps
@@ -630,12 +638,12 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
                     self.meter,
                     statistic_id=self._statistic_id,
                 )
-                if db_tip_time is not None and db_tip_time > self._last_imported_time:
+                if db_tip_time is not None and db_tip_time > imported_time:
                     _LOGGER.debug(
                         "Sealing carry-forward rows for %s: %s → %s "
                         "(state=%.4f, sum=%.4f)",
                         self.meter.meter_id,
-                        self._last_imported_time,
+                        imported_time,
                         db_tip_time,
                         last_import_state,
                         last_import_sum,
@@ -645,7 +653,7 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
                         self.meter,
                         self._statistic_id,
                         self._statistic_name,
-                        from_dt=self._last_imported_time,
+                        from_dt=imported_time,
                         through_dt=db_tip_time,
                         carry_state=last_import_state,
                         carry_sum=last_import_sum,
@@ -673,7 +681,7 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
         # post-import upsert in centralized_import_statistics and by the
         # diverge-from-DB entity-state sync above.
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         listener = self.coordinator.async_add_listener(self._state_update)
         self.async_on_remove(listener)
@@ -825,7 +833,7 @@ class EyeOnWaterTempSensor(SensorEntity):
             and self.meter.meter_info.sensors.endpoint_temperature
         ):
             temp = self.meter.meter_info.sensors.endpoint_temperature
-            return temp.seven_day_min
+            return cast("float | None", temp.seven_day_min)
 
         return None
 

@@ -237,10 +237,14 @@ class EyeOnWaterData:
                     # negative consumption bar in the Energy Dashboard.
                     last_import_dt = prepared_data[-1].dt
                     await async_delete_statistics_after(
-                        self.hass, statistic_id, last_import_dt,
+                        self.hass,
+                        statistic_id,
+                        last_import_dt,
                     )
                     await async_delete_statistics_after(
-                        self.hass, cost_stat_id, last_import_dt,
+                        self.hass,
+                        cost_stat_id,
+                        last_import_dt,
                     )
                     # The cost stat has no valid backing entity — all short-term
                     # rows are compiled from the EnergyCostSensor state, which
@@ -250,7 +254,8 @@ class EyeOnWaterData:
                     # table is cleaned.  Wipe every short-term row so the History
                     # view falls back to the correct LTS rows we just imported.
                     await async_delete_all_short_term_statistics(
-                        self.hass, cost_stat_id,
+                        self.hass,
+                        cost_stat_id,
                     )
                     # Purge the states table for the meter entity so the chart
                     # doesn't blend sub-hourly states with LTS hour-bucket values.

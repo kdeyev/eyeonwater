@@ -1,14 +1,17 @@
 """Support for EyeOnWater binary sensors."""
 
 from dataclasses import dataclass
+from typing import cast
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.core import callback
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -66,7 +69,11 @@ FLAG_SENSORS = [
 ]
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
@@ -81,10 +88,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(sensors, update_before_add=False)
 
 
-class EyeOnWaterBinarySensor(  # type: ignore[misc]
+class EyeOnWaterBinarySensor(
     CoordinatorEntity,
-    RestoreEntity,
     BinarySensorEntity,
+    RestoreEntity,
 ):
     """Representation of an EyeOnWater binary flag sensor."""
 
@@ -118,21 +125,22 @@ class EyeOnWaterBinarySensor(  # type: ignore[misc]
 
     def get_flag(self) -> bool:
         """Get flag value."""
-        return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
+        return cast(
+            "bool",
+            self.meter.meter_info.reading.flags.__dict__[self.entity_description.key],
+        )
 
     @callback
-    def _state_update(self):
+    def _state_update(self) -> None:
         """Call when the coordinator has an update."""
         if self.available:
             self._attr_is_on = self.get_flag()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
-
-        if self.coordinator.last_update_success:
-            return
-
-        if last_state := await self.async_get_last_state():
-            self._attr_is_on = last_state.state == "on"
+        if not self.coordinator.last_update_success:
+            last_state = await self.async_get_last_state()
+            if last_state is not None:
+                self._attr_is_on = last_state.state == "on"

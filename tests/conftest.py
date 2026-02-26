@@ -1,162 +1,117 @@
-"""Fixtures for EyeOnWater tests."""
-import datetime
-from collections.abc import Generator
-from dataclasses import dataclass, field
-from unittest.mock import AsyncMock, MagicMock, patch
+"""Pytest configuration for eyeonwater tests."""
+
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from pyonwater import Client, DataPoint, Meter, NativeUnits
 
-from custom_components.eyeonwater.const import DOMAIN
+# ---------------------------------------------------------------------------
+# Module-level constants shared by test modules that import directly from here
+# ---------------------------------------------------------------------------
 
-# ---------- test data ----------
-
-MOCK_USERNAME = "test@example.com"
-MOCK_PASSWORD = "testpassword"
-
+MOCK_METER_ID = "60439875"
+MOCK_METER_UUID = "5215777958325016766"
 MOCK_CONFIG = {
-    CONF_USERNAME: MOCK_USERNAME,
-    CONF_PASSWORD: MOCK_PASSWORD,
+    "username": "test@example.com",
+    "password": "test_password",
 }
 
 
-MOCK_METER_UUID = "abc-123-def-456"
-MOCK_METER_ID = "meter_001"
+def _make_hass() -> MagicMock:
+    """Return a minimal mock HomeAssistant instance with a real data dict."""
+    hass = MagicMock()
+    hass.data = {}
+    hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
+    hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+    hass.services.async_register = MagicMock()
+    # Close coroutines immediately so unawaited-coroutine warnings are suppressed.
+    # HA's async_create_task schedules work on the event loop; in unit tests we
+    # just need to discard the coroutine cleanly.
+    hass.async_create_task = lambda coro, *_a, **_kw: coro.close()
+    return hass
 
 
-# ---------- lightweight fakes ----------
-
-
-@dataclass
-class FakeFlags:
-    leak: bool = False
-    empty_pipe: bool = False
-    tamper: bool = False
-    cover_removed: bool = False
-    reverse_flow: bool = False
-    low_battery: bool = False
-    battery_charging: bool = False
-
-
-@dataclass
-class FakeReading:
-    model: str = "TestModel"
-    customer_name: str = "TestCustomer"
-    hardware_version: str = "1.0"
-    firmware_version: str = "2.0"
-    flags: FakeFlags = field(default_factory=FakeFlags)
-
-    def dict(self):
-        return {
-            "model": self.model,
-            "customer_name": self.customer_name,
-            "hardware_version": self.hardware_version,
-            "firmware_version": self.firmware_version,
-        }
-
-
-@dataclass
-class FakeSensors:
-    endpoint_temperature: None = None
-
-
-@dataclass
-class FakeMeterInfo:
-    reading: FakeReading = field(default_factory=FakeReading)
-    sensors: FakeSensors = field(default_factory=FakeSensors)
-
-
-@dataclass
-class FakeDataPoint:
-    dt: datetime.datetime = field(
-        default_factory=lambda: datetime.datetime(
-            2025, 1, 1, tzinfo=datetime.timezone.utc
-        ),
+def _make_meter() -> MagicMock:
+    """Return a minimal mock Meter object."""
+    meter = MagicMock(spec=Meter)
+    meter.meter_id = MOCK_METER_ID
+    meter.meter_uuid = MOCK_METER_UUID
+    meter.native_unit_of_measurement = "gal"
+    meter.reading = DataPoint(
+        dt=datetime(2026, 2, 17, 12, 0, 0),
+        reading=204797.7,
+        unit=NativeUnits.GAL,
     )
-    reading: float = 123.45
-
-
-def _make_meter(
-    *,
-    meter_uuid: str = MOCK_METER_UUID,
-    meter_id: str = MOCK_METER_ID,
-    native_unit: str | None = None,
-) -> MagicMock:
-    """Return a lightweight fake Meter."""
-    import pyonwater
-
-    meter = MagicMock(spec=pyonwater.Meter)
-    meter.meter_uuid = meter_uuid
-    meter.meter_id = meter_id
-    meter.meter_info = FakeMeterInfo()
-    meter.native_unit_of_measurement = native_unit or pyonwater.NativeUnits.GAL
-    meter.reading = FakeDataPoint()
-    meter.last_historical_data = [FakeDataPoint()]
-    meter.read_meter_info = AsyncMock()
-    meter.read_historical_data = AsyncMock(return_value=[FakeDataPoint()])
+    meter.last_historical_data = []
     return meter
 
 
-def _make_hass() -> MagicMock:
-    """Create a minimal mock HomeAssistant instance."""
+@pytest.fixture
+def mock_hass():
+    """Mock Home Assistant instance."""
     hass = MagicMock()
-    hass.data = {}
-    hass.config.country = "US"
-    hass.services = MagicMock()
-    hass.services.async_register = MagicMock()
-
-    # config_entries mock
-    hass.config_entries = MagicMock()
-    hass.config_entries.async_forward_entry_setups = AsyncMock()
-    hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
-
+    hass.config.time_zone = "America/New_York"
     return hass
 
 
 @pytest.fixture
-def hass() -> MagicMock:
-    """Provide a mock HomeAssistant instance."""
-    return _make_hass()
-
-
-@pytest.fixture
-def mock_meter() -> MagicMock:
-    """Provide a single fake meter."""
-    return _make_meter()
-
-
-@pytest.fixture
-def mock_account() -> MagicMock:
-    """Provide a fake Account."""
-    import pyonwater
-
-    account = MagicMock(spec=pyonwater.Account)
-    account.username = MOCK_USERNAME
-    account.fetch_meters = AsyncMock(return_value=[_make_meter()])
-    return account
-
-
-@pytest.fixture
-def mock_client() -> MagicMock:
-    """Provide a fake Client."""
-    import pyonwater
-
-    client = MagicMock(spec=pyonwater.Client)
-    client.authenticate = AsyncMock()
+def mock_client():
+    """Mock pyonwater Client."""
+    client = MagicMock(spec=Client)
     return client
 
 
 @pytest.fixture
-def patch_pyonwater(mock_account, mock_client) -> Generator:
-    """Patch pyonwater Account and Client constructors."""
-    with (
-        patch(
-            "custom_components.eyeonwater.config_flow.Account",
-            return_value=mock_account,
+def mock_meter():
+    """Mock pyonwater Meter with sample data."""
+    meter = MagicMock(spec=Meter)
+    meter.meter_id = "12345678"
+    meter.native_unit_of_measurement = "gal"
+    meter.reading = DataPoint(
+        dt=datetime(2026, 2, 17, 12, 0, 0),
+        reading=1000.0,
+        unit=NativeUnits.GAL,
+    )
+    return meter
+
+
+@pytest.fixture
+def sample_datapoints():
+    """Sample DataPoint sequence for testing."""
+    base_dt = datetime(2026, 2, 1, 0, 0, 0)
+    return [
+        DataPoint(dt=base_dt, reading=1000.0, unit=NativeUnits.GAL),
+        DataPoint(
+            dt=base_dt + timedelta(hours=1), reading=1005.0, unit=NativeUnits.GAL
         ),
-        patch(
-            "custom_components.eyeonwater.config_flow.Client",
-            return_value=mock_client,
+        DataPoint(
+            dt=base_dt + timedelta(hours=2), reading=1012.0, unit=NativeUnits.GAL
         ),
-    ):
-        yield
+        DataPoint(
+            dt=base_dt + timedelta(hours=3), reading=1015.0, unit=NativeUnits.GAL
+        ),
+    ]
+
+
+@pytest.fixture
+def mock_recorder():
+    """Mock Home Assistant recorder instance."""
+    recorder = MagicMock()
+    session = MagicMock()
+    recorder.get_session.return_value.__enter__ = MagicMock(return_value=session)
+    recorder.get_session.return_value.__exit__ = MagicMock(return_value=None)
+    return recorder
+
+
+@pytest.fixture
+def mock_config_entry():
+    """Mock Home Assistant config entry."""
+    entry = MagicMock()
+    entry.data = {
+        "username": "test@example.com",
+        "password": "test_password",
+    }
+    entry.entry_id = "test_entry_id"
+    entry.unique_id = "test_unique_id"
+    return entry

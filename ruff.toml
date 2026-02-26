@@ -2,14 +2,16 @@
 
 target-version = "py310"
 
+[lint]
 select = ["ALL"]
 
 # All the ones without a comment were the ones that are currently violated
 # by the codebase. The plan is to fix them all (when sensible) and then enable them.
 ignore = [
     "ANN",
-    "ANN101",  # Missing type annotation for {name} in method
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
+    "D203",    # Incompatible with D211 (no-blank-line-before-class) — prefer D211
+    "D213",    # Incompatible with D212 (multi-line-summary-first-line) — prefer D212
     "D401",    # First line of docstring should be in imperative mood
     "E501",    # line too long
     "FBT001",  # Boolean positional arg in function definition
@@ -23,15 +25,15 @@ ignore = [
     "SLF001",  # Private member accessed
 ]
 
-[per-file-ignores]
+[lint.per-file-ignores]
 "tests/*.py" = ["ALL"]
 ".github/*py" = ["INP001"]
 
-[flake8-pytest-style]
+[lint.flake8-pytest-style]
 fixture-parentheses = false
 
-[pyupgrade]
+[lint.pyupgrade]
 keep-runtime-typing = true
 
-[mccabe]
+[lint.mccabe]
 max-complexity = 25

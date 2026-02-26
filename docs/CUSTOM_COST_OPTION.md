@@ -101,7 +101,7 @@ flowchart TD
 flowchart LR
     S1["1️⃣  Get a price entity\nsensor.current_water_rate\n= 0.010375 USD/gal"]
     S2["2️⃣  Set it in\nintegration options\nSettings → EyeOnWater → Configure"]
-    S3["3️⃣  Wire stat_cost\nin Energy Dashboard\nsensor.water_meter_&lt;id&gt;_cost"]
+    S3["3️⃣  Wire stat_cost<br/>in Energy Dashboard<br/>sensor.water_meter_&lt;id&gt;_cost"]
     S1 --> S2 --> S3
 ```
 

@@ -1,4 +1,5 @@
 """Tests for the EyeOnWater __init__ (setup / unload)."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 

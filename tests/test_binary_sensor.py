@@ -170,10 +170,10 @@ class TestAsyncSetupEntry:
         config_entry = MagicMock()
         config_entry.entry_id = "entry_id"
 
-        added_entities = []
-
-        def capture_entities(entities, **_kwargs):
-            added_entities.extend(entities)
+        added_entities: list = []
+        capture_entities = MagicMock(
+            side_effect=lambda entities, **_: added_entities.extend(entities)
+        )
 
         await async_setup_entry(hass, config_entry, capture_entities)
 
@@ -201,10 +201,12 @@ class TestAsyncSetupEntry:
         config_entry = MagicMock()
         config_entry.entry_id = "entry_id"
 
-        added_entities = []
-        await async_setup_entry(
-            hass, config_entry, lambda e, **kw: added_entities.extend(e)
+        added_entities: list = []
+        capture_entities = MagicMock(
+            side_effect=lambda entities, **_: added_entities.extend(entities)
         )
+
+        await async_setup_entry(hass, config_entry, capture_entities)
 
         assert len(added_entities) == 2 * len(FLAG_SENSORS)
 

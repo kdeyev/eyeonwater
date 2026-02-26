@@ -1,4 +1,5 @@
 """Support for EyeOnWater binary sensors."""
+
 from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
@@ -7,7 +8,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 from homeassistant.core import callback
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -80,7 +81,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(sensors, update_before_add=False)
 
 
-class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
+class EyeOnWaterBinarySensor(  # type: ignore[misc]
+    CoordinatorEntity,
+    RestoreEntity,
+    BinarySensorEntity,
+):
     """Representation of an EyeOnWater binary flag sensor."""
 
     _attr_has_entity_name = True
@@ -101,10 +106,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self.meter = meter
         self._uuid = normalize_id(meter.meter_uuid)
         self._id = normalize_id(meter.meter_id)
-        self._state = False
-        self._available = False
         self._attr_unique_id = f"{description.key}_{self._uuid}"
-        self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._uuid)},
             name=f"{WATER_METER_NAME} {self._id}",
@@ -121,9 +123,8 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
     @callback
     def _state_update(self):
         """Call when the coordinator has an update."""
-        self._available = self.coordinator.last_update_success
-        if self._available:
-            self._state = self.get_flag()
+        if self.available:
+            self._attr_is_on = self.get_flag()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):
@@ -134,5 +135,4 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
             return
 
         if last_state := await self.async_get_last_state():
-            self._state = last_state.state
-            self._available = True
+            self._attr_is_on = last_state.state == "on"

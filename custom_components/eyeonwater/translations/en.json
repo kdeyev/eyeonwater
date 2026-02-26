@@ -38,17 +38,108 @@
             }
         }
     },
-    "services": {
+    "options": {
+        "step": {
+            "init": {
+                "title": "EyeOnWater Options",
+                "description": "Enable cost tracking to import per-period cost statistics alongside consumption data. When enabled, the Energy Dashboard can display cost automatically.",
+                "data": {
+                    "enable_cost": "Enable Custom Cost Option"
+                }
+            },
+            "cost_entity": {
+                "title": "Cost Entity Configuration",
+                "description": "Enter the entity ID whose state is your water rate (e.g. sensor.current_water_rate). Home Assistant handles unit conversion automatically. When set, a companion cost statistic is imported and can be used as stat_cost in the Energy Dashboard.",
+                "data": {
+                    "price_entity_id": "Price entity (currency/unit)"
+                }
+            }
+        }
+    },
+    "service": {
         "import_historical_data": {
             "name": "Import historical data",
-            "description": "Import historical data from eyeonwater.",
+            "description": "Import historical data from EyeOnWater.",
             "fields": {
                 "days": {
                     "name": "Days to import",
                     "description": "The number days of history."
                 }
             }
+        },
+        "replay_scenario": {
+            "name": "Replay scenario",
+            "description": "Replay real API payloads through the statistics pipeline.",
+            "fields": {
+                "entity_id": {
+                    "name": "Entity",
+                    "description": "Target sensor entity (optional if only one meter)."
+                },
+                "meter_id": {
+                    "name": "Meter ID",
+                    "description": "Target meter ID (optional if entity is provided)."
+                },
+                "start_date": {
+                    "name": "Start date",
+                    "description": "Start date (ISO format)."
+                },
+                "end_date": {
+                    "name": "End date",
+                    "description": "End date (ISO format)."
+                },
+                "aggregation": {
+                    "name": "Aggregation",
+                    "description": "Aggregation level for the data window."
+                }
+            }
+        },
+        "validate_statistics_monotonic": {
+            "name": "Validate monotonic statistics",
+            "description": "Validate that cumulative sums remain monotonic.",
+            "fields": {
+                "statistic_id": {
+                    "name": "Statistic ID",
+                    "description": "Statistic ID to validate."
+                },
+                "entity_id": {
+                    "name": "Entity",
+                    "description": "Target sensor entity."
+                },
+                "meter_id": {
+                    "name": "Meter ID",
+                    "description": "Target meter ID."
+                },
+                "hours": {
+                    "name": "Hours",
+                    "description": "Recent window in hours (ignored when full scan is true)."
+                },
+                "full_scan": {
+                    "name": "Full scan",
+                    "description": "Scan the full dataset instead of the recent window."
+                }
+            }
+        },
+        "reset_statistics": {
+            "name": "Reset statistics",
+            "description": "Delete all statistics rows for the selected meter.",
+            "fields": {
+                "confirm": {
+                    "name": "Confirm",
+                    "description": "Type DELETE to confirm this destructive action."
+                },
+                "statistic_id": {
+                    "name": "Statistic ID",
+                    "description": "Statistic ID to reset."
+                },
+                "entity_id": {
+                    "name": "Entity",
+                    "description": "Target sensor entity."
+                },
+                "meter_id": {
+                    "name": "Meter ID",
+                    "description": "Target meter ID."
+                }
+            }
         }
     }
-
 }

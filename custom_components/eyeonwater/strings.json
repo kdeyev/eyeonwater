@@ -2,6 +2,7 @@
   "config": {
     "step": {
       "user": {
+        "description": "Use your EyeOnWater username and password.\n\n{system_settings_info}",
         "data": {
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]"
@@ -15,6 +16,24 @@
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "EyeOnWater Options",
+        "description": "Enable cost tracking to import per-period cost statistics alongside consumption data. When enabled, the Energy Dashboard can display cost automatically.",
+        "data": {
+          "enable_cost": "Enable Custom Cost Option"
+        }
+      },
+      "cost_entity": {
+        "title": "Cost Entity Configuration",
+        "description": "Select the sensor whose state represents your water rate. Home Assistant handles unit conversion automatically. When set, a companion cost statistic is imported and can be used as stat_cost in the Energy Dashboard.",
+        "data": {
+          "price_entity_id": "Price entity (currency/unit)"
+        }
+      }
     }
   },
   "entity": {

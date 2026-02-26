@@ -1,10 +1,212 @@
 import_historical_data:
+  name: Import Historical Data
+  description: Import historical water usage readings from EyeOnWater API into Home Assistant statistics
   fields:
     days:
-      description: Number of days of history to load
-      required: true
+      name: Days of History
+      description: Number of days back from today to import (365 = 1 year, 730 = 2 years).
+      required: false
+      default: 365
       example: 365
       selector:
         number:
-          min: 0
+          min: 1
+          max: 730
           mode: box
+          unit_of_measurement: days
+    purge_states:
+      name: Purge State History After Import
+      description: >-
+        After importing statistics, delete (1) any LTS/short-term statistics rows
+        written by HA's recorder AFTER the last imported data point, and (2) the
+        entity's state history (states table) — for BOTH the water meter entity
+        and its companion cost entity (e.g. sensor.water_meter_60439875_cost).
+        Use when backfilling after a restart or TOTAL_INCREASING restore, or when
+        bad cost values (e.g. $0.00 from a misconfigured rate) were written to
+        state history: eliminates "sum=0 contamination" causing negative bars in
+        the Energy Dashboard and removes erroneous history entries from the chart.
+        Safe to use — long-term statistics cover all historical display and Energy
+        Dashboard needs.  New state history and stats accumulate normally after purge.
+      required: false
+      default: false
+      selector:
+        boolean:
+
+replay_scenario:
+  name: Replay Scenario (Debug)
+  description: Advanced debugging tool to replay real API payloads through the statistics pipeline
+  fields:
+    entity_id:
+      name: Water Meter Entity
+      description: Select the MAIN water meter sensor (not temperature sensor). Leave empty if you only have one meter.
+      required: false
+      example: "sensor.water_meter_60439875"
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: eyeonwater
+    meter_id:
+      name: Meter ID (Advanced)
+      description: Target by meter ID instead of entity
+      required: false
+      advanced: true
+      example: "60439875"
+      selector:
+        text:
+          type: text
+    start_date:
+      name: Start Date
+      description: Beginning of date range for fetching real API payloads
+      required: true
+      example: "2026-02-12T00:00:00"
+      selector:
+        datetime:
+    end_date:
+      name: End Date
+      description: End of date range for fetching real API payloads
+      required: true
+      example: "2026-02-14T00:00:00"
+      selector:
+        datetime:
+    aggregation:
+      name: Data Aggregation Level
+      description: Time interval for data points (HOURLY recommended for most uses)
+      required: false
+      default: "HOURLY"
+      example: "HOURLY"
+      selector:
+        select:
+          options:
+            - label: "Hourly (recommended)"
+              value: "HOURLY"
+            - label: "Daily"
+              value: "DAILY"
+            - label: "Weekly"
+              value: "WEEKLY"
+            - label: "Monthly"
+              value: "MONTHLY"
+            - label: "15 Minutes"
+              value: "QUARTER_HOURLY"
+
+validate_statistics_monotonic:
+  name: Validate Statistics Quality
+  description: Check water meter statistics for data quality issues (negative deltas, gaps, anomalies)
+  fields:
+    entity_id:
+      name: Water Meter Entity
+      description: Select the MAIN water meter sensor to validate (not temperature sensor)
+      required: false
+      example: "sensor.water_meter_60439875"
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: eyeonwater
+    statistic_id:
+      name: Statistic ID (Advanced)
+      description: Manually specify statistic ID
+      required: false
+      advanced: true
+      example: "sensor.water_meter_60439875"
+      selector:
+        text:
+          type: text
+    meter_id:
+      name: Meter ID (Advanced)
+      description: Target by meter ID instead of entity
+      required: false
+      advanced: true
+      example: "60439875"
+      selector:
+        text:
+          type: text
+    hours:
+      name: Time Window (Hours)
+      description: Only scan this many recent hours (ignored if Full Scan is enabled)
+      required: false
+      default: 48
+      example: 48
+      selector:
+        number:
+          min: 1
+          max: 8760
+          mode: box
+          unit_of_measurement: hours
+    full_scan:
+      name: Full Scan
+      description: Check ALL historical data instead of just recent window
+      required: false
+      default: false
+      selector:
+        boolean:
+
+read_meter:
+  name: Read Meter
+  description: >-
+    Trigger an on-demand meter info read from the EyeOnWater API.
+    Fetches the current totalizer value and device attributes (model, firmware,
+    latest read) for one or all meters, then refreshes the coordinator so
+    sensor state updates immediately.
+    Historical data is NOT re-fetched — use Import Historical Data for that.
+  fields:
+    entity_id:
+      name: Water Meter Entity
+      description: Target a specific water meter sensor. Leave empty to refresh all meters.
+      required: false
+      example: "sensor.water_meter_60439875"
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: eyeonwater
+    meter_id:
+      name: Meter ID (Advanced)
+      description: Target by meter ID instead of entity.
+      required: false
+      advanced: true
+      example: "60439875"
+      selector:
+        text:
+          type: text
+
+reset_statistics:
+  name: "WARNING: Reset Statistics (DESTRUCTIVE - CANNOT BE UNDONE)"
+  description: "DANGER: This permanently deletes ALL historical statistics for a water meter from the database. This action CANNOT be undone! Use only if you need to clear corrupted data or start fresh. All energy dashboard history will be permanently lost."
+  fields:
+    entity_id:
+      name: "Water Meter Entity (Will Be DELETED)"
+      description: Select the MAIN water meter sensor (not temperature) whose statistics will be PERMANENTLY DELETED from the database. THIS ACTION CANNOT BE UNDONE!
+      required: false
+      example: "sensor.water_meter_60439875"
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: eyeonwater
+    statistic_id:
+      name: Statistic ID (Advanced)
+      description: Manually specify statistic ID (only needed if entity selector doesn't work)
+      required: false
+      advanced: true
+      example: "sensor.water_meter_60439875"
+      selector:
+        text:
+          type: text
+    meter_id:
+      name: Meter ID (Advanced)
+      description: Target by meter ID instead of entity (only if entity_id not provided)
+      required: false
+      advanced: true
+      example: "60439875"
+      selector:
+        text:
+          type: text
+    confirm:
+      name: "REQUIRED: Type DELETE to confirm"
+      description: "REQUIRED: You must type the word DELETE (in all capital letters) to confirm permanent deletion of all statistics for this meter"
+      required: true
+      example: "DELETE"
+      selector:
+        text:
+          type: text

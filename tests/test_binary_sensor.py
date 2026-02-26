@@ -358,7 +358,12 @@ class TestAsyncAddedToHass:
 
     @pytest.mark.asyncio
     async def test_returns_early_when_coordinator_success(self):
-        """When coordinator.last_update_success=True, no restore is attempted."""
+        """When coordinator.last_update_success=True, state is set from live data.
+
+        No restore from last_state is attempted; _attr_is_on is populated
+        directly so sensors are not Unknown at startup. HA writes state itself
+        after async_added_to_hass returns — no explicit write needed here.
+        """
         sensor, _, coordinator = _make_sensor(key="leak")
         coordinator.last_update_success = True
         sensor.async_on_remove = MagicMock()
@@ -366,9 +371,10 @@ class TestAsyncAddedToHass:
 
         await sensor.async_added_to_hass()
 
-        # Restore should NOT have been called
+        # Restore from last_state should NOT have been called
         sensor.async_get_last_state.assert_not_called()
-        assert sensor._attr_is_on is None  # unchanged from default
+        # State IS populated from live data (leak flag is False in mock)
+        assert sensor._attr_is_on is False
 
     @pytest.mark.asyncio
     async def test_restores_on_state_when_no_coordinator_update(self):

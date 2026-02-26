@@ -140,7 +140,14 @@ class EyeOnWaterBinarySensor(
     async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
-        if not self.coordinator.last_update_success:
+        if self.coordinator.last_update_success:
+            # Coordinator already has fresh data — set the initial state now so
+            # sensors don't show "Unknown" until the next scheduled poll.
+            # Do NOT call _state_update() here: async_write_ha_state() requires
+            # self.hass which is not yet set when async_added_to_hass runs.
+            # HA writes the state itself once async_added_to_hass returns.
+            self._attr_is_on = self.get_flag()
+        else:
             last_state = await self.async_get_last_state()
             if last_state is not None:
                 self._attr_is_on = last_state.state == "on"

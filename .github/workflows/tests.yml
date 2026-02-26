@@ -22,7 +22,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install "homeassistant==2026.2.2" "pyonwater==0.3.22"
+          pip install "homeassistant==2026.2.2"
+          # Requires pyonwater==0.4.0 (kdeyev/pyonwater#46).
+          # This step will fail until that PR is merged and published to PyPI.
+          # See PR.md > Known CI Failures for details.
+          pip install "pyonwater==0.4.0"
           pip install pytest pytest-asyncio pytest-cov pytest-homeassistant-custom-component
 
       - name: Run tests

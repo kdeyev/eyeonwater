@@ -22,12 +22,12 @@ from propcache.api import cached_property
 from sqlalchemy.exc import SQLAlchemyError
 
 from .const import (
-    CONF_PRICE_ENTITY,
     DATA_COORDINATOR,
     DATA_SMART_METER,
     DOMAIN,
     WATER_METER_NAME,
 )
+from .coordinator import resolve_price_from_energy_manager
 from .statistic_helper import (
     async_get_highest_sum_stat,
     async_get_stat_just_before,
@@ -62,24 +62,6 @@ async def async_setup_entry(
         normalized_id = normalize_id(meter.meter_id)
         statistic_id = get_entity_statistic_id(meter.meter_id)
         statistic_name = f"{WATER_METER_NAME} {normalized_id}"
-        price_entity_id = config_entry.options.get(CONF_PRICE_ENTITY) or None
-
-        if price_entity_id:
-            cost_stat_id = get_cost_statistic_id(meter.meter_id)
-            _LOGGER.info(
-                "Cost statistics enabled for meter %s using price entity '%s'. "
-                "Set stat_cost: %s in your Energy Dashboard water source config.",
-                meter.meter_id,
-                price_entity_id,
-                cost_stat_id,
-            )
-        else:
-            _LOGGER.debug(
-                "No price entity configured for meter %s — cost statistics disabled. "
-                "Configure one via:"
-                "  Settings > Devices & Services > EyeOnWater > Configure.",
-                meter.meter_id,
-            )
 
         # Fetch last imported statistic (datetime, state, and sum)
         last_imported_time, _, _ = await get_last_imported_stat(
@@ -95,7 +77,6 @@ async def async_setup_entry(
                 last_imported_time=last_imported_time,
                 statistic_id=statistic_id,
                 statistic_name=statistic_name,
-                price_entity_id=price_entity_id,
             ),
         )
 
@@ -157,7 +138,6 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
         *,
         statistic_id: str,
         statistic_name: str,
-        price_entity_id: str | None = None,
     ) -> None:
         """Initialize the unified sensor."""
         super().__init__()
@@ -171,7 +151,6 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
         self._last_imported_time = last_imported_time
         self._statistic_id = statistic_id
         self._statistic_name = statistic_name
-        self._price_entity_id = price_entity_id
         self._import_lock = asyncio.Lock()
 
         self._attr_name = f"{WATER_METER_NAME} {self._id}"
@@ -228,46 +207,6 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
 
         # Defer async work to avoid blocking the coordinator callback.
         self.hass.create_task(self._handle_update_async(latest_data))
-
-    def _resolve_price_per_unit(self) -> float | None:
-        """Return current price per unit-of-volume from the configured entity.
-
-        Reads the live state of ``_price_entity_id`` from the HA state machine.
-        Returns ``None`` when no price entity is configured, the entity is
-        unavailable, or its state cannot be parsed as a float.
-        """
-        if not self._price_entity_id:
-            return None
-        state_obj = self.hass.states.get(self._price_entity_id)
-        if state_obj is None or state_obj.state in ("unavailable", "unknown", None):
-            _LOGGER.warning(
-                "Price entity %s unavailable — cost statistics skipped",
-                self._price_entity_id,
-            )
-            return None
-        try:
-            price = float(state_obj.state)
-        except (ValueError, TypeError):
-            _LOGGER.warning(
-                "Price entity %s state '%s' is not numeric — cost statistics skipped",
-                self._price_entity_id,
-                state_obj.state,
-            )
-            return None
-        if price <= 0:
-            _LOGGER.warning(
-                "Price entity %s state '%s' is zero/negative — cost statistics skipped",
-                self._price_entity_id,
-                state_obj.state,
-            )
-            return None
-        _LOGGER.debug(
-            "Price for cost stats: %s = %.6f %s/unit",
-            self._price_entity_id,
-            price,
-            self.hass.config.currency or "USD",
-        )
-        return price
 
     async def _repair_db_ahead_baseline(
         self,
@@ -511,11 +450,7 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
                 last_stat_sum = new_sum
                 consumption_repaired = True
 
-        if (
-            consumption_repaired
-            and self._price_entity_id
-            and last_stat_time is not None
-        ):
+        if consumption_repaired and last_stat_time is not None:
             await self._repair_cost_stat(last_stat_time)
 
         return effective_last_time, last_stat_reading, last_stat_sum
@@ -619,7 +554,12 @@ class EyeOnWaterUnifiedSensor(RestoreEntity, SensorEntity):
                 self._statistic_id,
                 self._statistic_name,
                 wait_for_commit=True,
-                price_per_unit=self._resolve_price_per_unit(),
+                price_per_unit=(
+                    await resolve_price_from_energy_manager(
+                        self.hass,
+                        self._statistic_id,
+                    )
+                )[0],
                 currency=self.hass.config.currency or "USD",
             )
             imported_time: datetime.datetime = self._last_historical_data[-1].dt

@@ -2,7 +2,9 @@
 
 import asyncio
 import logging
+from typing import cast
 
+from homeassistant.components.energy.data import async_get_manager
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -25,6 +27,79 @@ from .statistic_helper import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def resolve_price_from_energy_manager(  # noqa: PLR0911
+    hass: HomeAssistant,
+    statistic_id: str,
+) -> tuple[float | None, str]:
+    """Return (price_per_unit, currency) by reading the HA Energy Manager.
+
+    Locates the ``WaterSourceType`` whose ``stat_energy_from`` matches
+    *statistic_id* and reads either ``entity_energy_price`` (live entity
+    state) or ``number_energy_price`` (static value).
+
+    Returns ``(None, currency)`` when:
+    - the ``energy`` component is not loaded yet
+    - no matching water source is configured in the Energy Dashboard
+    - the price entity is unavailable or non-numeric
+    """
+    currency: str = hass.config.currency or "USD"
+    try:
+        manager = await async_get_manager(hass)
+    except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
+        return None, currency
+
+    if manager.data is None:
+        return None, currency
+
+    for source in manager.data.get("energy_sources", []):
+        if source.get("type") != "water":
+            continue
+        if source.get("stat_energy_from") != statistic_id:
+            continue
+
+        # Static price takes precedence over a live entity
+        number_price = cast("float | None", source.get("number_energy_price"))
+        if number_price is not None and number_price > 0:
+            return number_price, currency
+
+        entity_id = cast("str | None", source.get("entity_energy_price"))
+        if not entity_id:
+            return None, currency
+
+        state_obj = hass.states.get(entity_id)
+        if state_obj is None or state_obj.state in ("unavailable", "unknown"):
+            _LOGGER.warning(
+                "Energy Manager price entity '%s' unavailable — cost stats skipped",
+                entity_id,
+            )
+            return None, currency
+
+        try:
+            price = float(state_obj.state)
+        except (ValueError, TypeError):
+            _LOGGER.warning(
+                "Energy Manager price entity '%s' state '%s' is not numeric — "
+                "cost stats skipped",
+                entity_id,
+                state_obj.state,
+            )
+            return None, currency
+
+        if price <= 0:
+            _LOGGER.warning(
+                "Energy Manager price entity '%s' state '%s' is zero/negative — "
+                "cost stats skipped",
+                entity_id,
+                state_obj.state,
+            )
+            return None, currency
+
+        return price, currency
+
+    # No matching water source found in Energy Dashboard
+    return None, currency
 
 
 class EyeOnWaterData:
@@ -141,8 +216,6 @@ class EyeOnWaterData:
         *,
         force_overwrite: bool = False,
         purge_states: bool = False,
-        price_per_unit: float | None = None,
-        currency: str = "USD",
     ) -> None:
         """Import historical data from the past N days.
 
@@ -150,10 +223,10 @@ class EyeOnWaterData:
             days: Number of days of history to import
             force_overwrite: If True, reimport all data (overwrites existing)
             purge_states: If True, purge the entity's state history after import.
-            price_per_unit: Rate in *currency* per unit-of-volume.  When set,
-                a parallel cost LTS stat is also imported, enabling per-hour
-                cost attribution via the Energy Dashboard ``stat_cost`` field.
-            currency: ISO 4217 currency code for cost metadata (default "USD").
+
+        Price and currency are resolved automatically from the HA Energy Manager
+        for the water source whose ``stat_energy_from`` matches each meter's
+        statistic ID.  No manual configuration is required.
 
         """
         for meter in self.meters:
@@ -211,6 +284,11 @@ class EyeOnWaterData:
                 # and ensures monotonic consistency across all import sources
                 statistic_id = get_entity_statistic_id(meter.meter_id)
                 meter_name = f"{WATER_METER_NAME} {normalize_id(meter.meter_id)}"
+
+                price_per_unit, currency = await resolve_price_from_energy_manager(
+                    self.hass,
+                    statistic_id,
+                )
 
                 await centralized_import_statistics(
                     self.hass,

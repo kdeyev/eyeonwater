@@ -215,10 +215,16 @@ async def test_import_historical_data_calls_centralized_import(
     meter.reading = dp
     eow_data.meters = [meter]
 
-    with patch(
-        "custom_components.eyeonwater.coordinator.centralized_import_statistics",
-        new=AsyncMock(),
-    ) as mock_import:
+    with (
+        patch(
+            "custom_components.eyeonwater.coordinator.resolve_price_from_energy_manager",
+            new=AsyncMock(return_value=(None, "USD")),
+        ),
+        patch(
+            "custom_components.eyeonwater.coordinator.centralized_import_statistics",
+            new=AsyncMock(),
+        ) as mock_import,
+    ):
         await eow_data.import_historical_data(days=1)
 
     mock_import.assert_awaited_once()
@@ -240,6 +246,10 @@ async def test_import_historical_data_purge_states_calls_helpers(
     mock_hass.services.async_call = AsyncMock()
 
     with (
+        patch(
+            "custom_components.eyeonwater.coordinator.resolve_price_from_energy_manager",
+            new=AsyncMock(return_value=(None, "USD")),
+        ),
         patch(
             "custom_components.eyeonwater.coordinator.centralized_import_statistics",
             new=AsyncMock(),
@@ -274,10 +284,16 @@ async def test_import_historical_data_empty_data_skips_meter(eow_data: EyeOnWate
     meter.read_historical_data = AsyncMock(return_value=[])
     eow_data.meters = [meter]
 
-    with patch(
-        "custom_components.eyeonwater.coordinator.centralized_import_statistics",
-        new=AsyncMock(),
-    ) as mock_import:
+    with (
+        patch(
+            "custom_components.eyeonwater.coordinator.resolve_price_from_energy_manager",
+            new=AsyncMock(return_value=(None, "USD")),
+        ),
+        patch(
+            "custom_components.eyeonwater.coordinator.centralized_import_statistics",
+            new=AsyncMock(),
+        ) as mock_import,
+    ):
         await eow_data.import_historical_data(days=1)
 
     mock_import.assert_not_awaited()
@@ -296,10 +312,16 @@ async def test_import_historical_data_force_overwrite_logs_warning(
     meter.reading = dp
     eow_data.meters = [meter]
 
-    with patch(
-        "custom_components.eyeonwater.coordinator.centralized_import_statistics",
-        new=AsyncMock(),
-    ) as mock_import:
+    with (
+        patch(
+            "custom_components.eyeonwater.coordinator.resolve_price_from_energy_manager",
+            new=AsyncMock(return_value=(None, "USD")),
+        ),
+        patch(
+            "custom_components.eyeonwater.coordinator.centralized_import_statistics",
+            new=AsyncMock(),
+        ) as mock_import,
+    ):
         await eow_data.import_historical_data(days=1, force_overwrite=True)
 
     mock_import.assert_awaited_once()

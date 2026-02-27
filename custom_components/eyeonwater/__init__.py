@@ -18,7 +18,6 @@ from pyonwater import AggregationLevel, EyeOnWaterAPIError, EyeOnWaterAuthError,
 
 from .config_flow import create_account_from_config
 from .const import (
-    CONF_PRICE_ENTITY,
     DATA_COORDINATOR,
     DATA_SMART_METER,
     DEBOUNCE_COOLDOWN,
@@ -35,7 +34,7 @@ from .const import (
     VALIDATE_MONOTONIC_SERVICE_NAME,
     WATER_METER_NAME,
 )
-from .coordinator import EyeOnWaterData
+from .coordinator import EyeOnWaterData, resolve_price_from_energy_manager
 from .statistic_helper import (
     centralized_import_statistics,
     get_entity_statistic_id,
@@ -55,46 +54,6 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 async def async_setup(_hass: HomeAssistant, _config: dict[str, Any]) -> bool:
     """Set up the EyeOnWater component."""
     return True
-
-
-def _resolve_price_per_unit(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-) -> tuple[float | None, str]:
-    """Return (price_per_unit, currency) from the configured price entity, if any.
-
-    Reads the live state of the entity stored in the ``price_entity_id`` config
-    entry option.  Returns ``(None, currency)`` when no entity is configured,
-    or the entity is unavailable / non-numeric.
-    """
-    currency: str = hass.config.currency or "USD"
-    price_entity_id: str = (entry.options.get(CONF_PRICE_ENTITY) or "").strip()
-    if not price_entity_id:
-        return None, currency
-    state_obj = hass.states.get(price_entity_id)
-    if state_obj is None or state_obj.state in ("unavailable", "unknown"):
-        _LOGGER.warning(
-            "Price entity '%s' unavailable — cost statistics skipped for this import",
-            price_entity_id,
-        )
-        return None, currency
-    try:
-        price = float(state_obj.state)
-    except (ValueError, TypeError):
-        _LOGGER.warning(
-            "Price entity '%s' state '%s' is not numeric — cost statistics skipped",
-            price_entity_id,
-            state_obj.state,
-        )
-        return None, currency
-    if price <= 0:
-        _LOGGER.warning(
-            "Price entity '%s' state '%s' is zero/negative — cost statistics skipped",
-            price_entity_id,
-            state_obj.state,
-        )
-        return None, currency
-    return price, currency
 
 
 async def _async_update_data(
@@ -129,8 +88,6 @@ async def _async_import_historical_service(
     call: ServiceCall,
     eye_on_water_data: EyeOnWaterData,
     coordinator: DataUpdateCoordinator[EyeOnWaterData],
-    hass: HomeAssistant,
-    entry: ConfigEntry,
 ) -> None:
     # Get parameters: days (required/default)
     days: int | None = call.data.get(IMPORT_HISTORICAL_DATA_DAYS_NAME)
@@ -150,14 +107,10 @@ async def _async_import_historical_service(
         purge_states,
     )
 
-    price_per_unit, currency = _resolve_price_per_unit(hass, entry)
-
     await eye_on_water_data.import_historical_data(
         days,
         force_overwrite=force_overwrite,
         purge_states=purge_states,
-        price_per_unit=price_per_unit,
-        currency=currency,
     )
     _LOGGER.info("Service handler: requesting coordinator refresh")
     await coordinator.async_request_refresh()
@@ -330,7 +283,6 @@ async def _async_replay_scenario(
     hass: HomeAssistant,
     eye_on_water_data: EyeOnWaterData,
     coordinator: DataUpdateCoordinator[EyeOnWaterData],
-    entry: ConfigEntry,
 ) -> None:
     """Replay real payloads from specific dates through the import pipeline.
 
@@ -367,7 +319,11 @@ async def _async_replay_scenario(
         end_date,
     )
 
-    price_per_unit, currency = _resolve_price_per_unit(hass, entry)
+    statistic_id = get_entity_statistic_id(meter_id)
+    price_per_unit, currency = await resolve_price_from_energy_manager(
+        hass,
+        statistic_id,
+    )
 
     total_points, total_imported = await _replay_range(
         hass,
@@ -615,8 +571,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _async_import_historical_service,
             eye_on_water_data=eye_on_water_data,
             coordinator=coordinator,
-            hass=hass,
-            entry=entry,
         ),
     )
 
@@ -628,7 +582,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass=hass,
             eye_on_water_data=eye_on_water_data,
             coordinator=coordinator,
-            entry=entry,
         ),
     )
 

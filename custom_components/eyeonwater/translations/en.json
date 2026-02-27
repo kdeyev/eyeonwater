@@ -37,23 +37,5 @@
                 "name": "Reverse Waterflow"
             }
         }
-    },
-    "options": {
-        "step": {
-            "init": {
-                "title": "EyeOnWater Options",
-                "description": "Enable cost tracking to import per-period cost statistics alongside consumption data. When enabled, the Energy Dashboard can display cost automatically.",
-                "data": {
-                    "enable_cost": "Enable Custom Cost Option"
-                }
-            },
-            "cost_entity": {
-                "title": "Cost Entity Configuration",
-                "description": "Enter the entity ID whose state is your water rate (e.g. sensor.current_water_rate). Home Assistant handles unit conversion automatically. When set, a companion cost statistic is imported and can be used as stat_cost in the Energy Dashboard.",
-                "data": {
-                    "price_entity_id": "Price entity (currency/unit)"
-                }
-            }
-        }
     }
 }

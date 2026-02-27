@@ -16,8 +16,6 @@ DATA_SMART_METER = "smart_meter_data"
 DOMAIN = "eyeonwater"
 WATER_METER_NAME = "Water Meter"
 
-CONF_PRICE_ENTITY = "price_entity_id"
-CONF_ENABLE_COST = "enable_cost"
 COST_STAT_SUFFIX = "_cost"
 
 IMPORT_HISTORICAL_DATA_SERVICE_NAME = "import_historical_data"

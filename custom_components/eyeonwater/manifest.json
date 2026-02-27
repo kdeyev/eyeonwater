@@ -1,11 +1,12 @@
 {
   "domain": "eyeonwater",
   "name": "EyeOnWater",
+  "after_dependencies": ["energy"],
   "codeowners": [],
   "config_flow": true,
   "dependencies": ["recorder"],
   "documentation": "https://github.com/kdeyev/eyeonwater",
   "iot_class": "cloud_polling",
   "requirements": ["pyonwater==0.3.22"],
-"version": "2.6.0-beta.5"
+  "version": "2.6.0-beta.5"
 }

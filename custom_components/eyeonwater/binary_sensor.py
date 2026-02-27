@@ -1,13 +1,17 @@
 """Support for EyeOnWater binary sensors."""
+
 from dataclasses import dataclass
+from typing import cast
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.core import callback
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -65,7 +69,11 @@ FLAG_SENSORS = [
 ]
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
@@ -80,7 +88,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(sensors, update_before_add=False)
 
 
-class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntity):
+class EyeOnWaterBinarySensor(
+    CoordinatorEntity,
+    BinarySensorEntity,
+    RestoreEntity,
+):
     """Representation of an EyeOnWater binary flag sensor."""
 
     _attr_has_entity_name = True
@@ -101,10 +113,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
         self.meter = meter
         self._uuid = normalize_id(meter.meter_uuid)
         self._id = normalize_id(meter.meter_id)
-        self._state = False
-        self._available = False
         self._attr_unique_id = f"{description.key}_{self._uuid}"
-        self._attr_is_on = self._state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._uuid)},
             name=f"{WATER_METER_NAME} {self._id}",
@@ -116,23 +125,29 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
 
     def get_flag(self) -> bool:
         """Get flag value."""
-        return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
+        return cast(
+            "bool",
+            self.meter.meter_info.reading.flags.__dict__[self.entity_description.key],
+        )
 
     @callback
-    def _state_update(self):
+    def _state_update(self) -> None:
         """Call when the coordinator has an update."""
-        self._available = self.coordinator.last_update_success
-        if self._available:
-            self._state = self.get_flag()
+        if self.available:
+            self._attr_is_on = self.get_flag()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
-
         if self.coordinator.last_update_success:
-            return
-
-        if last_state := await self.async_get_last_state():
-            self._state = last_state.state
-            self._available = True
+            # Coordinator already has fresh data — set the initial state now so
+            # sensors don't show "Unknown" until the next scheduled poll.
+            # Do NOT call _state_update() here: async_write_ha_state() requires
+            # self.hass which is not yet set when async_added_to_hass runs.
+            # HA writes the state itself once async_added_to_hass returns.
+            self._attr_is_on = self.get_flag()
+        else:
+            last_state = await self.async_get_last_state()
+            if last_state is not None:
+                self._attr_is_on = last_state.state == "on"

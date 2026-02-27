@@ -1,4 +1,5 @@
 """Provide info to system health."""
+
 from homeassistant.components import system_health
 from homeassistant.core import HomeAssistant, callback
 
@@ -14,7 +15,7 @@ def async_register(
     register.async_register_info(system_health_info)
 
 
-async def system_health_info(hass):
+async def system_health_info(hass: HomeAssistant) -> dict[str, object]:
     """Get info for the info page."""
     eow_hostname = get_hostname_for_country(hass)
 

@@ -56,18 +56,21 @@ def create_account_from_config(
     )
 
 
-async def validate_input(hass: core.HomeAssistant, data):
+async def validate_input(
+    hass: core.HomeAssistant,
+    data: dict[str, Any],
+) -> dict[str, Any]:
     """Validate the user input allows us to connect.
 
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
     client_session = aiohttp_client.async_get_clientsession(hass)
-    account = create_account_from_config(hass, data)
+    account = create_account_from_config(hass, MappingProxyType(data))
     client = Client(client_session, account)
 
     try:
         await client.authenticate()
-    except (asyncio.TimeoutError, ClientError, EyeOnWaterAPIError) as error:
+    except (TimeoutError, ClientError, EyeOnWaterAPIError) as error:
         raise CannotConnect from error
     except EyeOnWaterAuthError as error:
         raise InvalidAuth(error) from error
@@ -76,7 +79,7 @@ async def validate_input(hass: core.HomeAssistant, data):
     return {"title": account.username}
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EyeOnWater."""
 
     VERSION = 1
@@ -88,7 +91,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
         """Get the options flow for this handler."""
         return OptionsFlowHandler()
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> config_entries.ConfigFlowResult:
         """Handle the initial step."""
         errors = {}
         if user_input is not None:

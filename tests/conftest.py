@@ -1,4 +1,5 @@
 """Fixtures for EyeOnWater tests."""
+
 import datetime
 from collections.abc import Generator
 from dataclasses import dataclass, field

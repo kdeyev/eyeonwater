@@ -1,10 +1,10 @@
 """EyeOnWater integration."""
-import asyncio
+
 import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import debounce
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -38,7 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except EyeOnWaterAuthError:
         _LOGGER.exception("Username or password was not accepted")
         return False
-    except asyncio.TimeoutError as error:
+    except TimeoutError as error:
         raise ConfigEntryNotReady from error
 
     try:
@@ -47,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.exception("Fetching meters failed")
         raise
 
-    async def async_update_data():
+    async def async_update_data() -> EyeOnWaterData:
         _LOGGER.debug("Fetching latest data")
         await eye_on_water_data.read_meters(days_to_load=3)
         return eye_on_water_data
@@ -72,11 +72,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SMART_METER: eye_on_water_data,
     }
 
-    _ = asyncio.create_task(coordinator.async_refresh())
+    hass.async_create_task(coordinator.async_refresh())
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    async def async_service_handler(call):
+    async def async_service_handler(call: ServiceCall) -> None:
         days = call.data.get(
             IMPORT_HISTORICAL_DATA_DAYS_NAME,
             IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,

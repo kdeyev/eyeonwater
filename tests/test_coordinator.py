@@ -1,4 +1,5 @@
 """Tests for the EyeOnWater coordinator."""
+
 import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 

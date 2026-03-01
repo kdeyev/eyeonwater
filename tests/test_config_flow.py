@@ -1,4 +1,5 @@
 """Tests for the EyeOnWater config flow."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 

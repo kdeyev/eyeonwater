@@ -1,4 +1,5 @@
 """EyeOnWater coordinator."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -43,7 +44,7 @@ class EyeOnWaterData:
         self.hass = hass
         self._last_imported_times: dict[str, datetime.datetime | None] = {}
 
-    async def setup(self):
+    async def setup(self) -> None:
         """Fetch all of the user's meters."""
         self.meters = await self.account.fetch_meters(self.client)
         _LOGGER.debug("Discovered %i meter(s)", len(self.meters))
@@ -54,7 +55,7 @@ class EyeOnWaterData:
                 meter,
             )
 
-    async def read_meters(self, days_to_load=3):
+    async def read_meters(self, days_to_load: int = 3) -> list[Meter]:
         """Read each meter."""
         for meter in self.meters:
             try:
@@ -115,7 +116,7 @@ class EyeOnWaterData:
             currency,
         )
 
-    async def import_historical_data(self, days: int):
+    async def import_historical_data(self, days: int) -> None:
         """Import historical data (service call)."""
         for meter in self.meters:
             data = await meter.read_historical_data(

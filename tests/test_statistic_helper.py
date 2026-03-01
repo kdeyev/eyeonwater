@@ -1,4 +1,5 @@
 """Tests for statistic_helper utilities."""
+
 import datetime
 
 import pyonwater

@@ -1,7 +1,14 @@
+.vscode/
 .venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+.coverage
+htmlcov/
+*.tar
+push_code.sh
+PR.md
+docs/pr/
 
 # Local Copilot customizations (personal, not for repo)
 .github/agents/

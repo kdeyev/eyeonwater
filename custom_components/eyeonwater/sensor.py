@@ -1,4 +1,5 @@
 """Support for EyeOnWater sensors."""
+
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -12,6 +13,7 @@ from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -88,12 +90,14 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
             self.meter.meter_info.sensors
             and self.meter.meter_info.sensors.endpoint_temperature
         ):
-            return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+            return float(
+                self.meter.meter_info.sensors.endpoint_temperature.seven_day_min,
+            )
 
         return None
 
 
-class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
+class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
     _attr_has_entity_name = True
@@ -129,29 +133,29 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         )
 
     @property
-    def available(self):
+    def available(self) -> bool:
         """Return True if entity is available."""
         return self._available
 
     @property
-    def native_value(self):
+    def native_value(self) -> float | None:
         """Get the latest reading."""
-        return self._state.reading
+        return self._state.reading if self._state else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the device specific state attributes."""
-        return self.meter.meter_info.reading.dict()
+        return dict(self.meter.meter_info.reading.dict())
 
     @callback
-    def _state_update(self):
+    def _state_update(self) -> None:
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
             self._state = self.meter.reading
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
 

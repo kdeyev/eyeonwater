@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+from typing import Any
 
 import pyonwater
 from homeassistant import exceptions
@@ -19,6 +20,7 @@ except ImportError:
     _HAS_MEAN_TYPE = False
 from homeassistant.components.recorder.statistics import get_last_statistics
 from homeassistant.const import UnitOfVolume
+from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dtutil
 from pyonwater import DataPoint, Meter
 
@@ -39,9 +41,9 @@ class UnrecognizedUnitError(exceptions.HomeAssistantError):
     """Error to indicate unrecognized pyonwater native unit."""
 
 
-def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
+def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits) -> UnitOfVolume:
     """Convert pyonwater native units to HA native units."""
-    ha_unit = PYONWATER_UNIT_MAP.get(unit, None)
+    ha_unit = PYONWATER_UNIT_MAP.get(unit)
     if ha_unit is None:
         msg = "Unrecognized pyonwater unit {unit}"
         raise UnrecognizedUnitError(msg)
@@ -80,7 +82,7 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
 
     unit = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
 
-    kwargs: dict = {
+    kwargs: dict[str, Any] = {
         "has_mean": False,
         "has_sum": True,
         "name": name,
@@ -92,7 +94,7 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
     if _HAS_MEAN_TYPE:
         kwargs["mean_type"] = StatisticMeanType.NONE
 
-    return StatisticMetaData(**kwargs)
+    return StatisticMetaData(**kwargs)  # type: ignore[typeddict-item, no-any-return]
 
 
 def get_cost_statistic_metadata(
@@ -150,7 +152,7 @@ def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:
 
 
 async def get_last_imported_time(
-    hass,
+    hass: HomeAssistant,
     meter: Meter,
 ) -> datetime.datetime | None:
     """Return last imported data datetime."""
@@ -168,8 +170,8 @@ async def get_last_imported_time(
     _LOGGER.debug("last_stats %s", last_stats)
 
     if last_stats:
-        date = last_stats[statistic_id][0]["start"]
-        date = datetime.datetime.fromtimestamp(date, tz=dtutil.DEFAULT_TIME_ZONE)
+        timestamp = last_stats[statistic_id][0]["start"]
+        date = datetime.datetime.fromtimestamp(timestamp, tz=dtutil.DEFAULT_TIME_ZONE)
         date = dtutil.as_local(date)
         _LOGGER.debug("date %s", date)
 

@@ -1,4 +1,5 @@
 """Support for EyeOnWater binary sensors."""
+
 from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
@@ -6,8 +7,10 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.core import callback
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -65,7 +68,11 @@ FLAG_SENSORS = [
 ]
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the EyeOnWater sensors."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
     meters = hass.data[DOMAIN][config_entry.entry_id][DATA_SMART_METER].meters
@@ -116,17 +123,19 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
 
     def get_flag(self) -> bool:
         """Get flag value."""
-        return self.meter.meter_info.reading.flags.__dict__[self.entity_description.key]
+        return bool(
+            self.meter.meter_info.reading.flags.__dict__[self.entity_description.key],
+        )
 
     @callback
-    def _state_update(self):
+    def _state_update(self) -> None:
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
             self._state = self.get_flag()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
 
@@ -134,5 +143,5 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
             return
 
         if last_state := await self.async_get_last_state():
-            self._state = last_state.state
+            self._state = last_state.state == "on"
             self._available = True

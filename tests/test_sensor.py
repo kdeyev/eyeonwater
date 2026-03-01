@@ -1,4 +1,5 @@
 """Tests for EyeOnWater sensor entities."""
+
 import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 

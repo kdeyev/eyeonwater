@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Local Copilot customizations (personal, not for repo)
+.github/agents/
+.github/skills/
+.github/copilot-instructions.md
+*.code-workspace

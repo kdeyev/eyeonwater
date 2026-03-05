@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pyonwater
 import pytest
-from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import UnitOfTemperature, UnitOfVolume
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -51,10 +51,10 @@ class TestEyeOnWaterSensor:
         sensor = EyeOnWaterSensor(meter, coordinator)
         assert sensor._attr_device_class == SensorDeviceClass.WATER
 
-    def test_no_state_class(self, coordinator) -> None:
+    def test_state_class(self, coordinator) -> None:
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
-        assert not hasattr(sensor, "_attr_state_class")
+        assert sensor._attr_state_class == SensorStateClass.TOTAL_INCREASING
 
     def test_unit_gallons(self, coordinator) -> None:
         meter = _make_meter(native_unit=pyonwater.NativeUnits.GAL)

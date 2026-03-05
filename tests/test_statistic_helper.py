@@ -94,9 +94,9 @@ def test_get_statistic_metadata() -> None:
     assert meta["has_sum"] is True
     assert meta["source"] == "eyeonwater"
     assert "meter_001" in meta["statistic_id"]
+    assert meta["unit_class"] == "volume"
     if _HAS_MEAN_TYPE:
         assert meta["mean_type"] == 0  # StatisticMeanType.NONE
-        assert meta["unit_class"] == "volume"
 
 
 # ---------- convert_statistic_data ----------

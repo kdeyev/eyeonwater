@@ -81,10 +81,10 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
         "source": "eyeonwater",
         "statistic_id": statistic_id,
         "unit_of_measurement": unit,
+        "unit_class": "volume",
     }
     if _HAS_MEAN_TYPE:
         kwargs["mean_type"] = StatisticMeanType.NONE
-        kwargs["unit_class"] = "volume"
 
     return StatisticMetaData(**kwargs)
 

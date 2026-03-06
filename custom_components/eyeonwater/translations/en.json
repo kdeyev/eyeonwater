@@ -19,7 +19,24 @@
             }
         }
     },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "unit_price": "Price per unit of water"
+                },
+                "data_description": {
+                    "unit_price": "The cost per unit of water (e.g., per gallon or per cubic foot). Set to 0 or leave empty to disable cost tracking."
+                }
+            }
+        }
+    },
     "entity": {
+        "sensor": {
+            "water_cost": {
+                "name": "Water Cost"
+            }
+        },
         "binary_sensor": {
             "leak": {
                 "name": "Leak Sensor"

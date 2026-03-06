@@ -32,7 +32,7 @@ PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Eye On Water from a config entry."""
     account = create_account_from_config(hass, entry.data)
-    eye_on_water_data = EyeOnWaterData(hass, account)
+    eye_on_water_data = EyeOnWaterData(hass, account, entry)
     try:
         await eye_on_water_data.client.authenticate()
     except EyeOnWaterAuthError:

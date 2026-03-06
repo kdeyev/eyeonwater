@@ -67,6 +67,12 @@ def get_statistics_id(meter_id: str) -> str:
     return f"eyeonwater:water_meter_{meter_id}"
 
 
+def get_cost_statistics_id(meter_id: str) -> str:
+    """Generate cost statistic ID for a meter."""
+    meter_id = normalize_id(meter_id)
+    return f"eyeonwater:water_cost_{meter_id}"
+
+
 def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
     """Build statistic metadata for a given meter."""
     name = get_statistic_name(meter_id=meter.meter_id)
@@ -87,6 +93,47 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
         kwargs["mean_type"] = StatisticMeanType.NONE
 
     return StatisticMetaData(**kwargs)
+
+
+def get_cost_statistic_metadata(
+    meter: Meter,
+    currency: str,
+) -> StatisticMetaData:
+    """Build cost statistic metadata for a given meter."""
+    name = f"{get_statistic_name(meter_id=meter.meter_id)} Cost"
+    statistic_id = get_cost_statistics_id(meter.meter_id)
+
+    kwargs: dict = {
+        "has_mean": False,
+        "has_sum": True,
+        "name": name,
+        "source": "eyeonwater",
+        "statistic_id": statistic_id,
+        "unit_of_measurement": currency,
+    }
+    if _HAS_MEAN_TYPE:
+        kwargs["mean_type"] = StatisticMeanType.NONE
+
+    return StatisticMetaData(**kwargs)
+
+
+def convert_cost_statistic_data(
+    data: list[DataPoint],
+    unit_price: float,
+) -> list[StatisticData]:
+    """Convert water usage data to cost statistics.
+
+    Each DataPoint has a cumulative meter reading as `reading`.
+    Cost = reading * unit_price (same cumulative approach).
+    """
+    return [
+        StatisticData(
+            start=row.dt,
+            sum=row.reading * unit_price,
+            state=row.reading * unit_price,
+        )
+        for row in data
+    ]
 
 
 def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:

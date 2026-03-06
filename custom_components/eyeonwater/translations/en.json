@@ -32,11 +32,7 @@
         }
     },
     "entity": {
-        "sensor": {
-            "water_cost": {
-                "name": "Water Cost"
-            }
-        },
+        "sensor": {},
         "binary_sensor": {
             "leak": {
                 "name": "Leak Sensor"

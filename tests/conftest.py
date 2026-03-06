@@ -1,23 +1,22 @@
 """Fixtures for EyeOnWater tests."""
 
+import asyncio
 import datetime
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pyonwater
 import pytest
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-
-from custom_components.eyeonwater.const import DOMAIN
 
 # ---------- test data ----------
 
 MOCK_USERNAME = "test@example.com"
-MOCK_PASSWORD = "testpassword"
 
 MOCK_CONFIG = {
     CONF_USERNAME: MOCK_USERNAME,
-    CONF_PASSWORD: MOCK_PASSWORD,
+    CONF_PASSWORD: "testpassword",
 }
 
 
@@ -30,6 +29,8 @@ MOCK_METER_ID = "meter_001"
 
 @dataclass
 class FakeFlags:
+    """Fake meter flag data for testing."""
+
     leak: bool = False
     empty_pipe: bool = False
     tamper: bool = False
@@ -41,13 +42,16 @@ class FakeFlags:
 
 @dataclass
 class FakeReading:
+    """Fake meter reading data for testing."""
+
     model: str = "TestModel"
     customer_name: str = "TestCustomer"
     hardware_version: str = "1.0"
     firmware_version: str = "2.0"
     flags: FakeFlags = field(default_factory=FakeFlags)
 
-    def dict(self):
+    def dict(self) -> dict[str, str]:
+        """Return reading fields as a plain dict."""
         return {
             "model": self.model,
             "customer_name": self.customer_name,
@@ -58,23 +62,33 @@ class FakeReading:
 
 @dataclass
 class FakeSensors:
+    """Fake meter sensors data for testing."""
+
     endpoint_temperature: None = None
 
 
 @dataclass
 class FakeMeterInfo:
+    """Fake meter info container for testing."""
+
     reading: FakeReading = field(default_factory=FakeReading)
     sensors: FakeSensors = field(default_factory=FakeSensors)
 
 
 @dataclass
-class FakeDataPoint:
+class FakeDataPoint(pyonwater.DataPoint):
+    """DataPoint subclass with test defaults (dt, reading, unit)."""
+
     dt: datetime.datetime = field(
         default_factory=lambda: datetime.datetime(
-            2025, 1, 1, tzinfo=datetime.timezone.utc
+            2025,
+            1,
+            1,
+            tzinfo=datetime.UTC,
         ),
     )
     reading: float = 123.45
+    unit: str = pyonwater.NativeUnits.GAL
 
 
 def _make_meter(
@@ -84,8 +98,6 @@ def _make_meter(
     native_unit: str | None = None,
 ) -> MagicMock:
     """Return a lightweight fake Meter."""
-    import pyonwater
-
     meter = MagicMock(spec=pyonwater.Meter)
     meter.meter_uuid = meter_uuid
     meter.meter_id = meter_id
@@ -105,6 +117,16 @@ def _make_hass() -> MagicMock:
     hass.config.country = "US"
     hass.services = MagicMock()
     hass.services.async_register = MagicMock()
+
+    def _create_task(coro: object, *_args: object, **_kwargs: object) -> MagicMock:
+        """Close any coroutine immediately so GC never sees an unawaited coro."""
+        if asyncio.iscoroutine(coro):
+            coro.close()
+        task = MagicMock()
+        task.cancel = MagicMock(return_value=False)
+        return task
+
+    hass.async_create_task = _create_task
 
     # config_entries mock
     hass.config_entries = MagicMock()
@@ -129,8 +151,6 @@ def mock_meter() -> MagicMock:
 @pytest.fixture
 def mock_account() -> MagicMock:
     """Provide a fake Account."""
-    import pyonwater
-
     account = MagicMock(spec=pyonwater.Account)
     account.username = MOCK_USERNAME
     account.fetch_meters = AsyncMock(return_value=[_make_meter()])
@@ -140,8 +160,6 @@ def mock_account() -> MagicMock:
 @pytest.fixture
 def mock_client() -> MagicMock:
     """Provide a fake Client."""
-    import pyonwater
-
     client = MagicMock(spec=pyonwater.Client)
     client.authenticate = AsyncMock()
     return client

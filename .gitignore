@@ -6,12 +6,4 @@ __pycache__/
 .coverage
 htmlcov/
 *.tar
-push_code.sh
-PR.md
-docs/pr/
-
-# Local Copilot customizations (personal, not for repo)
-.github/agents/
-.github/skills/
-.github/copilot-instructions.md
 *.code-workspace

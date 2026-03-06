@@ -11,9 +11,8 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -90,14 +89,13 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
             self.meter.meter_info.sensors
             and self.meter.meter_info.sensors.endpoint_temperature
         ):
-            return float(
-                self.meter.meter_info.sensors.endpoint_temperature.seven_day_min,
-            )
+            val = self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+            return float(val) if val is not None else None
 
         return None
 
 
-class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
+class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of an EyeOnWater sensor."""
 
     _attr_has_entity_name = True
@@ -158,10 +156,3 @@ class EyeOnWaterSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
-
-        if self.coordinator.last_update_success:
-            return
-
-        if last_state := await self.async_get_last_state():
-            self._state = last_state.state
-            self._available = True

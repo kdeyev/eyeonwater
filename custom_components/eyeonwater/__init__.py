@@ -72,7 +72,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SMART_METER: eye_on_water_data,
     }
 
-    hass.async_create_task(coordinator.async_refresh())
+    _task = hass.async_create_task(coordinator.async_refresh())
+
+    def _cancel_refresh_task() -> None:
+        _task.cancel()
+
+    entry.async_on_unload(_cancel_refresh_task)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

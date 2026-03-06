@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from pyonwater import EyeOnWaterAuthError
 
+from custom_components.eyeonwater import async_setup_entry, async_unload_entry
 from custom_components.eyeonwater.const import (
     DATA_COORDINATOR,
     DATA_SMART_METER,
@@ -16,8 +17,6 @@ from custom_components.eyeonwater.const import (
 
 from .conftest import (
     MOCK_CONFIG,
-    MOCK_METER_ID,
-    MOCK_METER_UUID,
     _make_hass,
     _make_meter,
 )
@@ -34,6 +33,7 @@ def _mock_config_entry() -> ConfigEntry:
 
 @pytest.fixture
 def config_entry() -> ConfigEntry:
+    """Provide a fake ConfigEntry."""
     return _mock_config_entry()
 
 
@@ -74,8 +74,6 @@ async def test_setup_entry_success(config_entry) -> None:
         coordinator_instance.async_refresh = AsyncMock()
         mock_coordinator_cls.return_value = coordinator_instance
 
-        from custom_components.eyeonwater import async_setup_entry
-
         result = await async_setup_entry(hass, config_entry)
 
     assert result is True
@@ -106,8 +104,6 @@ async def test_setup_entry_auth_error(config_entry) -> None:
         )
         mock_data_cls.return_value = data_instance
 
-        from custom_components.eyeonwater import async_setup_entry
-
         result = await async_setup_entry(hass, config_entry)
 
     assert result is False
@@ -134,8 +130,6 @@ async def test_setup_entry_timeout(config_entry) -> None:
         )
         mock_data_cls.return_value = data_instance
 
-        from custom_components.eyeonwater import async_setup_entry
-
         with pytest.raises(ConfigEntryNotReady):
             await async_setup_entry(hass, config_entry)
 
@@ -152,8 +146,6 @@ async def test_unload_entry(config_entry) -> None:
         DATA_COORDINATOR: MagicMock(),
         DATA_SMART_METER: MagicMock(),
     }
-
-    from custom_components.eyeonwater import async_unload_entry
 
     result = await async_unload_entry(hass, config_entry)
 

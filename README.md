@@ -74,6 +74,28 @@ In the **Water Consumption** section, select the `eyeonwater:water_meter_xxxxx` 
 
 ![energy-dashboard](https://github.com/kdeyev/eyeonwater/blob/master/img/energy-dashboard.png?raw=true)
 
+## Water Cost Tracking
+
+The integration includes a **Water Cost** sensor that tracks your cumulative water cost based on a configurable unit price.
+
+### How It Works
+
+- The cost sensor monitors your meter reading and calculates cost based on the **delta** (change) in usage, multiplied by your configured price per unit of water.
+- Cost accumulates over time and persists across Home Assistant restarts.
+- The sensor uses `device_class: monetary` and `state_class: total_increasing`, making it compatible with the **Energy Dashboard** for cost tracking.
+- The currency is automatically set from your Home Assistant configuration (`Settings` → `General` → `Currency`).
+
+### Configuration
+
+1. Go to `Settings` → `Devices & Services` → **EyeOnWater**.
+2. Click **Configure** on your integration entry.
+3. Enter your **water unit price** — the cost per unit of water (e.g., `0.005` for $0.005 per gallon).
+4. Click **Submit**.
+
+The **Water Cost** sensor will appear as `sensor.water_cost` on your meter's device. It remains unavailable until a unit price is configured.
+
+> **Tip:** You can update the unit price at any time through the same Configure menu. The sensor picks up changes immediately — only future usage deltas use the new price; previously accumulated cost is preserved.
+
 ## Import Historical Data
 
 The integration can import historical water usage data after installation.
@@ -100,9 +122,10 @@ The integration uses **external statistics** under a separate `eyeonwater:` name
 | Component | ID | Purpose |
 |-----------|-------------|---------|
 | Live sensor | `sensor.water_meter_xxxxx` | Real-time meter reading display |
+| Cost sensor | `sensor.water_cost` | Cumulative water cost (requires unit price configuration) |
 | External statistic | `eyeonwater:water_meter_xxxxx` | **Energy Dashboard** — accurate hourly usage |
 
-The live sensor has no `state_class`, so HA does not auto-compile statistics for it. All statistics come exclusively from the integration's retroactive imports — no conflicts, no negative values.
+The live sensor has no `state_class`, so HA does not auto-compile statistics for it. The cost sensor uses `state_class: total_increasing` and `device_class: monetary` for Energy Dashboard cost tracking. All water usage statistics come exclusively from the integration's retroactive imports — no conflicts, no negative values.
 
 ### HA Core Tracking
 

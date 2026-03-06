@@ -8,8 +8,11 @@ from homeassistant.const import UnitOfVolume
 from custom_components.eyeonwater.statistic_helper import (
     UnrecognizedUnitError,
     _HAS_MEAN_TYPE,
+    convert_cost_statistic_data,
     convert_statistic_data,
     filter_newer_data,
+    get_cost_statistic_metadata,
+    get_cost_statistics_id,
     get_ha_native_unit_of_measurement,
     get_statistic_metadata,
     get_statistic_name,
@@ -169,3 +172,70 @@ def test_filter_newer_data_empty_input_with_cutoff() -> None:
     cutoff = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
     result = filter_newer_data([], cutoff)
     assert result == []
+
+
+# ---------- cost statistics helpers ----------
+
+
+def test_get_cost_statistics_id() -> None:
+    sid = get_cost_statistics_id("meter-001")
+    assert sid == "eyeonwater:water_cost_meter_001"
+
+
+def test_get_cost_statistic_metadata() -> None:
+    meter = _make_meter(meter_id="meter-001")
+    meta = get_cost_statistic_metadata(meter, "USD")
+
+    assert meta["has_mean"] is False
+    assert meta["has_sum"] is True
+    assert meta["source"] == "eyeonwater"
+    assert meta["statistic_id"] == "eyeonwater:water_cost_meter_001"
+    assert meta["unit_of_measurement"] == "USD"
+    assert meta["name"] == "Water Meter meter_001 Cost"
+    assert meta["unit_class"] == "monetary"
+    if _HAS_MEAN_TYPE:
+        assert meta["mean_type"] == 0  # StatisticMeanType.NONE
+
+
+def test_get_cost_statistic_metadata_different_currency() -> None:
+    meter = _make_meter(meter_id="meter-001")
+    meta = get_cost_statistic_metadata(meter, "EUR")
+    assert meta["unit_of_measurement"] == "EUR"
+
+
+def test_convert_cost_statistic_data_empty() -> None:
+    assert convert_cost_statistic_data([], 1.5) == []
+
+
+def test_convert_cost_statistic_data_single() -> None:
+    dp = FakeDataPoint(
+        dt=datetime.datetime(2025, 6, 1, tzinfo=datetime.timezone.utc),
+        reading=100.0,
+    )
+    result = convert_cost_statistic_data([dp], 0.005)
+    assert len(result) == 1
+    assert result[0]["sum"] == pytest.approx(0.5)
+    assert result[0]["state"] == pytest.approx(0.5)
+
+
+def test_convert_cost_statistic_data_multiple() -> None:
+    points = [
+        FakeDataPoint(
+            dt=datetime.datetime(2025, 6, i, tzinfo=datetime.timezone.utc),
+            reading=float(i * 1000),
+        )
+        for i in range(1, 4)
+    ]
+    result = convert_cost_statistic_data(points, 0.01)
+    assert len(result) == 3
+    assert [r["sum"] for r in result] == [
+        pytest.approx(10.0),
+        pytest.approx(20.0),
+        pytest.approx(30.0),
+    ]
+
+
+def test_convert_cost_statistic_data_zero_price() -> None:
+    dp = FakeDataPoint(reading=500.0)
+    result = convert_cost_statistic_data([dp], 0.0)
+    assert result[0]["sum"] == pytest.approx(0.0)

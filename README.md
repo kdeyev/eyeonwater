@@ -74,6 +74,28 @@ In the **Water Consumption** section, select the `eyeonwater:water_meter_xxxxx` 
 
 ![energy-dashboard](https://github.com/kdeyev/eyeonwater/blob/master/img/energy-dashboard.png?raw=true)
 
+## Water Cost Tracking
+
+The integration can publish **external cost statistics** (`eyeonwater:water_cost_xxxxx`) alongside the water usage statistics. This lets the Energy Dashboard correlate water consumption with cost on the same historical timeline.
+
+### How It Works
+
+- When a **unit price** is configured, every imported water data point is multiplied by the price to produce a cumulative cost statistic.
+- Cost statistics use the same hourly granularity as water usage — they are retroactive and accurate, not real-time estimates.
+- The currency is automatically set from your Home Assistant configuration (`Settings` → `General` → `Currency`).
+- Both the regular import (every polling cycle) and the `import_historical_data` service produce cost statistics.
+
+### Configuration
+
+1. Go to `Settings` → `Devices & Services` → **EyeOnWater**.
+2. Click **Configure** on your integration entry.
+3. Enter your **water unit price** — the cost per unit of water (e.g., `0.005` for $0.005 per gallon).
+4. Click **Submit**.
+
+Once configured, cost statistics will appear as `eyeonwater:water_cost_xxxxx` and can be selected in the Energy Dashboard.
+
+> **Tip:** You can update the unit price at any time through the same Configure menu. Future imports will use the new price. To recalculate historical cost with a new price, use the `import_historical_data` service.
+
 ## Import Historical Data
 
 The integration can import historical water usage data after installation.
@@ -100,9 +122,10 @@ The integration uses **external statistics** under a separate `eyeonwater:` name
 | Component | ID | Purpose |
 |-----------|-------------|---------|
 | Live sensor | `sensor.water_meter_xxxxx` | Real-time meter reading display |
-| External statistic | `eyeonwater:water_meter_xxxxx` | **Energy Dashboard** — accurate hourly usage |
+| Water statistic | `eyeonwater:water_meter_xxxxx` | **Energy Dashboard** — accurate hourly usage |
+| Cost statistic | `eyeonwater:water_cost_xxxxx` | **Energy Dashboard** — accurate hourly cost (requires unit price) |
 
-The live sensor has no `state_class`, so HA does not auto-compile statistics for it. All statistics come exclusively from the integration's retroactive imports — no conflicts, no negative values.
+The live sensor has no `state_class`, so HA does not auto-compile statistics for it. All water usage and cost statistics come exclusively from the integration's retroactive imports — no conflicts, no negative values.
 
 ### HA Core Tracking
 

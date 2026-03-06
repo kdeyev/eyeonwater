@@ -3,14 +3,18 @@ import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.components.recorder.statistics import async_add_external_statistics
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
 
+from .const import CONF_UNIT_PRICE
 from .statistic_helper import (
+    convert_cost_statistic_data,
     convert_statistic_data,
     filter_newer_data,
+    get_cost_statistic_metadata,
     get_last_imported_time,
     get_statistic_metadata,
 )
@@ -28,9 +32,11 @@ class EyeOnWaterData:
         self,
         hass: HomeAssistant,
         account: Account,
+        config_entry: ConfigEntry,
     ) -> None:
         """Initialize the data coordintator."""
         self.account = account
+        self._config_entry = config_entry
         websession = aiohttp_client.async_get_clientsession(hass)
         self.client = Client(websession, account)
         self.meters: list[Meter] = []
@@ -79,7 +85,35 @@ class EyeOnWaterData:
         statistics = convert_statistic_data(new_data)
         metadata = get_statistic_metadata(meter)
         async_add_external_statistics(self.hass, metadata, statistics)
+
+        self._import_cost_statistics(meter, new_data)
+
         self._last_imported_times[meter.meter_id] = new_data[-1].dt
+
+    def _import_cost_statistics(
+        self,
+        meter: Meter,
+        data: list,
+    ) -> None:
+        """Import cost statistics if unit_price is configured."""
+        unit_price = self._config_entry.options.get(CONF_UNIT_PRICE)
+        if not unit_price or unit_price <= 0:
+            return
+
+        currency = self.hass.config.currency
+        if not currency:
+            _LOGGER.warning("No currency configured in HA, skipping cost statistics")
+            return
+
+        cost_statistics = convert_cost_statistic_data(data, unit_price)
+        cost_metadata = get_cost_statistic_metadata(meter, currency)
+        async_add_external_statistics(self.hass, cost_metadata, cost_statistics)
+        _LOGGER.info(
+            "%i cost data points imported (price=%s %s)",
+            len(cost_statistics),
+            unit_price,
+            currency,
+        )
 
     async def import_historical_data(self, days: int):
         """Import historical data (service call)."""
@@ -92,3 +126,5 @@ class EyeOnWaterData:
             statistics = convert_statistic_data(data)
             metadata = get_statistic_metadata(meter)
             async_add_external_statistics(self.hass, metadata, statistics)
+
+            self._import_cost_statistics(meter, data)

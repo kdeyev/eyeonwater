@@ -6,7 +6,6 @@ import pyonwater
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
-    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
@@ -18,7 +17,12 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
+from .const import (
+    DATA_COORDINATOR,
+    DATA_SMART_METER,
+    DOMAIN,
+    WATER_METER_NAME,
+)
 from .statistic_helper import (
     get_ha_native_unit_of_measurement,
     normalize_id,
@@ -95,7 +99,6 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
     _attr_name = None
     _attr_device_class = SensorDeviceClass.WATER
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(
         self,

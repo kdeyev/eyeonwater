@@ -37,11 +37,13 @@ class TestEyeOnWaterSensor:
     """Tests for the main water usage sensor."""
 
     def test_unique_id(self, coordinator) -> None:
+        """Unique ID equals normalized meter UUID."""
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
         assert sensor._attr_unique_id == normalize_id(MOCK_METER_UUID)
 
     def test_device_class(self, coordinator) -> None:
+        """Device class must be WATER."""
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
         assert sensor._attr_device_class == SensorDeviceClass.WATER

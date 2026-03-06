@@ -34,6 +34,21 @@ PYONWATER_UNIT_MAP: dict[pyonwater.NativeUnits, UnitOfVolume] = {
     pyonwater.NativeUnits.CM: UnitOfVolume.CUBIC_METERS,
 }
 
+# All volumes expressed in cubic meters (SI base)
+_TO_CUBIC_METERS: dict[str, float] = {
+    UnitOfVolume.GALLONS: 0.00378541,
+    UnitOfVolume.CUBIC_FEET: 0.0283168,
+    UnitOfVolume.CUBIC_METERS: 1.0,
+    UnitOfVolume.LITERS: 0.001,
+}
+
+DISPLAY_UNIT_OPTIONS: list[str] = [
+    UnitOfVolume.GALLONS,
+    UnitOfVolume.LITERS,
+    UnitOfVolume.CUBIC_FEET,
+    UnitOfVolume.CUBIC_METERS,
+]
+
 
 class UnrecognizedUnitError(exceptions.HomeAssistantError):
     """Error to indicate unrecognized pyonwater native unit."""
@@ -73,12 +88,23 @@ def get_cost_statistics_id(meter_id: str) -> str:
     return f"eyeonwater:water_cost_{meter_id}"
 
 
-def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
+def volume_conversion_factor(from_unit: str, to_unit: str) -> float:
+    """Return the factor to convert *from_unit* to *to_unit*."""
+    if from_unit == to_unit:
+        return 1.0
+    return _TO_CUBIC_METERS[from_unit] / _TO_CUBIC_METERS[to_unit]
+
+
+def get_statistic_metadata(
+    meter: Meter,
+    display_unit: str | None = None,
+) -> StatisticMetaData:
     """Build statistic metadata for a given meter."""
     name = get_statistic_name(meter_id=meter.meter_id)
     statistic_id = get_statistics_id(meter.meter_id)
 
-    unit = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
+    native_unit = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
+    unit = display_unit if display_unit else native_unit
 
     kwargs: dict = {
         "has_mean": False,
@@ -137,13 +163,19 @@ def convert_cost_statistic_data(
     ]
 
 
-def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:
-    """Convert statistics data to HA StatisticData format."""
+def convert_statistic_data(
+    data: list[DataPoint],
+    factor: float = 1.0,
+) -> list[StatisticData]:
+    """Convert statistics data to HA StatisticData format.
+
+    *factor* is applied to every reading (unit conversion).
+    """
     return [
         StatisticData(
             start=row.dt,
-            sum=row.reading,
-            state=row.reading,
+            sum=row.reading * factor,
+            state=row.reading * factor,
         )
         for row in data
     ]

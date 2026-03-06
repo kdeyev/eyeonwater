@@ -253,3 +253,50 @@ async def test_import_historical_data_includes_cost_stats(eow_data) -> None:
 
     # Water + cost
     assert mock_import.call_count == 2
+
+
+# ---------- display unit ----------
+
+
+@pytest.mark.asyncio
+async def test_read_meters_uses_display_unit(eow_data) -> None:
+    """read_meters should pass display_unit to metadata and convert data."""
+    eow_data._config_entry.options = {"display_unit": "L"}
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        await eow_data.setup()
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ) as mock_import:
+        await eow_data.read_meters(days_to_load=3)
+
+    mock_import.assert_called_once()
+    metadata = mock_import.call_args[0][1]
+    assert metadata["unit_of_measurement"] == "L"
+
+
+@pytest.mark.asyncio
+async def test_import_historical_data_uses_display_unit(eow_data) -> None:
+    """import_historical_data should respect display_unit."""
+    eow_data._config_entry.options = {"display_unit": "m³"}
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        await eow_data.setup()
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ) as mock_import:
+        await eow_data.import_historical_data(days=30)
+
+    mock_import.assert_called_once()
+    metadata = mock_import.call_args[0][1]
+    assert metadata["unit_of_measurement"] == "m³"

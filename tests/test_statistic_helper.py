@@ -18,6 +18,7 @@ from custom_components.eyeonwater.statistic_helper import (
     get_statistic_name,
     get_statistics_id,
     normalize_id,
+    volume_conversion_factor,
 )
 
 from .conftest import FakeDataPoint, _make_meter
@@ -239,3 +240,55 @@ def test_convert_cost_statistic_data_zero_price() -> None:
     dp = FakeDataPoint(reading=500.0)
     result = convert_cost_statistic_data([dp], 0.0)
     assert result[0]["sum"] == pytest.approx(0.0)
+
+
+# ---------- volume conversion ----------
+
+
+def test_volume_conversion_same_unit() -> None:
+    assert volume_conversion_factor(UnitOfVolume.GALLONS, UnitOfVolume.GALLONS) == 1.0
+
+
+def test_volume_conversion_gallons_to_liters() -> None:
+    factor = volume_conversion_factor(UnitOfVolume.GALLONS, UnitOfVolume.LITERS)
+    assert factor == pytest.approx(3.78541, rel=1e-4)
+
+
+def test_volume_conversion_cubic_feet_to_gallons() -> None:
+    factor = volume_conversion_factor(UnitOfVolume.CUBIC_FEET, UnitOfVolume.GALLONS)
+    assert factor == pytest.approx(7.48052, rel=1e-3)
+
+
+def test_volume_conversion_cubic_meters_to_liters() -> None:
+    factor = volume_conversion_factor(UnitOfVolume.CUBIC_METERS, UnitOfVolume.LITERS)
+    assert factor == pytest.approx(1000.0, rel=1e-4)
+
+
+# ---------- display unit in metadata ----------
+
+
+def test_get_statistic_metadata_with_display_unit() -> None:
+    meter = _make_meter(meter_id="meter-001")
+    meta = get_statistic_metadata(meter, display_unit=UnitOfVolume.LITERS)
+    assert meta["unit_of_measurement"] == UnitOfVolume.LITERS
+    assert meta["unit_class"] == "volume"
+
+
+def test_get_statistic_metadata_no_display_unit_uses_native() -> None:
+    meter = _make_meter(meter_id="meter-001", native_unit=pyonwater.NativeUnits.GAL)
+    meta = get_statistic_metadata(meter)
+    assert meta["unit_of_measurement"] == UnitOfVolume.GALLONS
+
+
+# ---------- convert_statistic_data with factor ----------
+
+
+def test_convert_statistic_data_with_factor() -> None:
+    dp = FakeDataPoint(
+        dt=datetime.datetime(2025, 6, 1, tzinfo=datetime.timezone.utc),
+        reading=100.0,
+    )
+    factor = volume_conversion_factor(UnitOfVolume.GALLONS, UnitOfVolume.LITERS)
+    result = convert_statistic_data([dp], factor)
+    assert result[0]["sum"] == pytest.approx(378.541, rel=1e-3)
+    assert result[0]["state"] == pytest.approx(378.541, rel=1e-3)

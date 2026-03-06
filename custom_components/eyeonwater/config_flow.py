@@ -12,7 +12,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import aiohttp_client
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
-from .const import CONF_UNIT_PRICE, DOMAIN
+from .const import CONF_DISPLAY_UNIT, CONF_UNIT_PRICE, DOMAIN
 
 if TYPE_CHECKING:
     from types import MappingProxyType
@@ -128,6 +128,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         current_price = self.config_entry.options.get(CONF_UNIT_PRICE)
+        current_display_unit = self.config_entry.options.get(CONF_DISPLAY_UNIT)
+
+        from .statistic_helper import DISPLAY_UNIT_OPTIONS
 
         return self.async_show_form(
             step_id="init",
@@ -137,6 +140,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_UNIT_PRICE,
                         description={"suggested_value": current_price},
                     ): vol.All(vol.Coerce(float), vol.Range(min=0)),
+                    vol.Optional(
+                        CONF_DISPLAY_UNIT,
+                        description={"suggested_value": current_display_unit},
+                    ): vol.In(DISPLAY_UNIT_OPTIONS),
                 },
             ),
         )

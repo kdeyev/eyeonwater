@@ -1,4 +1,5 @@
 """Support for EyeOnWater sensors."""
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -19,7 +20,13 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import CONF_UNIT_PRICE, DATA_COORDINATOR, DATA_SMART_METER, DOMAIN, WATER_METER_NAME
+from .const import (
+    CONF_UNIT_PRICE,
+    DATA_COORDINATOR,
+    DATA_SMART_METER,
+    DOMAIN,
+    WATER_METER_NAME,
+)
 from .statistic_helper import (
     get_ha_native_unit_of_measurement,
     normalize_id,
@@ -237,10 +244,7 @@ class EyeOnWaterCostSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         self._available = self.coordinator.last_update_success
         if self._available and self.meter.reading and self._unit_price is not None:
             current_reading = self.meter.reading.reading
-            if (
-                self._last_reading is not None
-                and current_reading > self._last_reading
-            ):
+            if self._last_reading is not None and current_reading > self._last_reading:
                 delta = current_reading - self._last_reading
                 self._cost += delta * self._unit_price
             self._last_reading = current_reading
@@ -263,11 +267,9 @@ class EyeOnWaterCostSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
                 self._cost = 0.0
 
             if last_state.attributes.get("last_reading") is not None:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     self._last_reading = float(
                         last_state.attributes["last_reading"],
                     )
-                except (ValueError, TypeError):
-                    pass
 
             self._available = True

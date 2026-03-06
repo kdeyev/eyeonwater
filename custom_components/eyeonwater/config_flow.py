@@ -1,9 +1,10 @@
 """Config flow for EyeOnWater integration."""
+
 from __future__ import annotations
 
-import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from types import MappingProxyType
+from typing import Any, Self
 
 import voluptuous as vol
 from aiohttp import ClientError
@@ -13,9 +14,6 @@ from homeassistant.helpers import aiohttp_client
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
 from .const import CONF_UNIT_PRICE, DOMAIN
-
-if TYPE_CHECKING:
-    from types import MappingProxyType
 
 CONF_EOW_HOSTNAME_COM = "eyeonwater.com"
 CONF_EOW_HOSTNAME_CA = "eyeonwater.ca"
@@ -90,6 +88,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> OptionsFlowHandler:
         """Get the options flow for this handler."""
         return OptionsFlowHandler()
+
+    def is_matching(self, other_flow: Self) -> bool:
+        """Return False — credentials-based flow; no discovery matching needed."""
+        return False
 
     async def async_step_user(
         self,

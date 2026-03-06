@@ -35,7 +35,6 @@ def eow_data(mock_account, mock_client) -> EyeOnWaterData:
         return EyeOnWaterData(hass, mock_account, config_entry)
 
 
-
 # ---------- setup ----------
 
 

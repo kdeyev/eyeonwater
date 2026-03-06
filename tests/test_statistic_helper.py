@@ -192,8 +192,7 @@ def test_get_cost_statistic_metadata() -> None:
     assert meta["statistic_id"] == "eyeonwater:water_cost_meter_001"
     assert meta["unit_of_measurement"] == "USD"
     assert meta["name"] == "Water Meter meter_001 Cost"
-    # cost stats should NOT have unit_class
-    assert "unit_class" not in meta or meta.get("unit_class") is None
+    assert meta["unit_class"] == "monetary"
     if _HAS_MEAN_TYPE:
         assert meta["mean_type"] == 0  # StatisticMeanType.NONE
 

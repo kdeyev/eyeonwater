@@ -74,7 +74,7 @@ select = ["ALL"]
 # All the ones without a comment were the ones that are currently violated
 # by the codebase. The plan is to fix them all (when sensible) and then enable them.
 ignore = [
-    "ANN",
+    "ANN",    # mypy strict is the authoritative annotation enforcer; ruff ANN rules are redundant and noisier
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
     "D203",    # Incompatible with D211 (no-blank-line-before-class) — prefer D211
     "D213",    # Incompatible with D212 (multi-line-summary-first-line) — prefer D212

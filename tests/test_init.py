@@ -71,7 +71,7 @@ async def test_setup_entry_success(config_entry) -> None:
         mock_data_cls.return_value = data_instance
 
         coordinator_instance = MagicMock()
-        coordinator_instance.async_refresh = AsyncMock()
+        coordinator_instance.async_config_entry_first_refresh = AsyncMock()
         mock_coordinator_cls.return_value = coordinator_instance
 
         result = await async_setup_entry(hass, config_entry)

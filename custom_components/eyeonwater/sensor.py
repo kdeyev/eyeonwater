@@ -33,7 +33,6 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity import Entity
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.StreamHandler())
 
 
 async def async_setup_entry(

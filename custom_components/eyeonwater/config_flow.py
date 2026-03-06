@@ -90,8 +90,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return OptionsFlowHandler()
 
     def is_matching(self, other_flow: Self) -> bool:
-        """Return False — credentials-based flow; no discovery matching needed."""
-        return False
+        """Return True if other_flow targets the same account.
+
+        Prevents duplicate in-progress config flows for the same username.
+        """
+        return other_flow.context.get("unique_id") == self.context.get("unique_id")
 
     async def async_step_user(
         self,

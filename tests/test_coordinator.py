@@ -122,7 +122,9 @@ async def test_import_historical_data(eow_data) -> None:
         await eow_data.import_historical_data(days=30)
 
     eow_data.meters[0].read_historical_data.assert_awaited()
-    mock_import.assert_called_once()
+    call_args = mock_import.call_args[0]
+    assert len(call_args) == 3  # (hass, metadata, statistics)
+    assert len(call_args[2]) > 0  # at least one StatisticData row passed
 
 
 @pytest.mark.asyncio
@@ -140,7 +142,9 @@ async def test_read_meters_imports_statistics(eow_data) -> None:
     ) as mock_import:
         await eow_data.read_meters(days_to_load=3)
 
-    mock_import.assert_called_once()
+    call_args = mock_import.call_args[0]
+    assert len(call_args) == 3  # (hass, metadata, statistics)
+    assert len(call_args[2]) > 0  # at least one StatisticData row passed
 
 
 @pytest.mark.asyncio

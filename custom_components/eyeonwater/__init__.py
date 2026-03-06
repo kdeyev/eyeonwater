@@ -24,7 +24,6 @@ from .const import (
 from .coordinator import EyeOnWaterData
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.StreamHandler())
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
@@ -72,13 +71,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SMART_METER: eye_on_water_data,
     }
 
-    _task = hass.async_create_task(coordinator.async_refresh())
-
-    def _cancel_refresh_task() -> None:
-        _task.cancel()
-
-    entry.async_on_unload(_cancel_refresh_task)
-
+    await coordinator.async_config_entry_first_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async def async_service_handler(call: ServiceCall) -> None:

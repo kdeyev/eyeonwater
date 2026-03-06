@@ -30,7 +30,6 @@ from pyonwater import DataPoint, Meter
 from .const import WATER_METER_NAME
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.StreamHandler())
 
 
 PYONWATER_UNIT_MAP: dict[str, UnitOfVolume] = {
@@ -171,6 +170,8 @@ async def get_last_imported_time(
         1,
         statistic_id,
         True,  # noqa: FBT003
+        # HA get_last_statistics requires a boolean positional arg;
+        # no keyword alternative exists in the public API
         {"start", "sum"},
     )
     _LOGGER.debug("last_stats %s", last_stats)

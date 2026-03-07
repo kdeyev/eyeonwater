@@ -110,7 +110,7 @@ def get_cost_statistic_metadata(
     name = f"{get_statistic_name(meter_id=meter.meter_id)} Cost"
     statistic_id = get_cost_statistics_id(meter.meter_id)
 
-    kwargs: dict = {
+    kwargs: dict[str, Any] = {
         "has_mean": False,
         "has_sum": True,
         "name": name,

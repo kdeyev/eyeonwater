@@ -8,7 +8,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, Meter
+from pyonwater import (
+    Account,
+    Client,
+    DataPoint,
+    EyeOnWaterAPIError,
+    EyeOnWaterAuthError,
+    Meter,
+)
 
 from .const import CONF_UNIT_PRICE
 from .statistic_helper import (
@@ -94,7 +101,7 @@ class EyeOnWaterData:
     def _import_cost_statistics(
         self,
         meter: Meter,
-        data: list,
+        data: list[DataPoint],
     ) -> None:
         """Import cost statistics if unit_price is configured."""
         unit_price = self._config_entry.options.get(CONF_UNIT_PRICE)

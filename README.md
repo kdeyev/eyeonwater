@@ -6,11 +6,11 @@ Version 2.6.0 changes how water usage statistics are stored. If you are upgradin
 
 ### What Changed
 
-| | Before (≤ 2.5.x) | After (2.6.0+) |
-|---|---|---|
-| Statistic ID | `sensor.eyeonwater:water_meter_xxxxx` | `eyeonwater:water_meter_xxxxx` |
-| Source | `recorder` | `eyeonwater` |
-| API | `async_import_statistics` | `async_add_external_statistics` |
+|              | Before (≤ 2.5.x)                      | After (2.6.0+)                  |
+| ------------ | ------------------------------------- | ------------------------------- |
+| Statistic ID | `sensor.eyeonwater:water_meter_xxxxx` | `eyeonwater:water_meter_xxxxx`  |
+| Source       | `recorder`                            | `eyeonwater`                    |
+| API          | `async_import_statistics`             | `async_add_external_statistics` |
 
 The old approach conflicted with Home Assistant's internal statistics pipeline, causing **negative water usage spikes** ([#30](https://github.com/kdeyev/eyeonwater/issues/30)). The new approach uses HA's external statistics API under a dedicated `eyeonwater:` namespace, eliminating these conflicts entirely.
 
@@ -23,9 +23,9 @@ The old approach conflicted with Home Assistant's internal statistics pipeline, 
    - In **Water Consumption**, remove the old statistic entry.
    - Add the new `eyeonwater:water_meter_xxxxx` statistic.
 4. **Re-import historical data:**
-   - Go to `Developer Tools` → `Services`.
+   - Go to `Developer Tools` → `Actions`.
    - Call `EyeOnWater: import_historical_data` with the desired number of days.
-5. *(Optional)* Delete the old orphaned statistics via `Developer Tools` → `Statistics` if they appear as "no longer provided."
+5. _(Optional)_ Delete the old orphaned statistics via `Developer Tools` → `Statistics` if they appear as "no longer provided."
 
 ### New Diagnostic Sensors
 
@@ -100,7 +100,7 @@ Once configured, cost statistics will appear as `eyeonwater:water_cost_xxxxx` an
 
 The integration can import historical water usage data after installation.
 
-1. Go to `Developer Tools` → `Services`.
+1. Go to `Developer Tools` → `Actions`.
 2. Select the `EyeOnWater: import_historical_data` service.
 3. Choose how many days of historical data you want to import.
 4. The import may take some time depending on the number of days.
@@ -119,15 +119,16 @@ EyeOnWater reports water meter readings **retroactively** — data for 12 PM–6
 
 The integration uses **external statistics** under a separate `eyeonwater:` namespace, completely independent from HA's automatic statistics pipeline:
 
-| Component | ID | Purpose |
-|-----------|-------------|---------|
-| Live sensor | `sensor.water_meter_xxxxx` | Real-time meter reading display |
-| Water statistic | `eyeonwater:water_meter_xxxxx` | **Energy Dashboard** — accurate hourly usage |
-| Cost statistic | `eyeonwater:water_cost_xxxxx` | **Energy Dashboard** — accurate hourly cost (requires unit price) |
+| Component       | ID                             | Purpose                                                           |
+| --------------- | ------------------------------ | ----------------------------------------------------------------- |
+| Live sensor     | `sensor.water_meter_xxxxx`     | Real-time meter reading display                                   |
+| Water statistic | `eyeonwater:water_meter_xxxxx` | **Energy Dashboard** — accurate hourly usage                      |
+| Cost statistic  | `eyeonwater:water_cost_xxxxx`  | **Energy Dashboard** — accurate hourly cost (requires unit price) |
 
 The live sensor has no `state_class`, so HA does not auto-compile statistics for it. All water usage and cost statistics come exclusively from the integration's retroactive imports — no conflicts, no negative values.
 
 ### HA Core Tracking
 
 The underlying limitation (no support for retroactive/delayed sensor data) is discussed upstream:
+
 - [home-assistant/architecture#964](https://github.com/home-assistant/architecture/discussions/964) — Delayed data sensors

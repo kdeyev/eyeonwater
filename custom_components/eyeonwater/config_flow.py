@@ -9,6 +9,7 @@ import voluptuous as vol
 from aiohttp import ClientError
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import callback
 from homeassistant.helpers import aiohttp_client
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
@@ -82,6 +83,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
     VERSION = 1
 
     @staticmethod
+    @callback
     def async_get_options_flow(
         _config_entry: config_entries.ConfigEntry,
     ) -> OptionsFlowHandler:

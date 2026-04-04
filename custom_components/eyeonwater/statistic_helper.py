@@ -136,7 +136,6 @@ def get_cost_statistic_metadata(
         "source": "eyeonwater",
         "statistic_id": statistic_id,
         "unit_of_measurement": currency,
-        "unit_class": "monetary",
     }
     if _HAS_MEAN_TYPE:
         kwargs["mean_type"] = StatisticMeanType.NONE

@@ -2,33 +2,37 @@
 
 import datetime
 import logging
+from collections.abc import Sequence
+from typing import Any
 
 import pyonwater
 from homeassistant import exceptions
-from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import (
     StatisticData,
     StatisticMetaData,
 )
+from homeassistant.helpers.recorder import get_instance
 
 try:
-    from homeassistant.components.recorder.models import StatisticMeanType
+    from homeassistant.components.recorder.models import (
+        StatisticMeanType as _StatisticMeanType,
+    )
 
-    _HAS_MEAN_TYPE = True
+    _STATISTIC_MEAN_TYPE_NONE: int | None = _StatisticMeanType.NONE
 except ImportError:
-    _HAS_MEAN_TYPE = False
+    _STATISTIC_MEAN_TYPE_NONE = None
 from homeassistant.components.recorder.statistics import get_last_statistics
 from homeassistant.const import UnitOfVolume
+from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dtutil
 from pyonwater import DataPoint, Meter
 
 from .const import WATER_METER_NAME
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.StreamHandler())
 
 
-PYONWATER_UNIT_MAP: dict[pyonwater.NativeUnits, UnitOfVolume] = {
+PYONWATER_UNIT_MAP: dict[str, UnitOfVolume] = {
     pyonwater.NativeUnits.GAL: UnitOfVolume.GALLONS,
     pyonwater.NativeUnits.CF: UnitOfVolume.CUBIC_FEET,
     pyonwater.NativeUnits.CM: UnitOfVolume.CUBIC_METERS,
@@ -39,9 +43,11 @@ class UnrecognizedUnitError(exceptions.HomeAssistantError):
     """Error to indicate unrecognized pyonwater native unit."""
 
 
-def get_ha_native_unit_of_measurement(unit: pyonwater.NativeUnits):
+def get_ha_native_unit_of_measurement(
+    unit: pyonwater.NativeUnits | str,
+) -> UnitOfVolume:
     """Convert pyonwater native units to HA native units."""
-    ha_unit = PYONWATER_UNIT_MAP.get(unit, None)
+    ha_unit = PYONWATER_UNIT_MAP.get(unit)
     if ha_unit is None:
         msg = "Unrecognized pyonwater unit {unit}"
         raise UnrecognizedUnitError(msg)
@@ -80,7 +86,7 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
 
     unit = get_ha_native_unit_of_measurement(meter.native_unit_of_measurement)
 
-    kwargs: dict = {
+    kwargs: dict[str, Any] = {
         "has_mean": False,
         "has_sum": True,
         "name": name,
@@ -89,10 +95,11 @@ def get_statistic_metadata(meter: Meter) -> StatisticMetaData:
         "unit_of_measurement": unit,
         "unit_class": "volume",
     }
-    if _HAS_MEAN_TYPE:
-        kwargs["mean_type"] = StatisticMeanType.NONE
+    if _STATISTIC_MEAN_TYPE_NONE is not None:
+        kwargs["mean_type"] = _STATISTIC_MEAN_TYPE_NONE
+        kwargs["unit_class"] = "volume"
 
-    return StatisticMetaData(**kwargs)
+    return StatisticMetaData(**kwargs)  # type: ignore[typeddict-item, no-any-return]
 
 
 def get_cost_statistic_metadata(
@@ -103,7 +110,7 @@ def get_cost_statistic_metadata(
     name = f"{get_statistic_name(meter_id=meter.meter_id)} Cost"
     statistic_id = get_cost_statistics_id(meter.meter_id)
 
-    kwargs: dict = {
+    kwargs: dict[str, Any] = {
         "has_mean": False,
         "has_sum": True,
         "name": name,
@@ -112,14 +119,14 @@ def get_cost_statistic_metadata(
         "unit_of_measurement": currency,
         "unit_class": "monetary",
     }
-    if _HAS_MEAN_TYPE:
-        kwargs["mean_type"] = StatisticMeanType.NONE
+    if _STATISTIC_MEAN_TYPE_NONE is not None:
+        kwargs["mean_type"] = _STATISTIC_MEAN_TYPE_NONE
 
-    return StatisticMetaData(**kwargs)
+    return StatisticMetaData(**kwargs)  # type: ignore[typeddict-item, no-any-return]
 
 
 def convert_cost_statistic_data(
-    data: list[DataPoint],
+    data: Sequence[DataPoint],
     unit_price: float,
 ) -> list[StatisticData]:
     """Convert water usage data to cost statistics.
@@ -137,7 +144,7 @@ def convert_cost_statistic_data(
     ]
 
 
-def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:
+def convert_statistic_data(data: Sequence[DataPoint]) -> list[StatisticData]:
     """Convert statistics data to HA StatisticData format."""
     return [
         StatisticData(
@@ -150,7 +157,7 @@ def convert_statistic_data(data: list[DataPoint]) -> list[StatisticData]:
 
 
 async def get_last_imported_time(
-    hass,
+    hass: HomeAssistant,
     meter: Meter,
 ) -> datetime.datetime | None:
     """Return last imported data datetime."""
@@ -163,13 +170,17 @@ async def get_last_imported_time(
         1,
         statistic_id,
         True,  # noqa: FBT003
+        # HA get_last_statistics requires a boolean positional arg;
+        # no keyword alternative exists in the public API
         {"start", "sum"},
     )
     _LOGGER.debug("last_stats %s", last_stats)
 
     if last_stats:
-        date = last_stats[statistic_id][0]["start"]
-        date = datetime.datetime.fromtimestamp(date, tz=dtutil.DEFAULT_TIME_ZONE)
+        timestamp = last_stats[statistic_id][0].get("start")
+        if timestamp is None:
+            return None
+        date = datetime.datetime.fromtimestamp(timestamp, tz=dtutil.DEFAULT_TIME_ZONE)
         date = dtutil.as_local(date)
         _LOGGER.debug("date %s", date)
 
@@ -178,26 +189,22 @@ async def get_last_imported_time(
 
 
 def filter_newer_data(
-    data: list[DataPoint],
+    data: Sequence[DataPoint],
     last_imported_time: datetime.datetime | None,
 ) -> list[DataPoint]:
     """Filter data points that are newer than given datetime."""
     if not data:
         _LOGGER.info("0 data points found (empty input)")
-        return data
+        return []
 
     _LOGGER.debug(
         "last_imported_time %s - data %s",
         last_imported_time,
         data[-1].dt,
     )
+    result: list[DataPoint] = list(data)
     if last_imported_time is not None:
-        data = list(
-            filter(
-                lambda r: r.dt > last_imported_time,
-                data,
-            ),
-        )
-    _LOGGER.info("%i data points found", len(data))
+        result = [r for r in data if r.dt > last_imported_time]
+    _LOGGER.info("%i data points found", len(result))
 
-    return data
+    return result

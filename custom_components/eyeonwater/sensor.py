@@ -1,4 +1,5 @@
 """Support for EyeOnWater sensors."""
+
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -6,11 +7,12 @@ import pyonwater
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -32,7 +34,6 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity import Entity
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.StreamHandler())
 
 
 async def async_setup_entry(
@@ -88,7 +89,8 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
             self.meter.meter_info.sensors
             and self.meter.meter_info.sensors.endpoint_temperature
         ):
-            return self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+            val = self.meter.meter_info.sensors.endpoint_temperature.seven_day_min
+            return float(val) if val is not None else None
 
         return None
 
@@ -99,6 +101,7 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
     _attr_name = None
     _attr_device_class = SensorDeviceClass.WATER
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(
         self,
@@ -129,35 +132,28 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         )
 
     @property
-    def available(self):
+    def available(self) -> bool:
         """Return True if entity is available."""
         return self._available
 
     @property
-    def native_value(self):
+    def native_value(self) -> float | None:
         """Get the latest reading."""
-        return self._state.reading
+        return self._state.reading if self._state else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the device specific state attributes."""
-        return self.meter.meter_info.reading.dict()
+        return dict(self.meter.meter_info.reading.dict())
 
     @callback
-    def _state_update(self):
+    def _state_update(self) -> None:
         """Call when the coordinator has an update."""
         self._available = self.coordinator.last_update_success
         if self._available:
             self._state = self.meter.reading
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to updates."""
         self.async_on_remove(self.coordinator.async_add_listener(self._state_update))
-
-        if self.coordinator.last_update_success:
-            return
-
-        if last_state := await self.async_get_last_state():
-            self._state = last_state.state
-            self._available = True

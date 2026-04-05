@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
-from pyonwater import EyeOnWaterAuthError
+from pyonwater import EyeOnWaterAPIError, EyeOnWaterAuthError
 
 from custom_components.eyeonwater import async_setup_entry, async_unload_entry
 from custom_components.eyeonwater.const import (
@@ -132,6 +132,59 @@ async def test_setup_entry_timeout(config_entry) -> None:
 
         with pytest.raises(ConfigEntryNotReady):
             await async_setup_entry(hass, config_entry)
+
+
+@pytest.mark.asyncio
+async def test_setup_entry_api_error_raises_not_ready(config_entry) -> None:
+    """API errors during meter fetch should raise ConfigEntryNotReady."""
+    hass = _make_hass()
+
+    with (
+        patch(
+            "custom_components.eyeonwater.create_account_from_config",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.eyeonwater.EyeOnWaterData",
+        ) as mock_data_cls,
+    ):
+        data_instance = MagicMock()
+        data_instance.client = MagicMock()
+        data_instance.client.authenticate = AsyncMock()
+        data_instance.setup = AsyncMock(
+            side_effect=EyeOnWaterAPIError("400 Bad Request"),
+        )
+        mock_data_cls.return_value = data_instance
+
+        with pytest.raises(ConfigEntryNotReady):
+            await async_setup_entry(hass, config_entry)
+
+
+@pytest.mark.asyncio
+async def test_setup_entry_auth_error_during_fetch(config_entry) -> None:
+    """Auth errors during meter fetch should return False."""
+    hass = _make_hass()
+
+    with (
+        patch(
+            "custom_components.eyeonwater.create_account_from_config",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.eyeonwater.EyeOnWaterData",
+        ) as mock_data_cls,
+    ):
+        data_instance = MagicMock()
+        data_instance.client = MagicMock()
+        data_instance.client.authenticate = AsyncMock()
+        data_instance.setup = AsyncMock(
+            side_effect=EyeOnWaterAuthError("token expired"),
+        )
+        mock_data_cls.return_value = data_instance
+
+        result = await async_setup_entry(hass, config_entry)
+
+    assert result is False
 
 
 # ---------- async_unload_entry ----------

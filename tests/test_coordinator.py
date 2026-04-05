@@ -258,6 +258,29 @@ async def test_import_historical_data_includes_cost_stats(eow_data) -> None:
     assert mock_import.call_count == 2
 
 
+@pytest.mark.asyncio
+async def test_import_historical_data_continues_on_api_error(eow_data) -> None:
+    """import_historical_data should log and skip meters that fail."""
+    with patch(
+        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        await eow_data.setup()
+
+    eow_data.meters[0].read_historical_data.side_effect = EyeOnWaterAPIError(
+        "empty response",
+    )
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ) as mock_import:
+        # Should NOT raise
+        await eow_data.import_historical_data(days=30)
+
+    mock_import.assert_not_called()
+
+
 # ---------- display unit ----------
 
 

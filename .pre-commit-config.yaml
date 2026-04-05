@@ -39,7 +39,7 @@ repos:
       - id: mypy
         language_version: python
         # No reason to run if only tests have changed. They intentionally break typing.
-        exclude: tests/.*
+        exclude: (tests|scripts)/.*
         additional_dependencies:
         - homeassistant==2026.2.2
         - pydantic~=2.0

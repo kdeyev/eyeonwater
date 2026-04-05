@@ -96,6 +96,7 @@ ignore = [
     "S101", # pytest's assert is the assertion primitive — cannot be removed
 ]
 ".github/*.py" = ["INP001"]
+"scripts/*.py" = ["INP001", "T201", "BLE001", "D103", "PLR0915", "ASYNC109"]
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
@@ -117,7 +118,7 @@ warn_unused_ignores = true
 no_implicit_optional = true
 show_error_codes = true
 implicit_reexport = true
-exclude = ["\\.venv", "__pycache__", "\\.eggs", "\\.egg-info"]
+exclude = ["\\.venv", "__pycache__", "\\.eggs", "\\.egg-info", "scripts/"]
 
 [tool.pylint.MASTER]
 ignore-paths = [".venv"]

@@ -1,40 +1,34 @@
-# Home Assistant integration for EyeOnWater service
+# Home Assistant integration for EyeOnWater
 
-## ⚠️ Breaking Change in v2.6.0
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![GitHub stars](https://img.shields.io/github/stars/kdeyev/eyeonwater?style=social)](https://github.com/kdeyev/eyeonwater)
+[![GitHub Release](https://img.shields.io/github/v/release/kdeyev/eyeonwater)](https://github.com/kdeyev/eyeonwater/releases)
+[![GitHub License](https://img.shields.io/github/license/kdeyev/eyeonwater)](LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/kdeyev/eyeonwater/tests.yml?label=tests)](https://github.com/kdeyev/eyeonwater/actions/workflows/tests.yml)
 
-Version 2.6.0 changes how water usage statistics are stored. If you are upgrading from a previous version, **you must reconfigure your Energy Dashboard and re-import historical data**.
+Track your **water usage** directly in Home Assistant using the [EyeOnWater](https://eyeonwater.com) service. This integration imports accurate hourly meter readings into HA's Energy Dashboard — including **historical data** and optional **cost tracking**.
 
-### What Changed
+![watermeter](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter.png?raw=true)
 
-|              | Before (≤ 2.5.x)                      | After (2.6.0+)                  |
-| ------------ | ------------------------------------- | ------------------------------- |
-| Statistic ID | `sensor.eyeonwater:water_meter_xxxxx` | `eyeonwater:water_meter_xxxxx`  |
-| Source       | `recorder`                            | `eyeonwater`                    |
-| API          | `async_import_statistics`             | `async_add_external_statistics` |
+### Key Features
 
-The old approach conflicted with Home Assistant's internal statistics pipeline, causing **negative water usage spikes** ([#30](https://github.com/kdeyev/eyeonwater/issues/30)). The new approach uses HA's external statistics API under a dedicated `eyeonwater:` namespace, eliminating these conflicts entirely.
+- **Energy Dashboard integration** — hourly water consumption statistics with full history
+- **Water cost tracking** — multiply usage by your unit price for cost statistics
+- **Historical data import** — backfill days/weeks/months of data on demand
+- **Diagnostic sensors** — temperature, flow, battery, and signal strength
+- **US & Canada support** — works with `eyeonwater.com` and `eyeonwater.ca`
 
-### Migration Steps
+## 📖 Documentation
 
-1. **Update** the integration to v2.6.0 via HACS.
-2. **Restart** Home Assistant.
-3. **Reconfigure the Energy Dashboard:**
-   - Go to `Settings` → `Dashboards` → `Energy`.
-   - In **Water Consumption**, remove the old statistic entry.
-   - Add the new `eyeonwater:water_meter_xxxxx` statistic.
-4. **Re-import historical data:**
-   - Go to `Developer Tools` → `Actions`.
-   - Call `EyeOnWater: import_historical_data` with the desired number of days.
-5. _(Optional)_ Delete the old orphaned statistics via `Developer Tools` → `Statistics` if they appear as "no longer provided."
-
-### New Diagnostic Sensors
-
-v2.6.0 also adds 10 new diagnostic sensor entities (created only when the meter provides the data):
-
-- **Temperature:** 7-day min, 7-day avg, 7-day max, latest avg
-- **Flow:** usage this week, last week, this month, last month
-- **Battery:** battery level (%)
-- **Signal:** signal strength (dB)
+| Guide | Description |
+|-------|-------------|
+| **[Installation](docs/installation.md)** | Install via HACS or manually |
+| **[Configuration](docs/configuration.md)** | Set up credentials, sensors, and options |
+| **[Energy Dashboard](docs/energy-dashboard.md)** | Add water consumption to HA Energy |
+| **[Historical Data & Architecture](docs/historical-data.md)** | Import past data — how retroactive statistics work |
+| **[Water Cost Tracking](docs/cost-tracking.md)** | Track water costs in the Energy Dashboard |
+| **[Upgrading to v2.6](docs/migration-v2.6.md)** | Breaking changes and migration steps |
+| **[Troubleshooting](docs/troubleshooting.md)** | Common issues and solutions |
 
 ---
 
@@ -106,6 +100,38 @@ The integration can import historical water usage data after installation.
 4. The import may take some time depending on the number of days.
 
 ![import-historical-data](https://github.com/kdeyev/eyeonwater/blob/master/img/import-historical-data.png?raw=true)
+
+## Upgrading to v2.6.0
+
+<details>
+<summary>⚠️ Breaking changes — click to expand migration guide</summary>
+
+Version 2.6.0 changes how water usage statistics are stored. If you are upgrading from a previous version, **you must reconfigure your Energy Dashboard and re-import historical data**.
+
+### What Changed
+
+| | Before (≤ 2.5.x) | After (2.6.0+) |
+|---|---|---|
+| Statistic ID | `sensor.eyeonwater:water_meter_xxxxx` | `eyeonwater:water_meter_xxxxx` |
+| Source | `recorder` | `eyeonwater` |
+| API | `async_import_statistics` | `async_add_external_statistics` |
+
+The old approach conflicted with Home Assistant's internal statistics pipeline, causing **negative water usage spikes** ([#30](https://github.com/kdeyev/eyeonwater/issues/30)). The new approach uses HA's external statistics API under a dedicated `eyeonwater:` namespace, eliminating these conflicts entirely.
+
+### Migration Steps
+
+1. **Update** the integration to v2.6.0 via HACS.
+2. **Restart** Home Assistant.
+3. **Reconfigure the Energy Dashboard:**
+   - Go to `Settings` → `Dashboards` → `Energy`.
+   - In **Water Consumption**, remove the old statistic entry.
+   - Add the new `eyeonwater:water_meter_xxxxx` statistic.
+4. **Re-import historical data:**
+   - Go to `Developer Tools` → `Services`.
+   - Call `EyeOnWater: import_historical_data` with the desired number of days.
+5. *(Optional)* Delete the old orphaned statistics via `Developer Tools` → `Statistics` if they appear as "no longer provided."
+
+</details>
 
 ## Architecture: How Statistics Work
 

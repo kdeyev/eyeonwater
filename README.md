@@ -8,7 +8,7 @@
 
 Track your **water usage** directly in Home Assistant using the [EyeOnWater](https://eyeonwater.com) service. This integration imports accurate hourly meter readings into HA's Energy Dashboard — including **historical data** and optional **cost tracking**.
 
-![watermeter](https://github.com/kdeyev/eyeonwater/blob/master/img/watermeter.png?raw=true)
+![Energy Dashboard — water consumption](docs/img/07-energy-dashboard-water.png)
 
 ### Key Features
 

@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - master
+    paths:
+      - 'custom_components/**'
+      - 'pyproject.toml'
 
 jobs:
   check-version:

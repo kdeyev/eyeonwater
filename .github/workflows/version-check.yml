@@ -6,7 +6,6 @@ on:
       - master
     paths:
       - 'custom_components/**'
-      - 'pyproject.toml'
 
 jobs:
   check-version:

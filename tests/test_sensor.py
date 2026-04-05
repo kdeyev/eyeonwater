@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pyonwater
 import pytest
-from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import UnitOfTemperature, UnitOfVolume
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -48,11 +48,11 @@ class TestEyeOnWaterSensor:
         sensor = EyeOnWaterSensor(meter, coordinator)
         assert sensor._attr_device_class == SensorDeviceClass.WATER
 
-    def test_state_class(self, coordinator) -> None:
-        """State class is TOTAL_INCREASING for cumulative meter readings."""
+    def test_no_state_class(self, coordinator) -> None:
+        """Sensor must not define state_class (data flows via external statistics)."""
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
-        assert sensor._attr_state_class == SensorStateClass.TOTAL_INCREASING
+        assert not hasattr(sensor, "_attr_state_class")
 
     def test_unit_gallons(self, coordinator) -> None:
         """GAL native unit maps to GALLONS."""

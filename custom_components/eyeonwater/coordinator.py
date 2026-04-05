@@ -17,14 +17,16 @@ from pyonwater import (
     Meter,
 )
 
-from .const import CONF_UNIT_PRICE
+from .const import CONF_DISPLAY_UNIT, CONF_UNIT_PRICE
 from .statistic_helper import (
     convert_cost_statistic_data,
     convert_statistic_data,
     filter_newer_data,
     get_cost_statistic_metadata,
+    get_ha_native_unit_of_measurement,
     get_last_imported_time,
     get_statistic_metadata,
+    volume_conversion_factor,
 )
 
 if TYPE_CHECKING:
@@ -78,6 +80,20 @@ class EyeOnWaterData:
 
         return self.meters
 
+    def _get_display_unit(self) -> str | None:
+        """Return configured display unit, or None for meter native."""
+        return self._config_entry.options.get(CONF_DISPLAY_UNIT) or None
+
+    def _get_volume_factor(self, meter: Meter) -> float:
+        """Return conversion factor from meter native unit to display unit."""
+        display_unit = self._get_display_unit()
+        if not display_unit:
+            return 1.0
+        native_unit = get_ha_native_unit_of_measurement(
+            meter.native_unit_of_measurement,
+        )
+        return volume_conversion_factor(native_unit, display_unit)
+
     def _import_meter_statistics(self, meter: Meter) -> None:
         """Filter and import new historical data points for a meter."""
         if not meter.last_historical_data:
@@ -90,8 +106,9 @@ class EyeOnWaterData:
             return
 
         _LOGGER.info("%i data points will be imported", len(new_data))
-        statistics = convert_statistic_data(new_data)
-        metadata = get_statistic_metadata(meter)
+        factor = self._get_volume_factor(meter)
+        statistics = convert_statistic_data(new_data, factor)
+        metadata = get_statistic_metadata(meter, self._get_display_unit())
         async_add_external_statistics(self.hass, metadata, statistics)
 
         self._import_cost_statistics(meter, new_data)
@@ -131,8 +148,9 @@ class EyeOnWaterData:
                 days_to_load=days,
             )
             _LOGGER.info("%i data points will be imported", len(data))
-            statistics = convert_statistic_data(data)
-            metadata = get_statistic_metadata(meter)
+            factor = self._get_volume_factor(meter)
+            statistics = convert_statistic_data(data, factor)
+            metadata = get_statistic_metadata(meter, self._get_display_unit())
             async_add_external_statistics(self.hass, metadata, statistics)
 
             self._import_cost_statistics(meter, data)

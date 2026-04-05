@@ -23,10 +23,12 @@
         "step": {
             "init": {
                 "data": {
-                    "unit_price": "Price per unit of water"
+                    "unit_price": "Price per unit of water",
+                    "display_unit": "Statistics display unit"
                 },
                 "data_description": {
-                    "unit_price": "The cost per unit of water (e.g., per gallon or per cubic foot). Set to 0 or leave empty to disable cost tracking."
+                    "unit_price": "The cost per unit of water (e.g., per gallon or per cubic foot). Set to 0 or leave empty to disable cost tracking.",
+                    "display_unit": "Unit of measurement for water statistics in the Energy Dashboard. Leave empty to use the meter's native unit."
                 }
             }
         }

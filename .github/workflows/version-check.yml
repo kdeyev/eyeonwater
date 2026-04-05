@@ -23,6 +23,12 @@ jobs:
           echo "PR version: $NEW_VERSION"
           echo "Master version: $OLD_VERSION"
           if [ "$NEW_VERSION" = "$OLD_VERSION" ]; then
+            # Check if any .py files changed — skip version check for metadata-only PRs
+            PY_CHANGED=$(git diff --name-only origin/master...HEAD -- 'custom_components/**/*.py' | wc -l)
+            if [ "$PY_CHANGED" -eq 0 ]; then
+              echo "::notice::No Python source files changed — skipping version check."
+              exit 0
+            fi
             echo "::error::Version in manifest.json has not been updated. Please bump the version before merging to master."
             exit 1
           fi

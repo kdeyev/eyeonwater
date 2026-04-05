@@ -10,10 +10,12 @@ import voluptuous as vol
 from aiohttp import ClientError
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import callback
 from homeassistant.helpers import aiohttp_client
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
-from .const import CONF_UNIT_PRICE, DOMAIN
+from .const import CONF_DISPLAY_UNIT, CONF_UNIT_PRICE, DOMAIN
+from .statistic_helper import DISPLAY_UNIT_OPTIONS
 
 CONF_EOW_HOSTNAME_COM = "eyeonwater.com"
 CONF_EOW_HOSTNAME_CA = "eyeonwater.ca"
@@ -83,6 +85,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     @staticmethod
+    @callback
     def async_get_options_flow(
         _config_entry: config_entries.ConfigEntry,
     ) -> OptionsFlowHandler:
@@ -139,6 +142,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         current_price = self.config_entry.options.get(CONF_UNIT_PRICE)
+        current_display_unit = self.config_entry.options.get(CONF_DISPLAY_UNIT)
 
         return self.async_show_form(
             step_id="init",
@@ -148,6 +152,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_UNIT_PRICE,
                         description={"suggested_value": current_price},
                     ): vol.All(vol.Coerce(float), vol.Range(min=0)),
+                    vol.Optional(
+                        CONF_DISPLAY_UNIT,
+                        description={"suggested_value": current_display_unit},
+                    ): vol.In(DISPLAY_UNIT_OPTIONS),
                 },
             ),
         )

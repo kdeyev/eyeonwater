@@ -54,4 +54,3 @@ The live sensor has no `state_class`, so HA does not auto-compile statistics for
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
-

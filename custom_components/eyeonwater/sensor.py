@@ -10,7 +10,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
@@ -112,9 +112,6 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         self._uuid = normalize_id(meter.meter_uuid)
         self._id = normalize_id(meter.meter_id)
 
-        self._state: pyonwater.DataPoint | None = None
-        self._available = False
-
         self._attr_unique_id = self._uuid
         self._attr_native_unit_of_measurement = get_ha_native_unit_of_measurement(
             meter.native_unit_of_measurement,
@@ -130,28 +127,15 @@ class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
         )
 
     @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self._available
-
-    @property
     def native_value(self) -> float | None:
         """Get the latest reading."""
-        return self._state.reading if self._state else None
+        try:
+            return float(self.meter.reading.reading)
+        except (pyonwater.EyeOnWaterException, ValueError):
+            _LOGGER.debug("Could not read meter value", exc_info=True)
+            return None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the device specific state attributes."""
         return dict(self.meter.meter_info.reading.dict())
-
-    @callback
-    def _state_update(self) -> None:
-        """Call when the coordinator has an update."""
-        self._available = self.coordinator.last_update_success
-        if self._available:
-            self._state = self.meter.reading
-        self.async_write_ha_state()
-
-    async def async_added_to_hass(self) -> None:
-        """Subscribe to updates."""
-        self.async_on_remove(self.coordinator.async_add_listener(self._state_update))

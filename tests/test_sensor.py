@@ -66,35 +66,32 @@ class TestEyeOnWaterSensor:
         sensor = EyeOnWaterSensor(meter, coordinator)
         assert sensor._attr_native_unit_of_measurement == UnitOfVolume.CUBIC_FEET
 
-    def test_available_initially_false(self, coordinator) -> None:
-        """Sensor starts unavailable before first coordinator update."""
+    def test_available_follows_coordinator(self, coordinator) -> None:
+        """Sensor availability follows coordinator.last_update_success."""
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
+        coordinator.last_update_success = True
+        assert sensor.available is True
+        coordinator.last_update_success = False
         assert sensor.available is False
 
-    def test_state_update_sets_available(self, coordinator) -> None:
-        """Successful coordinator update marks sensor available and stores reading."""
+    def test_native_value_returns_reading(self, coordinator) -> None:
+        """native_value returns the meter reading value."""
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
-        sensor.hass = MagicMock()
-        sensor.async_write_ha_state = MagicMock()
+        value = sensor.native_value
+        assert value == meter.reading.reading
 
-        sensor._state_update()
-
-        assert sensor._available is True
-        assert sensor._state == meter.reading
-
-    def test_state_update_unavailable(self, coordinator) -> None:
-        """Failed coordinator update marks sensor unavailable."""
+    def test_native_value_returns_none_on_exception(self, coordinator) -> None:
+        """native_value returns None when meter.reading raises."""
         meter = _make_meter()
         sensor = EyeOnWaterSensor(meter, coordinator)
-        sensor.hass = MagicMock()
-        sensor.async_write_ha_state = MagicMock()
-        coordinator.last_update_success = False
-
-        sensor._state_update()
-
-        assert sensor._available is False
+        type(meter).reading = property(
+            lambda _self: (_ for _ in ()).throw(
+                pyonwater.EyeOnWaterException("Data was not fetched"),
+            ),
+        )
+        assert sensor.native_value is None
 
     def test_extra_state_attributes(self, coordinator) -> None:
         """Extra state attributes include meter reading fields."""

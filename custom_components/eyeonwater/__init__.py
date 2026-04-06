@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import debounce
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from pyonwater import EyeOnWaterAuthError
+from pyonwater import EyeOnWaterAuthError, EyeOnWaterException
 
 from .config_flow import create_account_from_config
 from .const import (
@@ -42,9 +42,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await eye_on_water_data.setup()
-    except Exception:
-        _LOGGER.exception("Fetching meters failed")
-        raise
+    except EyeOnWaterAuthError:
+        _LOGGER.exception("Authentication failed while fetching meters")
+        return False
+    except EyeOnWaterException as error:
+        raise ConfigEntryNotReady from error
 
     async def async_update_data() -> EyeOnWaterData:
         _LOGGER.debug("Fetching latest data")

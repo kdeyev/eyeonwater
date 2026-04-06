@@ -12,8 +12,7 @@ from pyonwater import (
     Account,
     Client,
     DataPoint,
-    EyeOnWaterAPIError,
-    EyeOnWaterAuthError,
+    EyeOnWaterException,
     Meter,
 )
 
@@ -73,7 +72,7 @@ class EyeOnWaterData:
                     client=self.client,
                     days_to_load=days_to_load,
                 )
-            except (EyeOnWaterAPIError, EyeOnWaterAuthError) as error:
+            except EyeOnWaterException as error:
                 raise UpdateFailed(error) from error
 
             self._import_meter_statistics(meter)
@@ -143,10 +142,23 @@ class EyeOnWaterData:
     async def import_historical_data(self, days: int) -> None:
         """Import historical data (service call)."""
         for meter in self.meters:
-            data = await meter.read_historical_data(
-                client=self.client,
-                days_to_load=days,
-            )
+            try:
+                data = await meter.read_historical_data(
+                    client=self.client,
+                    days_to_load=days,
+                )
+            except EyeOnWaterException as error:
+                _LOGGER.warning(
+                    "Failed to read historical data for meter %s: %s",
+                    meter.meter_id,
+                    error,
+                )
+                continue
+
+            if not data:
+                _LOGGER.info("No historical data for meter %s", meter.meter_id)
+                continue
+
             _LOGGER.info("%i data points will be imported", len(data))
             factor = self._get_volume_factor(meter)
             statistics = convert_statistic_data(data, factor)

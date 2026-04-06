@@ -19,7 +19,7 @@ tenacity = "^8.2.3"
 pytz = "^2023.3"
 python-dateutil = "^2.8.2"
 pydantic = "^2"
-pyonwater = "0.3.22"
+pyonwater = "0.3.29"
 
 [tool.poetry.group.dev.dependencies]
 types-pytz = "^2025.2.0.20251108"
@@ -29,7 +29,7 @@ mypy = ">=1.5"
 [tool.poetry.group.test.dependencies]
 pytest-homeassistant-custom-component = ">=0.13"
 homeassistant = "2026.2.2"
-pyonwater = "0.3.22"
+pyonwater = "0.3.29"
 pytest = ">=9.0"
 pytest-asyncio = ">=1.0"
 pytest-cov = ">=7.0"

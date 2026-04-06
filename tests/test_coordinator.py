@@ -159,8 +159,6 @@ async def test_import_historical_data(eow_data) -> None:
     ) as mock_import:
         await eow_data.import_historical_data(days=30)
 
-    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once()
-    eow_data.meters[0].read_historical_data.assert_not_awaited()
     call_args = mock_import.call_args[0]
     assert len(call_args) == 3  # (hass, metadata, statistics)
     assert len(call_args[2]) > 0  # at least one StatisticData row passed
@@ -181,8 +179,12 @@ async def test_import_historical_data_days_gt_one_uses_export_path(eow_data) -> 
     ):
         await eow_data.import_historical_data(days=2)
 
-    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once()
     eow_data.meters[0].read_historical_data.assert_not_awaited()
+    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once_with(
+        client=eow_data.client,
+        days_to_load=2,
+        export_unit="Gallons",
+    )
 
 
 @pytest.mark.asyncio
@@ -202,6 +204,32 @@ async def test_import_historical_data_one_day_uses_regular_path(eow_data) -> Non
 
     eow_data.meters[0].read_historical_data.assert_awaited_once()
     eow_data.meters[0].read_historical_data_range_export.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_import_historical_data_days_gt_one_uses_native_export_unit(
+    eow_data,
+) -> None:
+    """Multi-day import forwards export_unit matching meter native units."""
+    with patch(
+        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        await eow_data.setup()
+
+    eow_data.meters[0].native_unit_of_measurement = "cf"
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ):
+        await eow_data.import_historical_data(days=3)
+
+    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once_with(
+        client=eow_data.client,
+        days_to_load=3,
+        export_unit="Cubic Feet",
+    )
 
 
 @pytest.mark.asyncio
@@ -347,8 +375,10 @@ async def test_import_historical_data_continues_on_api_error(eow_data) -> None:
     ):
         await eow_data.setup()
 
-    eow_data.meters[0].read_historical_data.side_effect = EyeOnWaterAPIError(
-        "empty response",
+    eow_data.meters[0].read_historical_data_range_export.side_effect = (
+        EyeOnWaterAPIError(
+            "empty response",
+        )
     )
 
     with patch(

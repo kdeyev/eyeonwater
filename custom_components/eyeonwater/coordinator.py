@@ -16,7 +16,7 @@ from pyonwater import (
     Meter,
 )
 
-from .const import CONF_DISPLAY_UNIT, CONF_UNIT_PRICE
+from .const import CONF_DISPLAY_UNIT, CONF_PREFER_NEW_SEARCH, CONF_UNIT_PRICE
 from .statistic_helper import (
     convert_cost_statistic_data,
     convert_statistic_data,
@@ -54,7 +54,14 @@ class EyeOnWaterData:
 
     async def setup(self) -> None:
         """Fetch all of the user's meters."""
-        self.meters = await self.account.fetch_meters(self.client)
+        prefer_new_search = self._config_entry.options.get(
+            CONF_PREFER_NEW_SEARCH,
+            False,
+        )
+        self.meters = await self.account.fetch_meters(
+            self.client,
+            prefer_new_search=prefer_new_search,
+        )
         _LOGGER.debug("Discovered %i meter(s)", len(self.meters))
 
         for meter in self.meters:

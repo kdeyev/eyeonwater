@@ -34,6 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     eye_on_water_data = EyeOnWaterData(hass, account, entry)
     try:
         await eye_on_water_data.client.authenticate()
+        _LOGGER.debug("Authentication successful")
     except EyeOnWaterAuthError:
         _LOGGER.exception("Username or password was not accepted")
         return False
@@ -81,6 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             IMPORT_HISTORICAL_DATA_DAYS_NAME,
             IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,
         )
+        _LOGGER.info("Historical import requested: %d days", days)
         await eye_on_water_data.import_historical_data(days)
 
     hass.services.async_register(

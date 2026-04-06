@@ -24,11 +24,13 @@
             "init": {
                 "data": {
                     "unit_price": "Price per unit of water",
-                    "display_unit": "Statistics display unit"
+                    "display_unit": "Statistics display unit",
+                    "prefer_new_search": "Use API-based meter discovery"
                 },
                 "data_description": {
                     "unit_price": "The cost per unit of water (e.g., per gallon or per cubic foot). Set to 0 or leave empty to disable cost tracking.",
-                    "display_unit": "Unit of measurement for water statistics in the Energy Dashboard. Leave empty to use the meter's native unit."
+                    "display_unit": "Unit of measurement for water statistics in the Energy Dashboard. Leave empty to use the meter's native unit.",
+                    "prefer_new_search": "Use the newer API endpoint for meter discovery instead of the legacy dashboard. Enable this only if the default method does not find your meters."
                 }
             }
         }

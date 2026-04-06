@@ -14,7 +14,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import aiohttp_client
 from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 
-from .const import CONF_DISPLAY_UNIT, CONF_UNIT_PRICE, DOMAIN
+from .const import CONF_DISPLAY_UNIT, CONF_PREFER_NEW_SEARCH, CONF_UNIT_PRICE, DOMAIN
 from .statistic_helper import DISPLAY_UNIT_OPTIONS
 
 CONF_EOW_HOSTNAME_COM = "eyeonwater.com"
@@ -143,6 +143,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         current_price = self.config_entry.options.get(CONF_UNIT_PRICE)
         current_display_unit = self.config_entry.options.get(CONF_DISPLAY_UNIT)
+        current_prefer_new_search = self.config_entry.options.get(
+            CONF_PREFER_NEW_SEARCH,
+            False,
+        )
 
         return self.async_show_form(
             step_id="init",
@@ -156,6 +160,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_DISPLAY_UNIT,
                         description={"suggested_value": current_display_unit},
                     ): vol.In(DISPLAY_UNIT_OPTIONS),
+                    vol.Optional(
+                        CONF_PREFER_NEW_SEARCH,
+                        default=current_prefer_new_search,
+                    ): bool,
                 },
             ),
         )

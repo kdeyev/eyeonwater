@@ -17,3 +17,4 @@ IMPORT_HISTORICAL_DATA_DAYS_DEFAULT = 365
 
 CONF_UNIT_PRICE = "unit_price"
 CONF_DISPLAY_UNIT = "display_unit"
+CONF_PREFER_NEW_SEARCH = "prefer_new_search"

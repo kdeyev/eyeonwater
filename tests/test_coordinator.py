@@ -47,8 +47,39 @@ async def test_setup_fetches_meters(eow_data, mock_account) -> None:
         return_value=None,
     ):
         await eow_data.setup()
-    mock_account.fetch_meters.assert_awaited_once()
+    mock_account.fetch_meters.assert_awaited_once_with(
+        eow_data.client,
+        prefer_new_search=False,
+    )
     assert len(eow_data.meters) == 1
+
+
+@pytest.mark.asyncio
+async def test_setup_passes_prefer_new_search(mock_account, mock_client) -> None:
+    """setup() should pass prefer_new_search=True when option is set."""
+    hass = _make_hass()
+    config_entry = MagicMock()
+    config_entry.options = {"prefer_new_search": True}
+    with (
+        patch(
+            "custom_components.eyeonwater.coordinator.aiohttp_client.async_get_clientsession",
+        ),
+        patch(
+            "custom_components.eyeonwater.coordinator.Client",
+            return_value=mock_client,
+        ),
+        patch(
+            "custom_components.eyeonwater.coordinator.get_last_imported_time",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
+    ):
+        data = EyeOnWaterData(hass, mock_account, config_entry)
+        await data.setup()
+    mock_account.fetch_meters.assert_awaited_once_with(
+        data.client,
+        prefer_new_search=True,
+    )
 
 
 # ---------- read_meters ----------

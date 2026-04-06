@@ -7,7 +7,6 @@ from homeassistant.components.recorder.statistics import async_add_external_stat
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
-from homeassistant.helpers.update_coordinator import UpdateFailed
 from pyonwater import (
     Account,
     Client,
@@ -75,12 +74,22 @@ class EyeOnWaterData:
         for meter in self.meters:
             try:
                 await meter.read_meter_info(client=self.client)
+            except EyeOnWaterException:
+                _LOGGER.warning(
+                    "Failed to refresh meter info for %s, using cached data",
+                    meter.meter_id,
+                )
+
+            try:
                 await meter.read_historical_data(
                     client=self.client,
                     days_to_load=days_to_load,
                 )
-            except EyeOnWaterException as error:
-                raise UpdateFailed(error) from error
+            except EyeOnWaterException:
+                _LOGGER.warning(
+                    "Failed to read historical data for %s",
+                    meter.meter_id,
+                )
 
             self._import_meter_statistics(meter)
 

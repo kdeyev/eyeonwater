@@ -4,8 +4,7 @@ import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.helpers.update_coordinator import UpdateFailed
-from pyonwater import EyeOnWaterAPIError, EyeOnWaterAuthError
+from pyonwater import EyeOnWaterAPIError
 
 from custom_components.eyeonwater.coordinator import EyeOnWaterData
 
@@ -105,8 +104,8 @@ async def test_read_meters_success(eow_data) -> None:
 
 
 @pytest.mark.asyncio
-async def test_read_meters_api_error_raises_update_failed(eow_data) -> None:
-    """API errors should be wrapped in UpdateFailed."""
+async def test_read_meters_meter_info_error_continues(eow_data) -> None:
+    """API errors from read_meter_info should be logged, not fatal."""
     with patch(
         "custom_components.eyeonwater.coordinator.get_last_imported_time",
         new_callable=AsyncMock,
@@ -115,23 +114,31 @@ async def test_read_meters_api_error_raises_update_failed(eow_data) -> None:
         await eow_data.setup()
     eow_data.meters[0].read_meter_info.side_effect = EyeOnWaterAPIError("fail")
 
-    with pytest.raises(UpdateFailed):
-        await eow_data.read_meters()
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ):
+        meters = await eow_data.read_meters()
+    assert len(meters) == 1
+    # read_historical_data should still have been called
+    eow_data.meters[0].read_historical_data.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_read_meters_auth_error_raises_update_failed(eow_data) -> None:
-    """Auth errors should be wrapped in UpdateFailed."""
+async def test_read_meters_historical_error_continues(eow_data) -> None:
+    """API errors from read_historical_data should be logged, not fatal."""
     with patch(
         "custom_components.eyeonwater.coordinator.get_last_imported_time",
         new_callable=AsyncMock,
         return_value=None,
     ):
         await eow_data.setup()
-    eow_data.meters[0].read_meter_info.side_effect = EyeOnWaterAuthError("denied")
+    eow_data.meters[0].read_historical_data.side_effect = EyeOnWaterAPIError("fail")
 
-    with pytest.raises(UpdateFailed):
-        await eow_data.read_meters()
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ):
+        meters = await eow_data.read_meters()
+    assert len(meters) == 1
 
 
 # ---------- import_historical_data ----------

@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "eyeonwater"
-version = "2.7.3b1"
+version = "2.7.3-beta.1"
 description = "EyeOnWater HomeAssistant Integration."
 authors = []
 license = "MIT"

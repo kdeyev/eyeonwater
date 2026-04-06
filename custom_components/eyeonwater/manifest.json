@@ -8,5 +8,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/kdeyev/eyeonwater/issues",
   "requirements": ["pyonwater==0.3.30"],
-"version": "2.7.3b1"
+"version": "2.7.3-beta.1"
 }

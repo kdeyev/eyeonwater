@@ -11,7 +11,6 @@ from pyonwater import (
     Account,
     Client,
     DataPoint,
-    EyeOnWaterException,
     Meter,
 )
 
@@ -84,7 +83,7 @@ class EyeOnWaterData:
         for meter in self.meters:
             try:
                 await meter.read_meter_info(client=self.client)
-            except (EyeOnWaterException, TimeoutError, OSError) as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to refresh meter info for %s, using cached data: %s",
                     meter.meter_id,
@@ -96,14 +95,21 @@ class EyeOnWaterData:
                     client=self.client,
                     days_to_load=days_to_load,
                 )
-            except (EyeOnWaterException, TimeoutError, OSError) as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to read historical data for %s: %s",
                     meter.meter_id,
                     exc,
                 )
 
-            self._import_meter_statistics(meter)
+            try:
+                self._import_meter_statistics(meter)
+            except Exception as exc:  # noqa: BLE001
+                _LOGGER.warning(
+                    "Failed to import statistics for %s: %s",
+                    meter.meter_id,
+                    exc,
+                )
 
         return self.meters
 
@@ -180,11 +186,11 @@ class EyeOnWaterData:
                     client=self.client,
                     days_to_load=days,
                 )
-            except EyeOnWaterException as error:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to read historical data for meter %s: %s",
                     meter.meter_id,
-                    error,
+                    exc,
                 )
                 continue
 
@@ -197,9 +203,16 @@ class EyeOnWaterData:
                 len(data),
                 meter.meter_id,
             )
-            factor = self._get_volume_factor(meter)
-            statistics = convert_statistic_data(data, factor)
-            metadata = get_statistic_metadata(meter, self._get_display_unit())
-            async_add_external_statistics(self.hass, metadata, statistics)
+            try:
+                factor = self._get_volume_factor(meter)
+                statistics = convert_statistic_data(data, factor)
+                metadata = get_statistic_metadata(meter, self._get_display_unit())
+                async_add_external_statistics(self.hass, metadata, statistics)
 
-            self._import_cost_statistics(meter, data)
+                self._import_cost_statistics(meter, data)
+            except Exception as exc:  # noqa: BLE001
+                _LOGGER.warning(
+                    "Failed to import statistics for meter %s: %s",
+                    meter.meter_id,
+                    exc,
+                )

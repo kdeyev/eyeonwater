@@ -84,7 +84,7 @@ class EyeOnWaterData:
         for meter in self.meters:
             try:
                 await meter.read_meter_info(client=self.client)
-            except EyeOnWaterException as exc:
+            except (EyeOnWaterException, TimeoutError, OSError) as exc:
                 _LOGGER.warning(
                     "Failed to refresh meter info for %s, using cached data: %s",
                     meter.meter_id,
@@ -96,7 +96,7 @@ class EyeOnWaterData:
                     client=self.client,
                     days_to_load=days_to_load,
                 )
-            except EyeOnWaterException as exc:
+            except (EyeOnWaterException, TimeoutError, OSError) as exc:
                 _LOGGER.warning(
                     "Failed to read historical data for %s: %s",
                     meter.meter_id,

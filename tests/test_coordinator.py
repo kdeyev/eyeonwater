@@ -159,10 +159,49 @@ async def test_import_historical_data(eow_data) -> None:
     ) as mock_import:
         await eow_data.import_historical_data(days=30)
 
-    eow_data.meters[0].read_historical_data.assert_awaited()
+    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once()
+    eow_data.meters[0].read_historical_data.assert_not_awaited()
     call_args = mock_import.call_args[0]
     assert len(call_args) == 3  # (hass, metadata, statistics)
     assert len(call_args[2]) > 0  # at least one StatisticData row passed
+
+
+@pytest.mark.asyncio
+async def test_import_historical_data_days_gt_one_uses_export_path(eow_data) -> None:
+    """Manual import uses export-range path when requesting multiple days."""
+    with patch(
+        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        await eow_data.setup()
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ):
+        await eow_data.import_historical_data(days=2)
+
+    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once()
+    eow_data.meters[0].read_historical_data.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_import_historical_data_one_day_uses_regular_path(eow_data) -> None:
+    """Manual import keeps the regular path for a single day."""
+    with patch(
+        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        await eow_data.setup()
+
+    with patch(
+        "custom_components.eyeonwater.coordinator.async_add_external_statistics",
+    ):
+        await eow_data.import_historical_data(days=1)
+
+    eow_data.meters[0].read_historical_data.assert_awaited_once()
+    eow_data.meters[0].read_historical_data_range_export.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -292,6 +331,8 @@ async def test_import_historical_data_includes_cost_stats(eow_data) -> None:
     ) as mock_import:
         await eow_data.import_historical_data(days=30)
 
+    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once()
+    eow_data.meters[0].read_historical_data.assert_not_awaited()
     # Water + cost
     assert mock_import.call_count == 2
 
@@ -361,6 +402,8 @@ async def test_import_historical_data_uses_display_unit(eow_data) -> None:
     ) as mock_import:
         await eow_data.import_historical_data(days=30)
 
+    eow_data.meters[0].read_historical_data_range_export.assert_awaited_once()
+    eow_data.meters[0].read_historical_data.assert_not_awaited()
     mock_import.assert_called_once()
     metadata = mock_import.call_args[0][1]
     assert metadata["unit_of_measurement"] == "m\u00b3"

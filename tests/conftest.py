@@ -107,6 +107,7 @@ def _make_meter(
     meter.last_historical_data = [FakeDataPoint()]
     meter.read_meter_info = AsyncMock()
     meter.read_historical_data = AsyncMock(return_value=[FakeDataPoint()])
+    meter.read_historical_data_range_export = AsyncMock(return_value=[FakeDataPoint()])
     return meter
 
 

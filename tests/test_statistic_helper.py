@@ -196,7 +196,7 @@ def test_get_cost_statistics_id() -> None:
 
 
 def test_get_cost_statistic_metadata() -> None:
-    """Cost StatisticMetaData has monetary unit_class and optional mean_type."""
+    """Cost StatisticMetaData has no unit_class and optional mean_type."""
     meter = _make_meter(meter_id="meter-001")
     meta = get_cost_statistic_metadata(meter, "USD")
 
@@ -206,7 +206,7 @@ def test_get_cost_statistic_metadata() -> None:
     assert meta.get("statistic_id") == "eyeonwater:water_cost_meter_001"
     assert meta.get("unit_of_measurement") == "USD"
     assert meta.get("name") == "Water Meter meter_001 Cost"
-    assert meta.get("unit_class") == "monetary"
+    assert "unit_class" not in meta
     if _STATISTIC_MEAN_TYPE_NONE is not None:
         assert meta.get("mean_type") == _STATISTIC_MEAN_TYPE_NONE
 

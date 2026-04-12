@@ -156,11 +156,7 @@ def convert_cost_statistic_data(
     data: Sequence[DataPoint],
     unit_price: float,
 ) -> list[StatisticData]:
-    """Convert water usage data to cost statistics.
-
-    Each DataPoint has a cumulative meter reading as `reading`.
-    Cost = reading * unit_price (same cumulative approach).
-    """
+    """Convert water usage data to cost statistics."""
     return [
         StatisticData(
             start=row.dt,
@@ -175,10 +171,7 @@ def convert_statistic_data(
     data: Sequence[DataPoint],
     factor: float = 1.0,
 ) -> list[StatisticData]:
-    """Convert statistics data to HA StatisticData format.
-
-    *factor* is applied to every reading (unit conversion).
-    """
+    """Convert statistics data to HA StatisticData format."""
     return [
         StatisticData(
             start=row.dt,
@@ -203,8 +196,6 @@ async def get_last_imported_time(
         1,
         statistic_id,
         True,  # noqa: FBT003
-        # HA get_last_statistics requires a boolean positional arg;
-        # no keyword alternative exists in the public API
         {"start", "sum"},
     )
     _LOGGER.debug("last_stats %s", last_stats)
@@ -225,13 +216,7 @@ def filter_newer_data(
     data: Sequence[DataPoint],
     last_imported_time: datetime.datetime | None,
 ) -> list[DataPoint]:
-    """Filter data points that are newer than given datetime.
-
-    Both ``last_imported_time`` (from HA statistics) and ``DataPoint.dt``
-    (from pyonwater) are timezone-aware datetimes.  We normalise both to
-    UTC before comparing to avoid mismatches when the two use different
-    timezone objects that represent the same wall-clock offset.
-    """
+    """Filter data points newer than given datetime."""
     if not data:
         _LOGGER.info("0 data points found (empty input)")
         return []
@@ -243,8 +228,7 @@ def filter_newer_data(
     )
     result: list[DataPoint] = list(data)
     if last_imported_time is not None:
-        # Normalise to UTC so that timezone-object differences (e.g.
-        # pytz vs zoneinfo) don't cause incorrect filtering.
+        # Normalise both to UTC before comparing.
         cutoff_utc = last_imported_time.astimezone(datetime.timezone.utc)
         result = [
             r

@@ -179,19 +179,12 @@ class EyeOnWaterData:
         )
 
     async def import_historical_data(self, days: int) -> None:
-        """Import historical data (service call).
-
-        Fetches the requested number of days from the API and writes
-        them into HA's long-term statistics store.  Any individual
-        day that returns an empty API response is skipped gracefully
-        (the pyonwater library logs a warning for each skipped day).
-
-        After a successful import the in-memory ``_last_imported_times``
-        cache is updated so the next regular coordinator poll does not
-        re-import data that was just written.
-        """
+        """Import historical data for all meters."""
         if days <= 0:
-            _LOGGER.warning("import_historical_data called with non-positive days=%d; skipping", days)
+            _LOGGER.warning(
+                "import_historical_data called with days=%d; skipping",
+                days,
+            )
             return
 
         for meter in self.meters:
@@ -209,7 +202,10 @@ class EyeOnWaterData:
                 continue
 
             if not data:
-                _LOGGER.info("No historical data returned for meter %s", meter.meter_id)
+                _LOGGER.info(
+                    "No historical data returned for meter %s",
+                    meter.meter_id,
+                )
                 continue
 
             _LOGGER.info(
@@ -225,15 +221,8 @@ class EyeOnWaterData:
 
                 self._import_cost_statistics(meter, data)
 
-                # Keep the cache in sync so the next coordinator poll
-                # does not re-import data we just wrote.
                 if data:
                     self._last_imported_times[meter.meter_id] = data[-1].dt
-                    _LOGGER.debug(
-                        "Updated last_imported_time for meter %s to %s",
-                        meter.meter_id,
-                        data[-1].dt,
-                    )
             except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to import statistics for meter %s: %s",

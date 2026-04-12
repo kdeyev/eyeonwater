@@ -78,12 +78,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async def async_service_handler(call: ServiceCall) -> None:
+        """Handle the import_historical_data service call.
+
+        Exceptions are caught here to prevent the error from propagating
+        into the WebSocket API handler and causing an "unknown_error"
+        response in the HA frontend.  All failures are logged as warnings
+        so the user can inspect them in the HA log.
+        """
         days = call.data.get(
             IMPORT_HISTORICAL_DATA_DAYS_NAME,
             IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,
         )
         _LOGGER.info("Historical import requested: %d days", days)
-        await eye_on_water_data.import_historical_data(days)
+        try:
+            await eye_on_water_data.import_historical_data(days)
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.warning(
+                "Historical data import failed: %s",
+                exc,
+            )
 
     hass.services.async_register(
         DOMAIN,

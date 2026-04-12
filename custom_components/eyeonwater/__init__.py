@@ -78,12 +78,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async def async_service_handler(call: ServiceCall) -> None:
+        """Handle the import_historical_data service call."""
         days = call.data.get(
             IMPORT_HISTORICAL_DATA_DAYS_NAME,
             IMPORT_HISTORICAL_DATA_DAYS_DEFAULT,
         )
         _LOGGER.info("Historical import requested: %d days", days)
-        await eye_on_water_data.import_historical_data(days)
+        try:
+            await eye_on_water_data.import_historical_data(days)
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.warning(
+                "Historical data import failed: %s",
+                exc,
+            )
 
     hass.services.async_register(
         DOMAIN,

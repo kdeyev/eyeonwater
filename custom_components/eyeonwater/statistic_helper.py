@@ -122,8 +122,9 @@ def get_statistic_metadata(
         "unit_class": "volume",
     }
     if _STATISTIC_MEAN_TYPE_NONE is not None:
+        # HA 2024.11+ uses mean_type instead of has_mean; set both for
+        # backward compatibility with older HA installs.
         kwargs["mean_type"] = _STATISTIC_MEAN_TYPE_NONE
-        kwargs["unit_class"] = "volume"
 
     return StatisticMetaData(**kwargs)  # type: ignore[typeddict-item, no-any-return]
 
@@ -143,6 +144,7 @@ def get_cost_statistic_metadata(
         "source": "eyeonwater",
         "statistic_id": statistic_id,
         "unit_of_measurement": currency,
+        "unit_class": "monetary",
     }
     if _STATISTIC_MEAN_TYPE_NONE is not None:
         kwargs["mean_type"] = _STATISTIC_MEAN_TYPE_NONE
@@ -211,7 +213,7 @@ async def get_last_imported_time(
         timestamp = last_stats[statistic_id][0].get("start")
         if timestamp is None:
             return None
-        date = datetime.datetime.fromtimestamp(timestamp, tz=dtutil.DEFAULT_TIME_ZONE)
+        date = datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
         date = dtutil.as_local(date)
         _LOGGER.debug("date %s", date)
 
@@ -223,7 +225,13 @@ def filter_newer_data(
     data: Sequence[DataPoint],
     last_imported_time: datetime.datetime | None,
 ) -> list[DataPoint]:
-    """Filter data points that are newer than given datetime."""
+    """Filter data points that are newer than given datetime.
+
+    Both ``last_imported_time`` (from HA statistics) and ``DataPoint.dt``
+    (from pyonwater) are timezone-aware datetimes.  We normalise both to
+    UTC before comparing to avoid mismatches when the two use different
+    timezone objects that represent the same wall-clock offset.
+    """
     if not data:
         _LOGGER.info("0 data points found (empty input)")
         return []
@@ -235,7 +243,14 @@ def filter_newer_data(
     )
     result: list[DataPoint] = list(data)
     if last_imported_time is not None:
-        result = [r for r in data if r.dt > last_imported_time]
+        # Normalise to UTC so that timezone-object differences (e.g.
+        # pytz vs zoneinfo) don't cause incorrect filtering.
+        cutoff_utc = last_imported_time.astimezone(datetime.timezone.utc)
+        result = [
+            r
+            for r in data
+            if r.dt.astimezone(datetime.timezone.utc) > cutoff_utc
+        ]
     _LOGGER.info("%i data points found", len(result))
 
     return result

@@ -127,6 +127,26 @@ class EyeOnWaterData:
         )
         return volume_conversion_factor(native_unit, display_unit)
 
+    def _get_export_unit(self, meter: Meter) -> str:
+        """Return export-unit label matching the meter native unit."""
+        native_unit = getattr(
+            meter.native_unit_of_measurement,
+            "value",
+            str(meter.native_unit_of_measurement),
+        )
+        export_unit = {
+            "gal": "Gallons",
+            "cf": "Cubic Feet",
+            "cm": "Cubic Meters",
+        }.get(native_unit)
+        if export_unit is None:
+            _LOGGER.warning(
+                "Unsupported native unit %s for export-range import; defaulting export_unit to Gallons",
+                meter.native_unit_of_measurement,
+            )
+            return "Gallons"
+        return export_unit
+
     def _import_meter_statistics(self, meter: Meter) -> None:
         """Filter and import new historical data points for a meter."""
         if not meter.last_historical_data:
@@ -182,10 +202,19 @@ class EyeOnWaterData:
         """Import historical data (service call)."""
         for meter in self.meters:
             try:
-                data = await meter.read_historical_data(
-                    client=self.client,
-                    days_to_load=days,
-                )
+                if days > 1:
+                    # Export range is the bulk multi-day retrieval path; single-day
+                    # imports stay on the regular per-day consumption endpoint.
+                    data = await meter.read_historical_data_range_export(
+                        client=self.client,
+                        days_to_load=days,
+                        export_unit=self._get_export_unit(meter),
+                    )
+                else:
+                    data = await meter.read_historical_data(
+                        client=self.client,
+                        days_to_load=days,
+                    )
             except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to read historical data for meter %s: %s",

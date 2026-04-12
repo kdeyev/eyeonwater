@@ -123,7 +123,6 @@ def get_statistic_metadata(
     }
     if _STATISTIC_MEAN_TYPE_NONE is not None:
         kwargs["mean_type"] = _STATISTIC_MEAN_TYPE_NONE
-        kwargs["unit_class"] = "volume"
 
     return StatisticMetaData(**kwargs)  # type: ignore[typeddict-item, no-any-return]
 
@@ -143,6 +142,7 @@ def get_cost_statistic_metadata(
         "source": "eyeonwater",
         "statistic_id": statistic_id,
         "unit_of_measurement": currency,
+        "unit_class": "monetary",
     }
     if _STATISTIC_MEAN_TYPE_NONE is not None:
         kwargs["mean_type"] = _STATISTIC_MEAN_TYPE_NONE
@@ -154,11 +154,7 @@ def convert_cost_statistic_data(
     data: Sequence[DataPoint],
     unit_price: float,
 ) -> list[StatisticData]:
-    """Convert water usage data to cost statistics.
-
-    Each DataPoint has a cumulative meter reading as `reading`.
-    Cost = reading * unit_price (same cumulative approach).
-    """
+    """Convert water usage data to cost statistics."""
     return [
         StatisticData(
             start=row.dt,
@@ -173,10 +169,7 @@ def convert_statistic_data(
     data: Sequence[DataPoint],
     factor: float = 1.0,
 ) -> list[StatisticData]:
-    """Convert statistics data to HA StatisticData format.
-
-    *factor* is applied to every reading (unit conversion).
-    """
+    """Convert statistics data to HA StatisticData format."""
     return [
         StatisticData(
             start=row.dt,
@@ -201,8 +194,6 @@ async def get_last_imported_time(
         1,
         statistic_id,
         True,  # noqa: FBT003
-        # HA get_last_statistics requires a boolean positional arg;
-        # no keyword alternative exists in the public API
         {"start", "sum"},
     )
     _LOGGER.debug("last_stats %s", last_stats)
@@ -211,7 +202,7 @@ async def get_last_imported_time(
         timestamp = last_stats[statistic_id][0].get("start")
         if timestamp is None:
             return None
-        date = datetime.datetime.fromtimestamp(timestamp, tz=dtutil.DEFAULT_TIME_ZONE)
+        date = datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
         date = dtutil.as_local(date)
         _LOGGER.debug("date %s", date)
 
@@ -223,7 +214,7 @@ def filter_newer_data(
     data: Sequence[DataPoint],
     last_imported_time: datetime.datetime | None,
 ) -> list[DataPoint]:
-    """Filter data points that are newer than given datetime."""
+    """Filter data points newer than given datetime."""
     if not data:
         _LOGGER.info("0 data points found (empty input)")
         return []
@@ -235,7 +226,13 @@ def filter_newer_data(
     )
     result: list[DataPoint] = list(data)
     if last_imported_time is not None:
-        result = [r for r in data if r.dt > last_imported_time]
+        # Normalise both to UTC before comparing.
+        cutoff_utc = last_imported_time.astimezone(datetime.timezone.utc)
+        result = [
+            r
+            for r in data
+            if r.dt.astimezone(datetime.timezone.utc) > cutoff_utc
+        ]
     _LOGGER.info("%i data points found", len(result))
 
     return result

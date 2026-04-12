@@ -179,7 +179,11 @@ class EyeOnWaterData:
         )
 
     async def import_historical_data(self, days: int) -> None:
-        """Import historical data (service call)."""
+        """Import historical data for all meters."""
+        if days <= 0:
+            _LOGGER.warning("import_historical_data called with days=%d; skipping", days)
+            return
+
         for meter in self.meters:
             try:
                 data = await meter.read_historical_data(
@@ -195,7 +199,7 @@ class EyeOnWaterData:
                 continue
 
             if not data:
-                _LOGGER.info("No historical data for meter %s", meter.meter_id)
+                _LOGGER.info("No historical data returned for meter %s", meter.meter_id)
                 continue
 
             _LOGGER.info(
@@ -210,6 +214,9 @@ class EyeOnWaterData:
                 async_add_external_statistics(self.hass, metadata, statistics)
 
                 self._import_cost_statistics(meter, data)
+
+                if data:
+                    self._last_imported_times[meter.meter_id] = data[-1].dt
             except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to import statistics for meter %s: %s",

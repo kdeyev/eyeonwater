@@ -181,7 +181,10 @@ class EyeOnWaterData:
     async def import_historical_data(self, days: int) -> None:
         """Import historical data for all meters."""
         if days <= 0:
-            _LOGGER.warning("import_historical_data called with days=%d; skipping", days)
+            _LOGGER.warning(
+                "import_historical_data called with days=%d; skipping",
+                days,
+            )
             return
 
         for meter in self.meters:
@@ -199,7 +202,10 @@ class EyeOnWaterData:
                 continue
 
             if not data:
-                _LOGGER.info("No historical data returned for meter %s", meter.meter_id)
+                _LOGGER.info(
+                    "No historical data returned for meter %s",
+                    meter.meter_id,
+                )
                 continue
 
             _LOGGER.info(

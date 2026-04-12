@@ -96,7 +96,13 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
-    """Representation of an EyeOnWater sensor."""
+    """Representation of an EyeOnWater sensor.
+
+    The cumulative meter reading is reported with state_class=TOTAL_INCREASING
+    so Home Assistant can derive consumption periods for the Energy dashboard.
+    Historical daily data is loaded separately via async_add_external_statistics
+    in the coordinator.
+    """
 
     _attr_has_entity_name = True
     _attr_name = None

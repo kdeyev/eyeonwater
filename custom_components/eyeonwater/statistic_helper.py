@@ -122,6 +122,8 @@ def get_statistic_metadata(
         "unit_class": "volume",
     }
     if _STATISTIC_MEAN_TYPE_NONE is not None:
+        # HA 2024.11+ uses mean_type instead of has_mean; set both for
+        # backward compatibility with older HA installs.
         kwargs["mean_type"] = _STATISTIC_MEAN_TYPE_NONE
 
     return StatisticMetaData(**kwargs)  # type: ignore[typeddict-item, no-any-return]

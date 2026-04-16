@@ -99,19 +99,26 @@ class TestEyeOnWaterBinarySensor:
         sensor = _make_sensor("encoder_leak", coordinator)
         assert sensor._attr_unique_id == f"encoder_leak_{normalize_id(MOCK_METER_UUID)}"
 
-    def test_entity_registry_disabled_encoder_leak(self, coordinator: MagicMock) -> None:
+    def test_entity_registry_disabled_encoder_leak(
+        self,
+        coordinator: MagicMock,
+    ) -> None:
         """encoder_leak entity must be disabled in the entity registry by default."""
         sensor = _make_sensor("encoder_leak", coordinator)
         assert sensor.entity_description.entity_registry_enabled_default is False
 
     def test_entity_registry_disabled_endpoint_reading_missed(
-        self, coordinator: MagicMock,
+        self,
+        coordinator: MagicMock,
     ) -> None:
         """endpoint_reading_missed entity must be disabled in the entity registry by default."""
         sensor = _make_sensor("endpoint_reading_missed", coordinator)
         assert sensor.entity_description.entity_registry_enabled_default is False
 
-    def test_entity_registry_disabled_device_alert(self, coordinator: MagicMock) -> None:
+    def test_entity_registry_disabled_device_alert(
+        self,
+        coordinator: MagicMock,
+    ) -> None:
         """device_alert entity must be disabled in the entity registry by default."""
         sensor = _make_sensor("device_alert", coordinator)
         assert sensor.entity_description.entity_registry_enabled_default is False
@@ -137,8 +144,7 @@ class TestEyeOnWaterBinarySensor:
     def test_get_flag_missing_field_returns_false(self, coordinator: MagicMock) -> None:
         """get_flag returns False gracefully for flags not present on the meter."""
         meter = _make_meter()
-        # Remove a field entirely to simulate an older meter model
-        del meter.meter_info.reading.flags.__dataclass_fields__
+        # FakeFlags does not define 'nonexistent_flag', so getattr returns the default False
         desc = Description(
             key="nonexistent_flag",
             device_class=BinarySensorDeviceClass.PROBLEM,

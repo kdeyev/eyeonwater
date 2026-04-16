@@ -32,12 +32,15 @@ class FakeFlags:
     """Fake meter flag data for testing."""
 
     leak: bool = False
+    encoder_leak: bool = False
     empty_pipe: bool = False
     tamper: bool = False
     cover_removed: bool = False
     reverse_flow: bool = False
     low_battery: bool = False
     battery_charging: bool = False
+    endpoint_reading_missed: bool = False
+    device_alert: bool = False
 
 
 @dataclass

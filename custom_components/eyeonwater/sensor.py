@@ -7,7 +7,6 @@ import pyonwater
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
-    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
@@ -96,18 +95,11 @@ class EyeOnWaterTempSensor(CoordinatorEntity, SensorEntity):
 
 
 class EyeOnWaterSensor(CoordinatorEntity, SensorEntity):
-    """Representation of an EyeOnWater sensor.
-
-    The cumulative meter reading is reported with state_class=TOTAL_INCREASING
-    so Home Assistant can derive consumption periods for the Energy dashboard.
-    Historical daily data is loaded separately via async_add_external_statistics
-    in the coordinator.
-    """
+    """Representation of an EyeOnWater sensor."""
 
     _attr_has_entity_name = True
     _attr_name = None
     _attr_device_class = SensorDeviceClass.WATER
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(
         self,

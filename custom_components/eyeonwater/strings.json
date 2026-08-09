@@ -39,6 +39,9 @@
       "leak": {
         "name": "Leak Sensor"
       },
+      "encoderleak": {
+        "name": "Encoder Leak"
+      },
       "emptypipe": {
         "name": "Empty Pipe"
       },
@@ -50,6 +53,12 @@
       },
       "reverseflow": {
         "name": "Reverse Waterflow"
+      },
+      "endpointreadingmissed": {
+        "name": "Endpoint Reading Missed"
+      },
+      "devicealert": {
+        "name": "Device Alert"
       }
     }
   }

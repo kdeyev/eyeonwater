@@ -29,6 +29,7 @@ class Description:
     key: str
     device_class: BinarySensorDeviceClass
     translation_key: str | None = None
+    enabled_by_default: bool = True
 
 
 FLAG_SENSORS = [
@@ -36,6 +37,12 @@ FLAG_SENSORS = [
         key="leak",
         translation_key="leak",
         device_class=BinarySensorDeviceClass.MOISTURE,
+    ),
+    Description(
+        key="encoder_leak",
+        translation_key="encoderleak",
+        device_class=BinarySensorDeviceClass.MOISTURE,
+        enabled_by_default=False,
     ),
     Description(
         key="empty_pipe",
@@ -64,6 +71,18 @@ FLAG_SENSORS = [
     Description(
         key="battery_charging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
+    ),
+    Description(
+        key="endpoint_reading_missed",
+        translation_key="endpointreadingmissed",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        enabled_by_default=False,
+    ),
+    Description(
+        key="device_alert",
+        translation_key="devicealert",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        enabled_by_default=False,
     ),
 ]
 
@@ -104,6 +123,7 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
             key=description.key,
             device_class=description.device_class,
             translation_key=description.translation_key,
+            entity_registry_enabled_default=description.enabled_by_default,
         )
         self.meter = meter
         self._uuid = normalize_id(meter.meter_uuid)
@@ -124,7 +144,11 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
     def get_flag(self) -> bool:
         """Get flag value."""
         return bool(
-            self.meter.meter_info.reading.flags.__dict__[self.entity_description.key],
+            getattr(
+                self.meter.meter_info.reading.flags,
+                self.entity_description.key,
+                False,
+            ),
         )
 
     @callback

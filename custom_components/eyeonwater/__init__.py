@@ -5,7 +5,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import debounce
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from pyonwater import EyeOnWaterAuthError, EyeOnWaterException
@@ -35,19 +35,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await eye_on_water_data.client.authenticate()
         _LOGGER.debug("Authentication successful")
-    except EyeOnWaterAuthError:
-        _LOGGER.exception("Username or password was not accepted")
-        return False
+    except EyeOnWaterAuthError as error:
+        msg = "Username or password was not accepted"
+        raise ConfigEntryAuthFailed(msg) from error
     except TimeoutError as error:
         raise ConfigEntryNotReady from error
 
     try:
         await eye_on_water_data.setup()
-    except EyeOnWaterAuthError:
-        _LOGGER.exception("Authentication failed while fetching meters")
-        return False
+    except EyeOnWaterAuthError as error:
+        msg = "Authentication failed while fetching meters"
+        raise ConfigEntryAuthFailed(msg) from error
     except EyeOnWaterException as error:
         raise ConfigEntryNotReady from error
+
+    if not eye_on_water_data.meters:
+        # Discovery returning nothing is not a valid steady state: every
+        # account has at least one meter.  Failing here keeps the entry in a
+        # visible error state instead of loading "successfully" with no
+        # entities and no explanation (#180).
+        msg = (
+            "No meters found for this account. This usually means the "
+            "EyeOnWater session is not authenticated."
+        )
+        raise ConfigEntryNotReady(msg)
 
     async def async_update_data() -> EyeOnWaterData:
         _LOGGER.debug("Fetching latest data")

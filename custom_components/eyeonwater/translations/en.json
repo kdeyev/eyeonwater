@@ -1,7 +1,8 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Device is already configured"
+            "already_configured": "Device is already configured",
+            "reauth_successful": "Re-authentication was successful"
         },
         "error": {
             "cannot_connect": "Failed to connect",
@@ -15,6 +16,13 @@
                 "data": {
                     "password": "Password",
                     "username": "Username"
+                }
+            },
+            "reauth_confirm": {
+                "title": "Reauthenticate EyeOnWater",
+                "description": "The EyeOnWater credentials for {username} are no longer accepted. Enter the password again to reconnect.",
+                "data": {
+                    "password": "Password"
                 }
             }
         }

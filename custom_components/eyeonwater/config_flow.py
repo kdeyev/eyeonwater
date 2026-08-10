@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from types import MappingProxyType
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 import voluptuous as vol
 from aiohttp import ClientError
@@ -17,6 +17,9 @@ from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError
 from .const import CONF_DISPLAY_UNIT, CONF_PREFER_NEW_SEARCH, CONF_UNIT_PRICE, DOMAIN
 from .statistic_helper import DISPLAY_UNIT_OPTIONS
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
 CONF_EOW_HOSTNAME_COM = "eyeonwater.com"
 CONF_EOW_HOSTNAME_CA = "eyeonwater.ca"
 
@@ -25,6 +28,12 @@ _LOGGER = logging.getLogger(__name__)
 DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
+    },
+)
+
+REAUTH_SCHEMA = vol.Schema(
+    {
         vol.Required(CONF_PASSWORD): str,
     },
 )
@@ -126,6 +135,49 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=DATA_SCHEMA,
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self,
+        _entry_data: Mapping[str, Any],
+    ) -> config_entries.ConfigFlowResult:
+        """Start re-authentication when stored credentials stop working."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Ask for the password again and validate it before storing."""
+        errors = {}
+        reauth_entry = self._get_reauth_entry()
+
+        if user_input is not None:
+            try:
+                await validate_input(
+                    self.hass,
+                    {**reauth_entry.data, **user_input},
+                )
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
+                return self.async_update_reload_and_abort(
+                    reauth_entry,
+                    data_updates=user_input,
+                )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=REAUTH_SCHEMA,
+            description_placeholders={
+                CONF_USERNAME: reauth_entry.data[CONF_USERNAME],
+            },
             errors=errors,
         )
 

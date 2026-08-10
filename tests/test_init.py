@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from pyonwater import EyeOnWaterAPIError, EyeOnWaterAuthError
 
 from custom_components.eyeonwater import async_setup_entry, async_unload_entry
@@ -85,7 +85,7 @@ async def test_setup_entry_success(config_entry) -> None:
 
 @pytest.mark.asyncio
 async def test_setup_entry_auth_error(config_entry) -> None:
-    """Auth errors during setup should return False."""
+    """Auth errors during setup should trigger HA's reauth flow."""
     hass = _make_hass()
 
     with (
@@ -104,9 +104,8 @@ async def test_setup_entry_auth_error(config_entry) -> None:
         )
         mock_data_cls.return_value = data_instance
 
-        result = await async_setup_entry(hass, config_entry)
-
-    assert result is False
+        with pytest.raises(ConfigEntryAuthFailed):
+            await async_setup_entry(hass, config_entry)
 
 
 @pytest.mark.asyncio
@@ -162,7 +161,7 @@ async def test_setup_entry_api_error_raises_not_ready(config_entry) -> None:
 
 @pytest.mark.asyncio
 async def test_setup_entry_auth_error_during_fetch(config_entry) -> None:
-    """Auth errors during meter fetch should return False."""
+    """Auth errors during meter fetch should trigger HA's reauth flow."""
     hass = _make_hass()
 
     with (
@@ -182,9 +181,43 @@ async def test_setup_entry_auth_error_during_fetch(config_entry) -> None:
         )
         mock_data_cls.return_value = data_instance
 
-        result = await async_setup_entry(hass, config_entry)
+        with pytest.raises(ConfigEntryAuthFailed):
+            await async_setup_entry(hass, config_entry)
 
-    assert result is False
+
+@pytest.mark.asyncio
+async def test_setup_entry_no_meters_raises_not_ready(config_entry) -> None:
+    """Discovering zero meters must fail setup rather than load silently.
+
+    An unauthenticated session makes discovery return an empty list, which
+    previously produced a config entry that loaded "successfully" with no
+    entities and no error anywhere in the UI (#180).
+    """
+    hass = _make_hass()
+
+    with (
+        patch(
+            "custom_components.eyeonwater.create_account_from_config",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.eyeonwater.EyeOnWaterData",
+        ) as mock_data_cls,
+    ):
+        data_instance = MagicMock()
+        data_instance.client = MagicMock()
+        data_instance.client.authenticate = AsyncMock()
+        data_instance.setup = AsyncMock()
+        data_instance.meters = []
+        mock_data_cls.return_value = data_instance
+
+        with pytest.raises(ConfigEntryNotReady, match="No meters found"):
+            await async_setup_entry(hass, config_entry)
+
+    assert DOMAIN not in hass.data or config_entry.entry_id not in hass.data.get(
+        DOMAIN,
+        {},
+    )
 
 
 # ---------- async_unload_entry ----------

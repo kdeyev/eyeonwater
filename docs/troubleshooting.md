@@ -44,6 +44,21 @@
 
 ---
 
+### A whole day of usage appears in a single hour
+
+**Symptom:** The Energy Dashboard shows all of the previous day's water usage lumped into one bar (often at midnight), even though the EyeOnWater website shows the same day broken down hour by hour.
+
+**Solution:** This was a bug in versions ≤ 2.5.x and is fixed in [v2.6.0+](migration-v2.6.md).
+
+Older versions drove the Energy Dashboard from the live sensor's state, so a batch of readings arriving at once was recorded as a single jump. Since v2.6.0 each reading is imported as its own external statistic with its own timestamp, so the hourly breakdown is preserved regardless of how the readings arrive.
+
+If you still see this after upgrading:
+
+1. Confirm the Energy Dashboard source is the **`eyeonwater:water_meter_xxxxx`** statistic, not a `sensor.` entity. The old `sensor.water_meter_xxxxx_statistic` entity was removed in v2.6.0.
+2. Re-run the [import_historical_data service](historical-data.md) to backfill with the correct timestamps.
+
+---
+
 ### Sensors show "Unavailable"
 
 **Symptom:** The water meter sensor or diagnostic sensors show "Unavailable."

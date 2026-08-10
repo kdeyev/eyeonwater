@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.7.13-beta.1
+
+### Changed
+
+- `pyonwater` 0.3.37 → **0.3.38**.
+
+### Fixed
+
+- **Removed cookie tracking that never held anything.** The client stored `resp.cookies` from the sign-in response, but EyeOnWater sets its session cookie on an intermediate redirect, so that value was always empty and passing it back on every request did nothing. Authentication has in fact been carried by the HTTP session's cookie jar throughout. The dead attribute is gone, sign-in now logs the cookies the jar actually holds, and a session that cannot store cookies is now called out instead of failing silently. Thanks to @Spiff-of-Space for spotting this while testing 2.7.12 ([#180](https://github.com/kdeyev/eyeonwater/issues/180)).
+- **Request URLs no longer contain a doubled slash.** The base URL ends with `/` while most endpoints begin with one, so requests went to `https://eyeonwater.com//api/...`. The server tolerated it, but it is no longer relied on.
+
+### Known issues
+
+- **Login is still broken for accounts migrated to EyeOnWater's new identity provider** ([#180](https://github.com/kdeyev/eyeonwater/issues/180)). Nothing in this release changes that. The work here improves diagnostics and removes a misleading code path found while investigating it.
+
 ## 2.7.12
 
 First stable release since 2.7.8. Everything below shipped through the 2.7.9–2.7.12 betas.

@@ -143,13 +143,11 @@ class EyeOnWaterBinarySensor(CoordinatorEntity, RestoreEntity, BinarySensorEntit
 
     def get_flag(self) -> bool:
         """Get flag value."""
-        return bool(
-            getattr(
-                self.meter.meter_info.reading.flags,
-                self.entity_description.key,
-                False,
-            ),
-        )
+        flags = self.meter.meter_info.reading.flags
+        if flags is None:
+            # Some meters omit "flags" from their register payload entirely.
+            return False
+        return bool(getattr(flags, self.entity_description.key, False))
 
     @callback
     def _state_update(self) -> None:

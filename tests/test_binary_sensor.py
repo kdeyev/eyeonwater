@@ -151,3 +151,18 @@ class TestEyeOnWaterBinarySensor:
         )
         sensor = EyeOnWaterBinarySensor(meter, coordinator, desc)
         assert sensor.get_flag() is False
+
+    def test_get_flag_missing_flags_object_returns_false(
+        self,
+        coordinator: MagicMock,
+    ) -> None:
+        """get_flag returns False when the meter reports no flags at all.
+
+        Some meters omit "flags" from their register payload entirely
+        (issue #179); this must not raise.
+        """
+        meter = _make_meter()
+        meter.meter_info.reading.flags = None
+        for desc in FLAG_SENSORS:
+            sensor = EyeOnWaterBinarySensor(meter, coordinator, desc)
+            assert sensor.get_flag() is False

@@ -150,22 +150,41 @@ def get_cost_statistic_metadata(
     return StatisticMetaData(**kwargs)  # type: ignore[typeddict-item, no-any-return]
 
 
+def _hourly_data_points(
+    data: Sequence[DataPoint],
+) -> list[tuple[datetime.datetime, DataPoint]]:
+    """Return the latest cumulative reading for each statistic hour."""
+    points_by_hour: dict[
+        datetime.datetime,
+        tuple[datetime.datetime, DataPoint],
+    ] = {}
+    for row in sorted(
+        data,
+        key=lambda point: (point.end_dt or point.dt).astimezone(datetime.UTC),
+    ):
+        hour_start = row.dt.replace(minute=0, second=0, microsecond=0)
+        hour_key = hour_start.astimezone(datetime.UTC)
+        points_by_hour[hour_key] = (hour_start, row)
+    return [points_by_hour[key] for key in sorted(points_by_hour)]
+
+
 def convert_cost_statistic_data(
     data: Sequence[DataPoint],
     unit_price: float,
 ) -> list[StatisticData]:
     """Convert water usage data to cost statistics.
 
-    Each DataPoint has a cumulative meter reading as `reading`.
+    Sub-hour data is collapsed to the final cumulative reading for each hour,
+    as Home Assistant external statistics require top-of-hour timestamps.
     Cost = reading * unit_price (same cumulative approach).
     """
     return [
         StatisticData(
-            start=row.dt,
+            start=start,
             sum=row.reading * unit_price,
             state=row.reading * unit_price,
         )
-        for row in data
+        for start, row in _hourly_data_points(data)
     ]
 
 
@@ -175,15 +194,17 @@ def convert_statistic_data(
 ) -> list[StatisticData]:
     """Convert statistics data to HA StatisticData format.
 
-    *factor* is applied to every reading (unit conversion).
+    Sub-hour data is collapsed to the final cumulative reading for each hour,
+    as Home Assistant external statistics require top-of-hour timestamps.
+    *factor* is applied to each retained reading (unit conversion).
     """
     return [
         StatisticData(
-            start=row.dt,
+            start=start,
             sum=row.reading * factor,
             state=row.reading * factor,
         )
-        for row in data
+        for start, row in _hourly_data_points(data)
     ]
 
 

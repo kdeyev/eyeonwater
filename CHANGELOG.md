@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.7.13-beta.2
+
+### Fixed
+
+- **Historical interval timestamps are aligned for Home Assistant statistics.** Hourly export rows labeled at `:59` are assigned to the hour they represent, and quarter-hour readings are rolled up using the final cumulative reading for each hour before import.
+
 ## 2.7.13-beta.1
 
 ### Changed

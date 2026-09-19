@@ -4,6 +4,7 @@ import datetime
 
 import pyonwater
 import pytest
+import pytz
 from homeassistant.const import UnitOfVolume
 
 from custom_components.eyeonwater.statistic_helper import (
@@ -140,6 +141,79 @@ def test_convert_statistic_data_multiple() -> None:
     assert [r.get("sum") for r in result] == [10.0, 20.0, 30.0]
 
 
+def test_convert_statistic_data_rolls_up_quarter_hour_intervals() -> None:
+    """Quarter-hour readings become one top-of-hour external statistic."""
+    points = [
+        FakeDataPoint(
+            dt=datetime.datetime(2025, 6, 1, 12, minute, tzinfo=datetime.UTC),
+            reading=reading,
+            end_dt=datetime.datetime(
+                2025,
+                6,
+                1,
+                12 if minute < 45 else 13,
+                minute + 15 if minute < 45 else 0,
+                tzinfo=datetime.UTC,
+            ),
+        )
+        for minute, reading in ((0, 101.0), (15, 102.0), (30, 103.0), (45, 104.0))
+    ]
+
+    result = convert_statistic_data(points)
+
+    assert result == [
+        {
+            "start": datetime.datetime(2025, 6, 1, 12, tzinfo=datetime.UTC),
+            "sum": 104.0,
+            "state": 104.0,
+        },
+    ]
+
+
+def test_convert_statistic_data_aligns_export_end_label() -> None:
+    """An hourly export's end label is aligned to its statistic hour."""
+    point = FakeDataPoint(
+        dt=datetime.datetime(2025, 6, 1, 12, 59, tzinfo=datetime.UTC),
+        reading=104.0,
+    )
+
+    result = convert_statistic_data([point])
+
+    assert result[0]["start"] == datetime.datetime(2025, 6, 1, 12, tzinfo=datetime.UTC)
+
+
+def test_convert_statistic_data_keeps_repeated_dst_hours_distinct() -> None:
+    """The two fall-back hours remain separate external statistics."""
+    timezone = pytz.timezone("America/New_York")
+    first_start = timezone.localize(
+        datetime.datetime(2025, 11, 2, 1),  # noqa: DTZ001
+        is_dst=True,
+    )
+    second_start = timezone.localize(
+        datetime.datetime(2025, 11, 2, 1),  # noqa: DTZ001
+        is_dst=False,
+    )
+    points = [
+        FakeDataPoint(
+            dt=first_start,
+            end_dt=second_start,
+            reading=101.0,
+        ),
+        FakeDataPoint(
+            dt=second_start,
+            end_dt=timezone.localize(
+                datetime.datetime(2025, 11, 2, 2),  # noqa: DTZ001
+            ),
+            reading=102.0,
+        ),
+    ]
+
+    result = convert_statistic_data(points)
+
+    assert [row["start"] for row in result] == [first_start, second_start]
+    assert [row["sum"] for row in result] == [101.0, 102.0]
+
+
 # ---------- filter_newer_data ----------
 
 
@@ -250,6 +324,35 @@ def test_convert_cost_statistic_data_multiple() -> None:
         pytest.approx(10.0),
         pytest.approx(20.0),
         pytest.approx(30.0),
+    ]
+
+
+def test_convert_cost_statistic_data_rolls_up_quarter_hour_intervals() -> None:
+    """Cost statistics use the final cumulative reading for each hour."""
+    points = [
+        FakeDataPoint(
+            dt=datetime.datetime(2025, 6, 1, 12, minute, tzinfo=datetime.UTC),
+            reading=reading,
+            end_dt=datetime.datetime(
+                2025,
+                6,
+                1,
+                12 if minute < 45 else 13,
+                minute + 15 if minute < 45 else 0,
+                tzinfo=datetime.UTC,
+            ),
+        )
+        for minute, reading in ((0, 100.0), (15, 110.0), (30, 120.0), (45, 130.0))
+    ]
+
+    result = convert_cost_statistic_data(points, 0.01)
+
+    assert result == [
+        {
+            "start": datetime.datetime(2025, 6, 1, 12, tzinfo=datetime.UTC),
+            "sum": pytest.approx(1.3),
+            "state": pytest.approx(1.3),
+        },
     ]
 
 

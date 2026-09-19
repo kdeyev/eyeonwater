@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.7.13-beta.2
+
+### Changed
+
+- `pyonwater` 0.3.38 → **0.3.41**.
+
+### Fixed
+
+- **Meters using 10-cubic-meter billing units can now complete setup.** EyeOnWater's `10 CM` response unit is accepted and converted to native cubic meters correctly.
+- **Historical interval timestamps are consistent.** Hourly and quarter-hour consumption data now use bucket-start timestamps, and export labels such as `:14`, `:29`, `:44`, and `:59` are normalized to their interval boundaries.
+
 ## 2.7.13-beta.1
 
 ### Changed

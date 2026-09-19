@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.7.13-beta.3
+
+### Fixed
+
+- **Historical data no longer performs timezone file I/O on Home Assistant's event loop.** `pyonwater` now resolves meter timezones and parses export CSV data in worker threads, preventing the blocking `open` warning reported in [#186](https://github.com/kdeyev/eyeonwater/issues/186).
+
 ## 2.7.13-beta.2
 
 ### Changed

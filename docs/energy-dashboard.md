@@ -32,9 +32,13 @@ Once configured, the Energy Dashboard shows your water consumption over time:
 
 ### Data Timing
 
-EyeOnWater publishes meter readings once every few hours, even though the meter itself records data more frequently. This means:
+EyeOnWater publishes meter readings in batches, even though the meter itself records data more frequently. How often it publishes depends on your water utility:
 
-- Data may appear with a **2–6 hour delay** on the dashboard.
+- Many utilities publish every few hours, so data appears with a **2–6 hour delay**.
+- Some utilities publish only **once per day**, so data can be up to a day behind.
+
+In both cases the **hourly breakdown is preserved** — each reading is imported with its own timestamp, so a batch that arrives all at once still fills in the correct hours rather than appearing as one lump.
+
 - After running the [historical data import](historical-data.md), past data will fill in retroactively.
 - The dashboard will show hourly water usage broken down by day, week, or month.
 

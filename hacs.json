@@ -1,4 +1,5 @@
 {
   "name": "Eye On Water",
-  "render_readme": true
+  "render_readme": true,
+  "homeassistant": "2025.11.0"
 }
